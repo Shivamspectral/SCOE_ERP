@@ -1,0 +1,1 @@
+-- No seed data: the first confirmed signup bootstraps the institution (see migration 4).

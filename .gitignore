@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# environment (keep the template)
+.env
+.env.*
+!.env.example
+
+# supabase local state
+supabase/.temp
+supabase/.branches
+
+# misc
+.DS_Store
+.vercel
+coverage
+npm-debug.log*
+pnpm-debug.log*
