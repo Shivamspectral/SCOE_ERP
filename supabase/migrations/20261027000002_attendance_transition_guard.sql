@@ -9,6 +9,12 @@ set search_path = ''
 as $$
 begin
   if new.status is not distinct from old.status then
+    if new.submitted_at is distinct from old.submitted_at
+      or new.verified_by is distinct from old.verified_by
+      or new.verified_at is distinct from old.verified_at
+      or new.review_note is distinct from old.review_note then
+      raise exception 'Attendance review metadata can only change during a valid status transition' using errcode = '42501';
+    end if;
     return new;
   end if;
 
