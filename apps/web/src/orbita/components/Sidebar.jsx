@@ -54,7 +54,6 @@ export function getNavigationForRole(role) {
         title: "Academics & Students",
         items: [
           { label: "Student Directory", href: "/students", icon: Users, tooltip: "Enrolled student records & dossiers" },
-          { label: "Registration IDs", href: "/registration-ids", icon: KeyRound, tooltip: "Issue and track institutional IDs" },
           { label: "Timetable", href: "/timetable", icon: CalendarDays, tooltip: "Weekly lecture & lab schedule" },
           { label: "Academics", href: "/academics", icon: BookOpen, tooltip: "Syllabus & course outcomes" },
         ],
@@ -107,7 +106,6 @@ export function getNavigationForRole(role) {
           { label: "Faculty & Workload", href: "/faculty", icon: Users, tooltip: "Teaching staff workload & cabins" },
           { label: "Student Directory", href: "/students", icon: Users, tooltip: "Department student strength" },
           { label: "Department Attendance", href: "/attendance", icon: ClipboardCheck, tooltip: "Attendance & defaulters list" },
-          { label: "Registration IDs", href: "/registration-ids", icon: KeyRound, tooltip: "Issue and track institutional IDs" },
         ],
       },
       {
@@ -152,7 +150,6 @@ export function getNavigationForRole(role) {
           { label: "Faculty Directory", href: "/faculty", icon: Users, tooltip: "Faculty strength & designations" },
           { label: "Student Management", href: "/students", icon: Users, tooltip: "Campus-wide student registry" },
           { label: "Institutional Attendance", href: "/attendance", icon: ClipboardCheck, tooltip: "Campus-wide attendance & defaulters" },
-          { label: "Registration IDs", href: "/registration-ids", icon: KeyRound, tooltip: "Issue and track institutional IDs" },
         ],
       },
       {
@@ -195,7 +192,6 @@ export function getNavigationForRole(role) {
         title: "Identity & Security",
         items: [
           { label: "User Management (IAM)", href: "/users", icon: Users, tooltip: "Manage students, faculty & admins" },
-          { label: "Registration IDs", href: "/registration-ids", icon: KeyRound, tooltip: "Issue and track institutional IDs" },
           { label: "Approvals & Clearances", href: "/approvals", icon: FileCheck, tooltip: "Root administrative sanction desk" },
           { label: "System Audit Logs", href: "/logs", icon: Shield, tooltip: "Security & transaction logs" },
         ],
