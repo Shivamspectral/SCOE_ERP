@@ -2,6 +2,24 @@ import { IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
+export class CreateAcademicClassDto {
+  @IsUUID() departmentId!: string;
+  @IsString() @MinLength(2) @MaxLength(100) name!: string;
+  @IsOptional() @IsString() @MaxLength(32) academicYear?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(6) yearOfStudy?: number;
+  @IsOptional() @IsString() @MaxLength(16) division?: string;
+  @IsOptional() @IsIn(['degree','diploma']) programLevel?: string;
+}
+
+export class CreateAcademicSubjectDto {
+  @IsUUID() departmentId!: string;
+  @IsOptional() @IsUUID() classId?: string;
+  @IsOptional() @IsString() @MaxLength(32) code?: string;
+  @IsString() @MinLength(2) @MaxLength(140) name!: string;
+  @IsOptional() @IsInt() @Min(1) @Max(12) semester?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(100) credits?: number;
+}
+
 export class CreateTimetableEntryDto {
   @IsUUID() departmentId!: string;
   @IsString() @MinLength(2) @MaxLength(120) subject!: string;
