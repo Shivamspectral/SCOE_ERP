@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ShieldAlert,
   Search,
@@ -13,18 +13,54 @@ import {
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { auditApi } from "../lib/api";
 
 export function SystemLogsPage() {
-  const { logs, toast } = usePortal();
+  const { logs, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveMode = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const [liveLogs, setLiveLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!liveMode) return;
+    let cancelled = false;
+    setLiveLogs([]);
+    setLoading(true);
+    auditApi.list({ limit: 100 }).then((rows) => {
+      if (cancelled) return;
+      const mapped = (Array.isArray(rows) ? rows : []).map((row) => {
+        const metadata = row.metadata || {};
+        const statusChange = metadata.status_before !== undefined || metadata.status_after !== undefined
+          ? ` (${metadata.status_before ?? "—"} → ${metadata.status_after ?? "—"})` : "";
+        const changedFields = Array.isArray(metadata.changed_fields) && metadata.changed_fields.length
+          ? ` · ${metadata.changed_fields.join(", ")}` : "";
+        const entityType = String(row.entity_type || "record").replace(/_/g, " ");
+        return {
+          id: row.id,
+          timestamp: row.created_at ? new Date(row.created_at).toLocaleString("en-IN") : "—",
+          user: row.actor_id ? `User · ${row.actor_id.slice(0, 8)}` : "System / automation",
+          action: `${String(row.action || "event").toUpperCase()} ${entityType}${statusChange}${changedFields}`,
+          entity: `${entityType} · ${row.entity_id ? String(row.entity_id).slice(0, 8) : "—"}`,
+          severity: row.action === "delete" ? "Warning" : metadata.role_before !== undefined ? "Security" : row.action === "insert" ? "Success" : "Info",
+        };
+      });
+      setLiveLogs(mapped);
+    }).catch((error) => {
+      if (!cancelled) toast({ title: "Could not load audit events", description: error?.message || "Check your access and try again.", variant: "error" });
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [liveMode, session?.access_token]);
+
+  const displayedLogs = liveMode ? liveLogs : logs;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState("All");
 
-  const filteredLogs = logs.filter((l) => {
+  const filteredLogs = displayedLogs.filter((l) => {
     const matchesSearch =
       l.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.ip.toLowerCase().includes(searchQuery.toLowerCase());
+      (l.entity || l.ip || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesSeverity =
       severityFilter === "All" || l.severity === severityFilter;
@@ -35,7 +71,7 @@ export function SystemLogsPage() {
   const handleExportCSV = () => {
     const headers = "Timestamp,User,Action,IP,Severity\n";
     const rows = filteredLogs
-      .map((l) => `"${l.timestamp}","${l.user}","${l.action}","${l.ip}","${l.severity}"`)
+      .map((l) => `"${l.timestamp}","${l.user}","${l.action}","${l.entity || l.ip || "—"}","${l.severity}"`)
       .join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -68,7 +104,7 @@ export function SystemLogsPage() {
             System Security & Transaction Audit
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Immutable system logs, authentication events, role escalations, and ERP data transmissions.
+            Database-recorded audit events for staff access, academic records, attendance, marks, circulars and workflow changes.
           </p>
         </div>
 
@@ -87,7 +123,7 @@ export function SystemLogsPage() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search action, user or IP address…"
+            placeholder="Search action, actor or entity…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-9 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-xs outline-none focus:border-primary"
@@ -120,12 +156,12 @@ export function SystemLogsPage() {
                 <th className="px-4 py-3">Timestamp</th>
                 <th className="px-4 py-3">Actor / Identity</th>
                 <th className="px-4 py-3">Action Description</th>
-                <th className="px-4 py-3">Source IP</th>
+                <th className="px-4 py-3">Entity</th>
                 <th className="px-4 py-3 text-right">Severity</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-foreground">
-              {filteredLogs.map((l) => (
+              {loading && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading audit events…</td></tr>}\n              {!loading && filteredLogs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No audit events match these filters.</td></tr>}\n              {filteredLogs.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                     {l.timestamp}
