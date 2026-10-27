@@ -346,16 +346,16 @@ export function PortalProvider({ children }) {
   const roleDefaults = ROLE_PROFILE_DEFAULTS[userRole] || ROLE_PROFILE_DEFAULTS.Faculty;
   const activeProfile = React.useMemo(() => {
     if (!serverProfile) return roleDefaults;
-    const name = serverProfile.name || roleDefaults.name;
+    const name = serverProfile.name || "Staff member";
     return {
       ...roleDefaults,
-      id: serverProfile.registration_id || serverProfile.id || roleDefaults.id,
+      id: serverProfile.registration_id || serverProfile.id || "—",
       name,
       role: userRole,
-      designation: serverProfile.designation || roleDefaults.designation,
-      dept: serverProfile.department_name || serverProfile.department || roleDefaults.dept,
-      branch: serverProfile.department_name || roleDefaults.branch,
-      email: serverProfile.email || roleDefaults.email,
+      designation: serverProfile.designation || "Institutional staff",
+      dept: serverProfile.department_name || serverProfile.department || "Unassigned",
+      branch: serverProfile.department_name || "—",
+      email: serverProfile.email || "",
       avatar: name
         .split(/\s+/)
         .filter(Boolean)
@@ -373,22 +373,21 @@ export function PortalProvider({ children }) {
     ...activeProfile,
   });
 
-  // Keep the visible student profile synchronized with the authenticated
-  // backend profile. Never overwrite real account identity with demo defaults
-  // after /api/auth/me has resolved. Academic fields that are not yet stored
-  // in the backend remain available from the presentation dataset for V1.
+  // In a real authenticated session, never carry sample academic fields or
+  // demo identity values into the profile. Only values returned by the backend
+  // are shown; missing institutional fields remain blank/unavailable.
   useEffect(() => {
     if (!isAuthenticated || !serverProfile) return;
 
-    setStudent((prev) => ({
-      ...prev,
+    setStudent({
       ...activeProfile,
-      id: serverProfile.registration_id || serverProfile.id || prev.id,
-      name: serverProfile.name || prev.name,
-      email: serverProfile.email || prev.email,
+      id: serverProfile.registration_id || serverProfile.id || "—",
+      name: serverProfile.name || "Staff member",
+      email: serverProfile.email || "",
+      phone: serverProfile.phone || "",
       role: userRole,
       ...(serverProfile.profile_data || {}),
-    }));
+    });
   }, [activeProfile, isAuthenticated, serverProfile, userRole]);
 
   const updateStudentProfile = useCallback(async (fields) => {
