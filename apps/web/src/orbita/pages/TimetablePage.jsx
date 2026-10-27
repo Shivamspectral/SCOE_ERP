@@ -10,10 +10,13 @@ import { academicApi } from "../lib/api";
 export function TimetablePage() {
   const { toast, backendConfigured, isAuthenticated, session } = usePortal();
   const [liveTimetable, setLiveTimetable] = useState(null);
+  const [timetableLoading, setTimetableLoading] = useState(false);
 
   useEffect(() => {
     if (!backendConfigured || !isAuthenticated || !session?.access_token) return;
     let cancelled = false;
+    setTimetableLoading(true);
+    setLiveTimetable(null);
     academicApi.timetable().then((rows) => {
       if (cancelled || !Array.isArray(rows)) return;
       const dayNames = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
@@ -34,10 +37,13 @@ export function TimetablePage() {
       if (!cancelled) setLiveTimetable(grouped);
     }).catch((error) => {
       console.warn("[timetable] unable to load live schedule", error);
-      if (!cancelled) setLiveTimetable({});
-    });
+      if (!cancelled) {
+        setLiveTimetable({});
+        toast({ title: "Could not load institutional timetable", description: error?.message || "The live schedule is unavailable.", variant: "error" });
+      }
+    }).finally(() => { if (!cancelled) setTimetableLoading(false); });
     return () => { cancelled = true; };
-  }, [backendConfigured, isAuthenticated, session?.access_token]);
+  }, [backendConfigured, isAuthenticated, session?.access_token, toast]);
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const schedule = liveSession ? (liveTimetable ?? {}) : weeklyTimetable;
   const [selectedDay, setSelectedDay] = useState("All");
@@ -45,16 +51,43 @@ export function TimetablePage() {
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const currentDayName = "Tuesday"; // Reference active day
+  const currentDayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
 
   const filteredDays = selectedDay === "All" ? days : [selectedDay];
 
   const handleDownloadPDF = () => {
-    toast({
-      title: "Downloading Timetable",
-      description: `Official timetable for Semester V (TE Computer Engineering) generated.`,
-      variant: "success",
-    });
+    const rows = Object.entries(schedule).flatMap(([day, slots]) =>
+      (slots || []).map((slot) => ({
+        day,
+        time: slot.time || "",
+        subject: slot.subject || "",
+        type: slot.type || "",
+        room: slot.room || "",
+        faculty: slot.faculty || "",
+        cohort: slot.cohort || "",
+      }))
+    );
+    if (timetableLoading) {
+      toast({ title: "Timetable is still loading", description: "Wait for the institutional schedule to load before exporting.", variant: "info" });
+      return;
+    }
+    if (rows.length === 0) {
+      toast({ title: "No timetable to export", description: "There are no schedule entries available to export.", variant: "warning" });
+      return;
+    }
+    const columns = ["day", "time", "subject", "type", "room", "faculty", "cohort"];
+    const escapeCell = (value) => `"${String(value).replace(/"/g, '""')}"`;
+    const csv = [columns.join(","), ...rows.map((row) => columns.map((key) => escapeCell(row[key])).join(","))].join("\\r\\n");
+    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "scoe-timetable.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast({ title: "Timetable exported", description: "A CSV file of the currently available schedule was downloaded.", variant: "success" });
   };
 
   return (
@@ -70,7 +103,7 @@ export function TimetablePage() {
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               <Download className="size-3.5 text-primary" />
-              <span>Download PDF</span>
+              <span>Export CSV</span>
             </button>
           </div>
         }
@@ -137,6 +170,8 @@ export function TimetablePage() {
           </div>
         </div>
       </div>
+
+      {timetableLoading && <div className="rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">Loading institutional timetable…</div>}
 
       {/* Week Grid matching original reference */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
