@@ -787,6 +787,7 @@ export function PortalProvider({ children }) {
         const fullName = row.full_name || "Unnamed record";
         return {
           id: row.id,
+          classId: row.class_id || null,
           name: fullName,
           full_name: fullName,
           rollNo: row.roll_number,
