@@ -127,7 +127,8 @@ export function TransportPage() {
         </div>
       </div>
 
-      {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">No verified institutional routes are available. Sample routes are hidden in live sessions until the transport service is connected.</p>}\n      <div className="grid gap-5 md:grid-cols-2">
+      {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">No verified institutional routes are available. Sample routes are hidden in live sessions until the transport service is connected.</p>}
+      <div className="grid gap-5 md:grid-cols-2">
         {filteredRoutes.map((r) => (
           <Card key={r.no} className="hover:border-primary/40 transition-colors flex flex-col justify-between">
             <CardHeader className="pb-3">
