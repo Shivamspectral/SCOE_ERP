@@ -60,7 +60,7 @@ export function ExaminationsPage() {
         <strong>Preview data only.</strong> Examination dates, seat numbers, grades and CGPA on this screen are sample values, not verified college or SPPU records. Official examination data and hall-ticket downloads are not connected.
       </div>
 
-      {/* Top Academic Standing Cards */}
+      {!liveSession && <>\n      {/* Top Academic Standing Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-l-4 border-l-primary">
           <CardContent className="p-4">
@@ -175,6 +175,6 @@ export function ExaminationsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </>}\n      {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">No institutional examination timetable, grade history or hall-ticket files are connected. Sample examination data is hidden for authenticated staff sessions.</p>}\n    </div>
   );
 }
