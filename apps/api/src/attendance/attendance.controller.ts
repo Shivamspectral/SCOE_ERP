@@ -56,7 +56,7 @@ export class AttendanceController {
     return data;
   }
 
-  @Put('sessions/:id/records')
+  @Post('sessions/:id/records')
   async saveRecords(
     @Req() request: AuthenticatedRequest,
     @Param('id', new ParseUUIDPipe()) id: string,
