@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 export class UpdateMemberDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(120) name?: string;
@@ -11,10 +11,3 @@ export class UpdateMemberDto {
   @IsOptional() @IsUUID() responsibilityId?: string;
 }
 
-export class InviteMemberDto {
-  @IsEmail() @MaxLength(254) email!: string;
-  @IsString() @MinLength(2) @MaxLength(120) name!: string;
-  @IsOptional() @IsString() @MaxLength(120) title?: string;
-  @IsIn(['Administrator','Coordinator','Vice-Principal','HOD','Faculty','Staff','Super Admin']) role!: string;
-  @IsOptional() @IsUUID() departmentId?: string;
-}
