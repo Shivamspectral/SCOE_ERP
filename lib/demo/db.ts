@@ -2,6 +2,7 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { DEMO_COOKIE, DEMO_INSTITUTION_ID, demoAccounts, demoId } from '@/lib/demo/accounts'
+import { verifyDemoSessionValue } from '@/lib/demo/session'
 
 /* -------------------------------------------------------------------------- */
 /*  In-memory stand-in for the Supabase client (demo mode only).               */
@@ -380,8 +381,8 @@ class Query implements PromiseLike<Result> {
 
 export async function createDemoServerClient() {
   const jar = await cookies()
-  const cookieId = jar.get(DEMO_COOKIE)?.value
-  const account = demoAccounts.find((a) => a.id === cookieId) ?? null
+  const cookieValue = jar.get(DEMO_COOKIE)?.value
+  const account = verifyDemoSessionValue(cookieValue)
   const uid = account?.id ?? null
 
   const user = account && {
