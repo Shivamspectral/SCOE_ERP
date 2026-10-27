@@ -1,0 +1,26 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import * as Joi from 'joi';
+import { HealthModule } from './health/health.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
+        PORT: Joi.number().port().default(4000),
+        WEB_ORIGIN: Joi.string().required(),
+        SUPABASE_URL: Joi.string().uri().required(),
+        SUPABASE_PUBLISHABLE_KEY: Joi.string().min(1).required(),
+      }),
+      validationOptions: { allowUnknown: true, abortEarly: false },
+    }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    HealthModule,
+  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+})
+export class AppModule {}
