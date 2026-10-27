@@ -51,7 +51,7 @@ export class DashboardController {
       count('academic_classes', { status: 'active' }),
       count('academic_subjects', { status: 'active' }),
       count('workflow_requests', { status: 'pending' }),
-      count('workflow_requests', { status: 'pending', module: 'task' }),
+      count('faculty_workspace_records', { status: 'draft', resource: 'tasks' }),
       count('circulars', { status: 'published' }),
       count('attendance_sessions', { status: 'submitted' }),
       count('attendance_records'),
