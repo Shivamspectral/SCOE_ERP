@@ -5,7 +5,7 @@
  *  - Authentication only: sign in, sign out, session refresh, password recovery.
  *  - It holds the PUBLIC anon key, never a service-role key.
  *  - It does not read or write application tables. All institutional data goes
- *    through the Next.js backend, which performs authorization.
+ *    through the NestJS API, which performs authorization.
  *
  * Carried over from the Supabase-wired build; the direct PostgREST table access
  * that build used was intentionally dropped, because it would put authorization
