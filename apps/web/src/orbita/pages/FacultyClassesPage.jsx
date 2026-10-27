@@ -20,6 +20,13 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { academicApi, attendanceApi, studentsApi } from "../lib/api";
 
+const localDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export function FacultyClassesPage() {
   const {
     facultyClassesList,
@@ -155,7 +162,7 @@ export function FacultyClassesPage() {
         if (!sessionRecord) {
           sessionRecord = await attendanceApi.createSession({
             classId: currentClass.id,
-            sessionDate: new Date().toISOString().slice(0, 10),
+            sessionDate: localDateString(),
             sessionLabel: "Daily attendance",
             academicYear: currentClass.academicYear || undefined,
           });
