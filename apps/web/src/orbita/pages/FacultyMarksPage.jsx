@@ -46,11 +46,19 @@ export function FacultyMarksPage() {
         });
         setLiveMarks(rows);
       })
-      .catch((error) => console.warn("[marks] live marks could not be loaded", error));
+      .catch((error) => {
+        console.warn("[marks] live marks could not be loaded", error);
+        if (!cancelled) {
+          setLiveMarks([]);
+          toast({ title: "Could not load institutional marks", description: error?.message || "Sample marks are hidden until institutional records can be loaded.", variant: "error" });
+        }
+      })
+      .finally(() => { if (!cancelled) setLiveLoading(false); });
     return () => { cancelled = true; };
-  }, [session?.access_token]);
+  }, [liveMode, session?.access_token]);
 
-  const displayedMarks = liveMarks ?? previewMarks;
+  // Never show synthetic marks to a signed-in user while live records are loading or unavailable.
+  const displayedMarks = liveMode ? (liveMarks ?? []) : previewMarks;
   const changeMarks = (studentId, inSem, endSem) => {
     if (liveMarks) {
       setLiveMarks((prev) => prev.map((student) => student.id === studentId
