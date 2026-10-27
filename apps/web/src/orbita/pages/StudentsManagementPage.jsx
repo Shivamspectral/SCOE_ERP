@@ -41,7 +41,7 @@ export function StudentsManagementPage() {
   const handleExportList = () => {
     const headers = "PRN,Roll No,Name,Branch,Year,CGPA,Email\n";
     const rows = filteredStudents
-      .map((s) => `"${s.id}","${s.rollNo}","${s.name}","${s.branch}","${s.year}","${s.cgpa}","${s.email}"`)
+      .map((s) => `"${s.registrationId || ""}","${s.rollNo}","${s.name}","${s.branch}","${s.year}","${s.cgpa ?? ""}","${s.email}"`)
       .join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -172,14 +172,14 @@ export function StudentsManagementPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                      {s.id}
+                      {s.registrationId || "—"}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       <span className="font-medium text-foreground">{s.branch}</span> ·{" "}
                       <span className="text-muted-foreground font-semibold">{s.year}</span>
                     </td>
                     <td className="px-4 py-3 text-center font-mono font-bold text-foreground">
-                      {s.cgpa}
+                      {s.cgpa ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -211,7 +211,7 @@ export function StudentsManagementPage() {
                     {selectedStudent.name}
                   </h3>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {selectedStudent.rollNo} · PRN: {selectedStudent.id}
+                    {selectedStudent.rollNo} · PRN: {selectedStudent.registrationId || "—"}
                   </p>
                 </div>
               </div>
@@ -228,7 +228,7 @@ export function StudentsManagementPage() {
                 <div className="rounded-lg bg-muted/40 p-2.5">
                   <span className="block text-muted-foreground">Cumulative CGPA</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    {selectedStudent.cgpa}
+                    {selectedStudent.cgpa ?? "—"}
                   </span>
                 </div>
                 <div className="rounded-lg bg-muted/40 p-2.5">
