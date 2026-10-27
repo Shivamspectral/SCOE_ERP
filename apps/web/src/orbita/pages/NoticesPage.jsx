@@ -70,11 +70,11 @@ export function NoticesPage() {
   const pinnedNotices = displayedNotices.filter((n) => n.pinned);
 
   const handleDownloadAttachment = (notice) => {
-    toast({
-      title: "Downloading Circular",
-      description: `${notice.attachment || "Circular.pdf"} saved to your downloads.`,
-      variant: "success",
-    });
+    if (!notice.attachment) {
+      toast({ title: "Attachment unavailable", description: "This circular has no attached file in the institutional register. Nothing was downloaded.", variant: "info" });
+      return;
+    }
+    toast({ title: "Attachment download unavailable", description: "The register stores attachment metadata only; secure file delivery is not connected. Nothing was downloaded.", variant: "info" });
   };
 
   return (
