@@ -19,7 +19,28 @@ export class WorkflowsController {
     if (module && ['task','leave','department','faculty','syllabus','timetable','attendance','examination','circular','events','documents','quality','policy','report','other'].includes(module)) query = query.eq('module', module);
     const { data, error } = await query;
     if (error) throw error;
-    return { data: data ?? [], count: data?.length ?? 0 };
+    const rows = data ?? [];
+    if (!rows.length) return { data: [], count: 0 };
+
+    const requesterIds = [...new Set(rows.map((row) => row.requester_id).filter(Boolean))];
+    const departmentIds = [...new Set(rows.map((row) => row.department_id).filter(Boolean))];
+    const profileResult = requesterIds.length
+      ? await client.from('profiles').select('user_id,full_name,title').in('user_id', requesterIds)
+      : { data: [], error: null };
+    if (profileResult.error) throw profileResult.error;
+    const departmentResult = departmentIds.length
+      ? await client.from('departments').select('id,name,code').in('id', departmentIds)
+      : { data: [], error: null };
+    if (departmentResult.error) throw departmentResult.error;
+    const profiles = new Map((profileResult.data ?? []).map((profile) => [profile.user_id, profile]));
+    const departments = new Map((departmentResult.data ?? []).map((department) => [department.id, department]));
+    const enriched = rows.map((row) => ({
+      ...row,
+      requester_name: profiles.get(row.requester_id)?.full_name ?? null,
+      requester_title: profiles.get(row.requester_id)?.title ?? null,
+      department_name: departments.get(row.department_id)?.name ?? null,
+    }));
+    return { data: enriched, count: enriched.length };
   }
 
   @Post()
