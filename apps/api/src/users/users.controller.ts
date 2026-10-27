@@ -22,6 +22,31 @@ const roleToDatabase: Record<string, string> = {
 export class UsersController {
   constructor(private readonly db: SupabaseRequestClient, private readonly config: ConfigService) {}
 
+  /**
+   * Resolve authorization from trusted institutional records, never from client-supplied role claims.
+   * Mutating the staff directory is restricted to active Principals and Administrators.
+   */
+  private async requireManager(client: ReturnType<SupabaseRequestClient['forRequest']>, userId: string) {
+    const { data: actor, error: actorError } = await client.from('profiles')
+      .select('user_id,institution_id,department_id,status')
+      .eq('user_id', userId).maybeSingle();
+    if (actorError) throw actorError;
+    if (!actor || actor.status !== 'active') {
+      throw new ForbiddenException('Active institutional access is required');
+    }
+
+    const { data: assignments, error: assignmentsError } = await client.from('role_assignments')
+      .select('role').eq('user_id', userId).eq('status', 'active');
+    if (assignmentsError) throw assignmentsError;
+    const roles = assignments ?? [];
+    const isPrincipal = roles.some((item) => item.role === 'principal');
+    const isAdministrator = roles.some((item) => item.role === 'administrator');
+    if (!isPrincipal && !isAdministrator) {
+      throw new ForbiddenException('Only the Principal or an authorized administrator can manage staff accounts');
+    }
+    return { actor, isPrincipal, isAdministrator };
+  }
+
   private async readMember(client: ReturnType<SupabaseRequestClient['forRequest']>, id: string) {
     const { data: profile, error } = await client.from('profiles')
       .select('user_id,institution_id,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)')
@@ -87,21 +112,7 @@ export class UsersController {
   @Post()
   async invite(@Req() request: AuthenticatedRequest, @Body() body: InviteMemberDto) {
     const client = this.db.forRequest(request);
-    const { data: actor, error: actorError } = await client.from('profiles')
-      .select('user_id,institution_id,department_id,status')
-      .eq('user_id', request.authUser!.id).maybeSingle();
-    if (actorError) throw actorError;
-    if (!actor || actor.status !== 'active') throw new ForbiddenException('Active institutional access is required');
-
-    const { data: actorRoles, error: actorRolesError } = await client.from('role_assignments')
-      .select('role').eq('user_id', request.authUser!.id).eq('status', 'active');
-    if (actorRolesError) throw actorRolesError;
-    const roles = actorRoles ?? [];
-    const isPrincipal = roles.some((item) => item.role === 'principal');
-    const canInviteStaff = isPrincipal || roles.some((item) => item.role === 'administrator');
-    if (!canInviteStaff) {
-      throw new ForbiddenException('Only the Principal or an authorized administrator can invite staff accounts');
-    }
+    const { actor, isPrincipal } = await this.requireManager(client, request.authUser!.id);
 
     const role = roleToDatabase[body.role];
     if (role === 'administrator' && !isPrincipal) {
@@ -164,8 +175,20 @@ export class UsersController {
   @Patch(':id')
   async update(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: UpdateMemberDto) {
     const client = this.db.forRequest(request);
+    const { actor, isPrincipal } = await this.requireManager(client, request.authUser!.id);
     const current = await this.readMember(client, id);
+    if (current.institution_id !== actor.institution_id) {
+      throw new ForbiddenException('Staff members can only be managed within your institution');
+    }
+    const currentRoles = current.roles as Array<{ role: string }>;
+    const targetIsPrivileged = currentRoles.some((item) => item.role === 'principal' || item.role === 'administrator');
+    if (targetIsPrivileged && !isPrincipal) {
+      throw new ForbiddenException('Only the Principal can manage Principal or Administrator accounts');
+    }
     const hasAccessChange = body.role !== undefined || body.status !== undefined || body.departmentId !== undefined || body.responsibilityId !== undefined;
+    if (request.authUser!.id === id && hasAccessChange) {
+      throw new ForbiddenException('You cannot change your own role, status, department, or responsibility');
+    }
 
     if (body.name !== undefined || body.title !== undefined || body.phone !== undefined) {
       const patch: Record<string, unknown> = {};
@@ -203,8 +226,18 @@ export class UsersController {
   @Delete(':id')
   async suspend(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
     const client = this.db.forRequest(request);
+    const { actor, isPrincipal } = await this.requireManager(client, request.authUser!.id);
+    if (request.authUser!.id === id) {
+      throw new ForbiddenException('You cannot suspend your own account');
+    }
     const current = await this.readMember(client, id);
+    if (current.institution_id !== actor.institution_id) {
+      throw new ForbiddenException('Staff members can only be managed within your institution');
+    }
     const roles = current.roles as Array<{ role: string; department_id: string | null }>;
+    if (roles.some((item) => item.role === 'principal' || item.role === 'administrator') && !isPrincipal) {
+      throw new ForbiddenException('Only the Principal can suspend Principal or Administrator accounts');
+    }
     const role = roles[0]?.role ?? 'staff';
     const { error } = await client.rpc('manage_member', {
       p_user_id: id, p_status: 'suspended', p_role: role,
