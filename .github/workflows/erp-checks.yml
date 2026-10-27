@@ -49,3 +49,6 @@ jobs:
       - name: Build API
         working-directory: apps/api
         run: pnpm build
+      - name: Test API auth guard
+        working-directory: apps/api
+        run: pnpm test
