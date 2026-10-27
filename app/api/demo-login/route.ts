@@ -49,7 +49,10 @@ export async function DELETE() {
 
 export async function GET() {
   const jar = await cookies()
-  const account = verifyDemoSessionValue(jar.get(DEMO_COOKIE)?.value)
+  const value = jar.get(DEMO_COOKIE)?.value
+  const account = isDemoMode()
+    ? demoAccounts.find((item) => item.id === value)
+    : verifyDemoSessionValue(value)
   if (!account) return NextResponse.json({ ok: false }, { status: 401 })
   return NextResponse.json({ ok: true, account: { id: account.id, email: account.email, name: account.name, label: account.label } })
 }

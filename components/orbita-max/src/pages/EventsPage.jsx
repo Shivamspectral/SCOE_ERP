@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Info
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
@@ -44,14 +43,6 @@ export function EventsPage() {
     toggleEvent(ev.id);
 
     if (!isCurrentlyReg) {
-      // Fire confetti celebration
-      try {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.7 },
-        });
-      } catch (err) {}
 
       toast({
         title: `Registered for ${ev.name}!`,
