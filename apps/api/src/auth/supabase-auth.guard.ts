@@ -28,6 +28,7 @@ export class SupabaseAuthGuard implements CanActivate {
     const { data, error } = await client.auth.getUser(token);
     if (error || !data.user) throw new UnauthorizedException('Invalid or expired session');
     request.authUser = { id: data.user.id, email: data.user.email };
+    request.accessToken = token;
     return true;
   }
 }
