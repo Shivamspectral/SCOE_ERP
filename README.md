@@ -26,7 +26,7 @@ A college staff ERP for principals, administrators, coordinators, HODs, faculty 
 
 ## Live-data boundaries
 
-Authenticated sessions are restricted to routes backed by institutional API calls: dashboard summary, timetable, attendance, marks, published circulars, notifications, profile, academics, classes, departments, staff and student directories, approvals/workflows, staff tasks, document metadata, and audit logs. Live data is never silently replaced with sample fixtures when these requests fail.
+Authenticated sessions are restricted to routes backed by institutional API calls: dashboard summary, timetable, attendance, marks, published circulars, notifications and saved notification preferences, profile, academics, classes, departments, staff and student directories, approvals/workflows, staff tasks, document metadata, and audit logs. Live data is never silently replaced with sample fixtures when these requests fail.
 
 The following remain unavailable until their API, persistence, permissions, and acceptance tests are implemented: binary document upload/download; official exam schedules, result cards and hall tickets; report generation/file delivery; grievance tickets; event registrations; placement applications; library reservations; hostel and transport operations; club/sports/alumni services; mentoring records; notification subscriptions/delivery; and saved notification preferences. These routes are blocked or show an explicit unavailable state for authenticated sessions. A successful workflow request means only that the request was recorded for review; it does not imply that an external action (SMS, email, gate pass, official PDF or university upload) occurred.
 
