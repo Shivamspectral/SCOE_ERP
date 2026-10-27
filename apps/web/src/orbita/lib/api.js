@@ -173,9 +173,9 @@ export const marksApi = {
 };
 
 export const noticesApi = {
-  list: (query) => api.get("/api/notices", query),
-  create: (payload) => api.post("/api/notices", payload),
-  publish: (id) => api.post(`/api/notices/${id}/publish`, {}),
+  list: (query) => api.get("/api/circulars", query),
+  create: (payload) => api.post("/api/circulars", payload),
+  publish: (id) => api.post(`/api/circulars/${id}/publish`, {}),
 };
 
 export const grievancesApi = {
@@ -193,7 +193,7 @@ export const reportsApi = {
 
 export const notificationsApi = {
   list: (query) => api.get("/api/notifications", query),
-  markRead: (id) => api.patch(`/api/notifications/${id}`, { is_read: true }),
+  markRead: (id) => api.patch(`/api/notifications/${id}/read`, {}),
   registerDevice: (payload) => api.post("/api/notifications/devices", payload),
 };
 
