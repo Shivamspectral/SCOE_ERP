@@ -47,7 +47,15 @@ export class AcademicController {
     if (day >= 1 && day <= 7) query = query.eq('day_of_week', day);
     const { data, error } = await query;
     if (error) throw error;
-    return { data: data ?? [], count: data?.length ?? 0 };
+    const rows = data ?? [];
+    const facultyIds = [...new Set(rows.map((row) => row.faculty_id).filter(Boolean))];
+    const profileResult = facultyIds.length
+      ? await client.from('profiles').select('user_id,full_name').in('user_id', facultyIds)
+      : { data: [], error: null };
+    if (profileResult.error) throw profileResult.error;
+    const names = new Map((profileResult.data ?? []).map((profile) => [profile.user_id, profile.full_name]));
+    const enriched = rows.map((row) => ({ ...row, faculty_name: names.get(row.faculty_id) ?? null }));
+    return { data: enriched, count: enriched.length };
   }
 
   @Post('timetable')
