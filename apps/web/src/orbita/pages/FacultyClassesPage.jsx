@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Users,
   CheckCircle2,
@@ -18,29 +18,111 @@ import {
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { academicApi, attendanceApi, studentsApi } from "../lib/api";
 
 export function FacultyClassesPage() {
   const {
     facultyClassesList,
-    attendanceSheet,
+    attendanceSheet: demoAttendanceSheet,
     toggleStudentAttendance,
     markAllClassAttendance,
     saveAttendanceSheet,
     addSystemLog,
     toast,
+    backendConfigured,
+    isAuthenticated,
+    session,
   } = usePortal();
+
+  const [liveClasses, setLiveClasses] = useState(null);
+  const [liveRoster, setLiveRoster] = useState([]);
+  const [liveAttendanceSession, setLiveAttendanceSession] = useState(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+
+  useEffect(() => {
+    if (!liveSession) return;
+    let cancelled = false;
+    academicApi.classes({ status: "active" }).then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      const mapped = rows.map((row) => ({
+        id: row.id,
+        courseName: row.name,
+        courseCode: row.name,
+        division: row.division || "—",
+        branch: row.departments?.name || "",
+        year: row.year_of_study ? `Year ${row.year_of_study}` : row.academic_year || "",
+        academicYear: row.academic_year || "",
+        departmentId: row.department_id,
+      }));
+      setLiveClasses(mapped);
+      setSelectedClassId((current) => mapped.some((item) => item.id === current) ? current : (mapped[0]?.id || ""));
+    }).catch((error) => {
+      console.warn("[classes] unable to load classes", error);
+      if (!cancelled) setLiveClasses([]);
+    });
+    return () => { cancelled = true; };
+  }, [liveSession, session?.access_token]);
 
   const [selectedClassId, setSelectedClassId] = useState("cls-1");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedDivision, setSelectedDivision] = useState("All");
 
-  const currentClass =
-    facultyClassesList.find((c) => c.id === selectedClassId) ||
-    facultyClassesList[0];
+  const availableClasses = liveSession ? (liveClasses ?? []) : facultyClassesList;
+  const currentClass = availableClasses.find((item) => item.id === selectedClassId) || availableClasses[0] || {
+    id: "", courseName: "No class assigned", courseCode: "", division: "—", branch: "", year: "",
+  };
+  const currentRoster = liveSession ? liveRoster : demoAttendanceSheet;
+
+  useEffect(() => {
+    if (!liveSession || !selectedClassId || !liveClasses?.some((item) => item.id === selectedClassId)) return;
+    let cancelled = false;
+    setLiveLoading(true);
+    Promise.all([
+      studentsApi.list({ classId: selectedClassId, status: "active", limit: 200 }),
+      attendanceApi.byClass(selectedClassId),
+    ]).then(async ([students, sessions]) => {
+      const openSession = (Array.isArray(sessions) ? sessions : [])
+        .filter((item) => ["draft", "returned"].includes(item.status))
+        .sort((left, right) => new Date(right.session_date).getTime() - new Date(left.session_date).getTime())[0] || null;
+      const records = openSession ? await attendanceApi.records(openSession.id) : [];
+      if (cancelled) return;
+      const recordMap = new Map((Array.isArray(records) ? records : []).map((record) => [record.student_id, record]));
+      const statusMap = { present: "Present", absent: "Absent", late: "Late", excused: "Excused", on_duty: "On Duty" };
+      setLiveRoster((Array.isArray(students) ? students : []).map((student) => {
+        const record = recordMap.get(student.id);
+        return {
+          id: student.id,
+          name: student.full_name,
+          rollNo: student.roll_number,
+          branch: student.departments?.name || currentClass.branch || "",
+          status: statusMap[record?.attendance_status] || "Pending",
+          attendance: "",
+          note: record?.note || "",
+          recordId: record?.id || null,
+        };
+      }));
+      setLiveAttendanceSession(openSession);
+    }).catch((error) => {
+      console.warn("[attendance] unable to load class roster", error);
+      if (!cancelled) { setLiveRoster([]); setLiveAttendanceSession(null); }
+    }).finally(() => { if (!cancelled) setLiveLoading(false); });
+    return () => { cancelled = true; };
+  }, [liveSession, selectedClassId, liveClasses, session?.access_token]);
+
+  const handleToggle = (studentId, status) => {
+    if (liveSession) setLiveRoster((prev) => prev.map((student) => student.id === studentId ? { ...student, status } : student));
+    else toggleStudentAttendance(studentId, status);
+  };
+
+  const handleMarkAll = (status) => {
+    if (liveSession) setLiveRoster((prev) => prev.map((student) => ({ ...student, status })));
+    else markAllClassAttendance(status);
+  };
 
   // Filter students
-  const filteredStudents = attendanceSheet.filter((student) => {
+  const filteredStudents = currentRoster.filter((student) => {
     const matchesSearch =
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -52,12 +134,46 @@ export function FacultyClassesPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const presentCount = attendanceSheet.filter((s) => s.status === "Present").length;
-  const absentCount = attendanceSheet.filter((s) => s.status === "Absent").length;
-  const lateCount = attendanceSheet.filter((s) => s.status === "Late").length;
-  const attendanceRate = Math.round((presentCount / attendanceSheet.length) * 100);
+  const presentCount = currentRoster.filter((s) => s.status === "Present").length;
+  const absentCount = currentRoster.filter((s) => s.status === "Absent").length;
+  const lateCount = currentRoster.filter((s) => s.status === "Late").length;
+  const attendanceRate = currentRoster.length ? Math.round((presentCount / currentRoster.length) * 100) : 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (liveSession) {
+      if (!currentClass.id || !liveRoster.length) {
+        toast({ title: "No roster available", description: "No active students were returned for this class.", variant: "warning" });
+        return;
+      }
+      if (liveRoster.some((student) => student.status === "Pending")) {
+        toast({ title: "Attendance incomplete", description: "Mark each student before saving the session.", variant: "warning" });
+        return;
+      }
+      const statusMap = { Present: "present", Absent: "absent", Late: "late", Excused: "excused", "On Duty": "on_duty" };
+      try {
+        let sessionRecord = liveAttendanceSession;
+        if (!sessionRecord) {
+          sessionRecord = await attendanceApi.createSession({
+            classId: currentClass.id,
+            sessionDate: new Date().toISOString().slice(0, 10),
+            sessionLabel: "Daily attendance",
+            academicYear: currentClass.academicYear || undefined,
+          });
+        }
+        await attendanceApi.markRecords(sessionRecord.id, liveRoster.map((student) => ({
+          studentId: student.id,
+          status: statusMap[student.status] || "absent",
+          note: student.note || undefined,
+        })));
+        setLiveAttendanceSession(sessionRecord);
+        addSystemLog(`Attendance saved for ${currentClass.courseName}: ${presentCount} present, ${absentCount} absent`, "Success");
+        toast({ title: "Attendance saved", description: "Records were saved to the institutional database.", variant: "success" });
+      } catch (error) {
+        toast({ title: "Attendance save failed", description: error?.message || "The session could not be saved.", variant: "error" });
+      }
+      return;
+    }
+
     saveAttendanceSheet(currentClass.id);
     addSystemLog(
       `Marked attendance for ${currentClass.courseName} (${currentClass.division}): ${presentCount} Present, ${absentCount} Absent`,
@@ -65,7 +181,7 @@ export function FacultyClassesPage() {
     );
     toast({
       title: "Attendance Saved & Synchronized",
-      description: `Updated record for ${currentClass.courseName} (${presentCount}/${attendanceSheet.length} Present). Dispatched to SPPU ERP.`,
+      description: `Updated record for ${currentClass.courseName} (${presentCount}/${currentRoster.length} Present).`,
       variant: "success",
     });
   };
@@ -261,14 +377,14 @@ export function FacultyClassesPage() {
         {/* Bulk Action Buttons */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => markAllClassAttendance("Present")}
+            onClick={() => handleMarkAll("Present")}
             className="flex items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/20 transition-colors"
           >
             <CheckCircle2 className="size-3.5" />
             <span>Mark All Present</span>
           </button>
           <button
-            onClick={() => markAllClassAttendance("Absent")}
+            onClick={() => handleMarkAll("Absent")}
             className="flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors"
           >
             <XCircle className="size-3.5" />
@@ -339,7 +455,7 @@ export function FacultyClassesPage() {
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex rounded-lg border border-border bg-card p-0.5 shadow-sm">
                         <button
-                          onClick={() => toggleStudentAttendance(s.id, "Present")}
+                          onClick={() => handleToggle(s.id, "Present")}
                           className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
                             s.status === "Present"
                               ? "bg-success text-white shadow-sm"
@@ -350,7 +466,7 @@ export function FacultyClassesPage() {
                           P
                         </button>
                         <button
-                          onClick={() => toggleStudentAttendance(s.id, "Absent")}
+                          onClick={() => handleToggle(s.id, "Absent")}
                           className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
                             s.status === "Absent"
                               ? "bg-destructive text-white shadow-sm"
@@ -361,7 +477,7 @@ export function FacultyClassesPage() {
                           A
                         </button>
                         <button
-                          onClick={() => toggleStudentAttendance(s.id, "Late")}
+                          onClick={() => handleToggle(s.id, "Late")}
                           className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
                             s.status === "Late"
                               ? "bg-warning text-warning-foreground shadow-sm"
