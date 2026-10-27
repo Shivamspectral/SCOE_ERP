@@ -74,7 +74,7 @@ begin
   end if;
 
   if inst_id is null or record_id is null then
-    return case when tg_op = 'DELETE' then old else new end;
+    if tg_op = 'DELETE' then return old; else return new; end if;
   end if;
 
   if tg_table_name = 'workflow_requests' then
@@ -89,7 +89,7 @@ begin
     inst_id, actor, lower(tg_op), tg_table_name, record_id, workflow_id, audit_metadata
   );
 
-  return case when tg_op = 'DELETE' then old else new end;
+  if tg_op = 'DELETE' then return old; else return new; end if;
 end;
 $$;
 
