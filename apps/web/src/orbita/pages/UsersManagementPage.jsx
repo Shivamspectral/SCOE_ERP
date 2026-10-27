@@ -93,8 +93,8 @@ export function UsersManagementPage() {
       await deleteUser(u.id);
       addSystemLog(`Revoked user access for ${u.name} (${u.id})`, "Warning");
       toast({
-        title: "User Access Revoked",
-        description: `Removed account ${u.id} (${u.name}).`,
+        title: "User account suspended",
+        description: `Access for ${u.name} (${u.id}) was suspended. The account record was not deleted.`,
         variant: "info",
       });
     } catch (error) {
