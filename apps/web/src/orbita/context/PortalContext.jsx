@@ -539,20 +539,6 @@ export function PortalProvider({ children }) {
   }, []);
 
   // User Management State (Super Admin)
-  const [usersList, setUsersList] = useState(initialAdminUsers);
-  const [usersLoaded, setUsersLoaded] = useState(false);
-  useEffect(() => {
-    if (!realSession) return;
-    let cancelled = false;
-    setUsersLoaded(false);
-    usersApi.list({ limit: 100 }).then((rows) => {
-      if (!cancelled) { setUsersList(Array.isArray(rows) ? rows : []); setUsersLoaded(true); }
-    }).catch((error) => {
-      console.warn("[users] unable to load directory", error);
-      if (!cancelled) { setUsersList([]); setUsersLoaded(true); }
-    });
-    return () => { cancelled = true; };
-  }, [realSession]);
   const addUser = useCallback(async (newUser) => {
     const created = await api.post("/api/users", newUser);
     setUsersList((prev) => [created, ...prev]);
@@ -813,6 +799,20 @@ export function PortalProvider({ children }) {
     return (departmentsList ?? initialDepartments).filter((item) => item.name?.toLowerCase() === dept);
   }, [scopeMeta.level, activeProfile.dept, departmentsList, realSession]);
 
+  const [usersList, setUsersList] = useState(initialAdminUsers);
+  const [usersLoaded, setUsersLoaded] = useState(false);
+  useEffect(() => {
+    if (!realSession) return;
+    let cancelled = false;
+    setUsersLoaded(false);
+    usersApi.list({ limit: 100 }).then((rows) => {
+      if (!cancelled) { setUsersList(Array.isArray(rows) ? rows : []); setUsersLoaded(true); }
+    }).catch((error) => {
+      console.warn("[users] unable to load directory", error);
+      if (!cancelled) { setUsersList([]); setUsersLoaded(true); }
+    });
+    return () => { cancelled = true; };
+  }, [realSession]);
   const scopedFaculty = useMemo(() => {
     if (realSession) return (usersList ?? []).filter((item) => ["Faculty", "faculty"].includes(item.role) || item.roles?.some((role) => role.role === "faculty")).map((item) => ({ id: item.id, name: item.name, email: item.email || "", dept: item.department?.name || "", designation: item.title || "Faculty", role: "Faculty" }));
     if (scopeMeta.level === "college") return initialFaculty;
