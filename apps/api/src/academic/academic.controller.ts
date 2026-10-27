@@ -2,12 +2,34 @@ import { BadRequestException, ConflictException, Body, Controller, Get, Param, P
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
-import { CreateSyllabusProgressDto, CreateTimetableEntryDto, UpdateSyllabusProgressDto } from './academic.dto';
+import { CreateAcademicClassDto, CreateAcademicSubjectDto, CreateSyllabusProgressDto, CreateTimetableEntryDto, UpdateSyllabusProgressDto } from './academic.dto';
 
 @Controller('academic')
 @UseGuards(SupabaseAuthGuard)
 export class AcademicController {
   constructor(private readonly db: SupabaseRequestClient) {}
+
+  @Post('classes')
+  async createClass(@Req() request: AuthenticatedRequest, @Body() body: CreateAcademicClassDto) {
+    const client = this.db.forRequest(request);
+    const { data: profile, error: profileError } = await client.from('profiles').select('institution_id,status').eq('user_id', request.authUser!.id).maybeSingle();
+    if (profileError) throw profileError;
+    if (!profile || profile.status !== 'active') throw new BadRequestException('Active institutional access is required');
+    const { data: department, error } = await client.from('departments').select('id,institution_id,status').eq('id', body.departmentId).maybeSingle();
+    if (error) throw error;
+    if (!department || department.institution_id !== profile.institution_id || department.status !== 'active') throw new BadRequestException('Choose an active department in your institution');
+    const { data, error: insertError } = await client.from('academic_classes').insert({
+      institution_id: profile.institution_id, department_id: department.id, name: body.name.trim(),
+      academic_year: body.academicYear?.trim() || null, year_of_study: body.yearOfStudy ?? null,
+      division: body.division?.trim() || null, program_level: body.programLevel ?? 'degree',
+      created_by: request.authUser!.id,
+    }).select('id,institution_id,department_id,name,academic_year,year_of_study,division,program_level,status,created_at,updated_at').single();
+    if (insertError) {
+      if (insertError.code === '23505') throw new ConflictException('This class already exists for the department and academic year');
+      throw insertError;
+    }
+    return data;
+  }
 
   @Get('classes')
   async classes(@Req() request: AuthenticatedRequest, @Query('departmentId') departmentId?: string, @Query('status') status?: string) {
@@ -20,6 +42,29 @@ export class AcademicController {
     const { data, error } = await query;
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
+  }
+
+  @Post('subjects')
+  async createSubject(@Req() request: AuthenticatedRequest, @Body() body: CreateAcademicSubjectDto) {
+    const client = this.db.forRequest(request);
+    const { data: profile, error: profileError } = await client.from('profiles').select('institution_id,status').eq('user_id', request.authUser!.id).maybeSingle();
+    if (profileError) throw profileError;
+    if (!profile || profile.status !== 'active') throw new BadRequestException('Active institutional access is required');
+    const { data: department, error } = await client.from('departments').select('id,institution_id,status').eq('id', body.departmentId).maybeSingle();
+    if (error) throw error;
+    if (!department || department.institution_id !== profile.institution_id || department.status !== 'active') throw new BadRequestException('Choose an active department in your institution');
+    if (body.classId) {
+      const { data: academicClass, error: classError } = await client.from('academic_classes').select('id,department_id,institution_id,status').eq('id', body.classId).maybeSingle();
+      if (classError) throw classError;
+      if (!academicClass || academicClass.institution_id !== profile.institution_id || academicClass.department_id !== department.id || academicClass.status !== 'active') throw new BadRequestException('Class must belong to the selected department');
+    }
+    const { data, error: insertError } = await client.from('academic_subjects').insert({
+      institution_id: profile.institution_id, department_id: department.id, class_id: body.classId ?? null,
+      code: body.code?.trim().toUpperCase() || null, name: body.name.trim(), semester: body.semester ?? null,
+      credits: body.credits ?? 0, created_by: request.authUser!.id,
+    }).select('id,institution_id,department_id,class_id,code,name,semester,credits,status,created_at,updated_at').single();
+    if (insertError) throw insertError;
+    return data;
   }
 
   @Get('subjects')
