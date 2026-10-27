@@ -16,7 +16,8 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function DepartmentsPage() {
-  const { departments, navigate } = usePortal();
+  const { departments, navigate, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState(null);
@@ -95,22 +96,22 @@ export function DepartmentsPage() {
               </p>
 
               <p className="mt-3 text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed">
-                {d.description}
+                {d.description || "Description not recorded"}
               </p>
 
               {/* Stats Grid */}
               <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3 text-center text-xs">
                 <div className="rounded-lg bg-muted/40 p-2">
                   <span className="block text-[11px] text-muted-foreground">Students</span>
-                  <span className="font-display font-bold text-foreground">{d.studentCount}</span>
+                  <span className="font-display font-bold text-foreground">{d.studentCount ?? "—"}</span>
                 </div>
                 <div className="rounded-lg bg-muted/40 p-2">
                   <span className="block text-[11px] text-muted-foreground">Faculty</span>
-                  <span className="font-display font-bold text-foreground">{d.facultyCount}</span>
+                  <span className="font-display font-bold text-foreground">{d.facultyCount ?? "—"}</span>
                 </div>
                 <div className="rounded-lg bg-muted/40 p-2">
                   <span className="block text-[11px] text-muted-foreground">Labs</span>
-                  <span className="font-display font-bold text-foreground">{d.labsCount}</span>
+                  <span className="font-display font-bold text-foreground">{d.labsCount ?? "—"}</span>
                 </div>
               </div>
 
@@ -119,12 +120,12 @@ export function DepartmentsPage() {
                 <div>
                   <div className="flex justify-between text-muted-foreground mb-1">
                     <span>Avg Attendance</span>
-                    <span className="font-semibold text-foreground">{d.avgAttendance}%</span>
+                    <span className="font-semibold text-foreground">{d.avgAttendance == null ? "—" : d.avgAttendance + "%"}</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full bg-success rounded-full"
-                      style={{ width: `${d.avgAttendance}%` }}
+                      style={{ width: d.avgAttendance == null ? "0%" : `${d.avgAttendance}%` }}
                     />
                   </div>
                 </div>
@@ -132,12 +133,12 @@ export function DepartmentsPage() {
                 <div>
                   <div className="flex justify-between text-muted-foreground mb-1">
                     <span>Placement Rate</span>
-                    <span className="font-semibold text-foreground">{d.avgPlacement}%</span>
+                    <span className="font-semibold text-foreground">{d.avgPlacement == null ? "—" : d.avgPlacement + "%"}</span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full bg-accent rounded-full"
-                      style={{ width: `${d.avgPlacement}%` }}
+                      style={{ width: d.avgPlacement == null ? "0%" : `${d.avgPlacement}%` }}
                     />
                   </div>
                 </div>
@@ -146,7 +147,7 @@ export function DepartmentsPage() {
 
             <div className="mt-5 flex items-center justify-between border-t border-border pt-3">
               <span className="text-[11px] font-medium text-primary">
-                {d.accreditation}
+                {d.accreditation || "Not recorded"}
               </span>
               <button
                 onClick={() => setSelectedDept(d)}
@@ -193,25 +194,25 @@ export function DepartmentsPage() {
                 <div className="rounded-lg border border-border p-2.5 text-center">
                   <span className="block text-muted-foreground">Approved Intake</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    {selectedDept.intake} / yr
+                    {selectedDept.intake == null ? "—" : selectedDept.intake + " / yr"}
                   </span>
                 </div>
                 <div className="rounded-lg border border-border p-2.5 text-center">
                   <span className="block text-muted-foreground">Active Strength</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    {selectedDept.studentCount}
+                    {selectedDept.studentCount ?? "—"}
                   </span>
                 </div>
                 <div className="rounded-lg border border-border p-2.5 text-center">
                   <span className="block text-muted-foreground">Teaching Faculty</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    {selectedDept.facultyCount}
+                    {selectedDept.facultyCount ?? "—"}
                   </span>
                 </div>
                 <div className="rounded-lg border border-border p-2.5 text-center">
                   <span className="block text-muted-foreground">Dedicated Labs</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    {selectedDept.labsCount}
+                    {selectedDept.labsCount ?? "—"}
                   </span>
                 </div>
               </div>
@@ -220,19 +221,19 @@ export function DepartmentsPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-foreground">Accreditation Status</span>
                   <span className="rounded-full bg-success/15 px-2.5 py-0.5 font-semibold text-success">
-                    {selectedDept.accreditation}
+                    {selectedDept.accreditation || "Not recorded"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-foreground">Average Term Attendance</span>
                   <span className="font-semibold text-foreground">
-                    {selectedDept.avgAttendance}%
+                    {selectedDept.avgAttendance == null ? "—" : selectedDept.avgAttendance + "%"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-foreground">Overall Placement Track</span>
                   <span className="font-semibold text-foreground">
-                    {selectedDept.avgPlacement}%
+                    {selectedDept.avgPlacement == null ? "—" : selectedDept.avgPlacement + "%"}
                   </span>
                 </div>
               </div>
