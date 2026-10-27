@@ -43,7 +43,7 @@ import { RegistrationIdsPage } from "./pages/RegistrationIdsPage";
 import { college } from "./data/portalData";
 
 export default function App() {
-  const { isAuthenticated, currentRoute, userRole, logout, isDemoPreview } = usePortal();
+  const { isAuthenticated, currentRoute, userRole, logout, isDemoPreview, backendConfigured, session, navigate } = usePortal();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
