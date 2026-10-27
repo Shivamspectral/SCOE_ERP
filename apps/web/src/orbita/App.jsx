@@ -43,7 +43,7 @@ import { RegistrationIdsPage } from "./pages/RegistrationIdsPage";
 import { college } from "./data/portalData";
 
 export default function App() {
-  const { isAuthenticated, currentRoute, userRole, logout } = usePortal();
+  const { isAuthenticated, currentRoute, userRole, logout, isDemoPreview } = usePortal();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -176,6 +176,13 @@ export default function App() {
           onCollapseToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           collapsed={sidebarCollapsed}
         />
+
+        {isDemoPreview && (
+          <div className="mx-4 mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-900 dark:text-amber-200 sm:mx-6">
+            <strong className="font-semibold">DEMO PREVIEW — sample data only.</strong>{" "}
+            This workspace is not connected to an authenticated staff account. Changes are not saved to college records.
+          </div>
+        )}
 
         {/* Dynamic Route Content */}
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
