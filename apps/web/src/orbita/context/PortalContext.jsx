@@ -282,7 +282,7 @@ export function PortalProvider({ children }) {
   const previewSignIn = useCallback((role = "Faculty") => {
     const demoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS !== "false";
     if (!demoEnabled) {
-      throw new Error("Preview sign-in is disabled when a backend is configured.");
+      throw new Error("Demo previews are disabled by VITE_ENABLE_DEMO_ACCOUNTS=false.");
     }
     setUserRole(role);
     setSession(null);
