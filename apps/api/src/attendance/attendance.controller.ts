@@ -75,6 +75,22 @@ export class AttendanceController {
     if (classError) throw classError;
     if (!academicClass || academicClass.status !== 'active') throw new BadRequestException('Active class not found in your permitted scope');
 
+    const { data: profile, error: profileError } = await client.from('profiles')
+      .select('institution_id,status').eq('user_id', request.authUser!.id).maybeSingle();
+    if (profileError) throw profileError;
+    if (!profile || profile.status !== 'active' || profile.institution_id !== academicClass.institution_id) {
+      throw new ForbiddenException('Active institutional access is required');
+    }
+    const { data: roles, error: roleError } = await client.from('role_assignments')
+      .select('role,department_id').eq('user_id', request.authUser!.id).eq('status', 'active');
+    if (roleError) throw roleError;
+    const canCreateAttendance = (roles ?? []).some((role) =>
+      ['faculty', 'hod', 'coordinator', 'principal', 'administrator'].includes(role.role)
+      && (role.department_id === null || role.department_id === academicClass.department_id));
+    if (!canCreateAttendance) {
+      throw new ForbiddenException('Attendance sessions require an authorized academic role in this department');
+    }
+
     if (body.subjectId) {
       const { data: subject, error: subjectError } = await client.from('academic_subjects')
         .select('id,department_id,class_id,status').eq('id', body.subjectId).maybeSingle();
