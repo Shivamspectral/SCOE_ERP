@@ -827,21 +827,25 @@ export function PortalProvider({ children }) {
       setInstitutionStudents(rows.map((row) => {
         const departmentName = row.departments?.name || "";
         const className = row.academic_classes?.name || "";
+        const yearOfStudy = Number(row.academic_classes?.year_of_study);
+        const yearLabels = { 1: "FE", 2: "SE", 3: "TE", 4: "BE" };
+        const classYear = className.match(/\\b(FE|SE|TE|BE)\\b/i)?.[1]?.toUpperCase();
         const fullName = row.full_name || "Unnamed record";
         return {
           id: row.id,
           classId: row.class_id || null,
           name: fullName,
           full_name: fullName,
-          rollNo: row.roll_number,
-          roll_number: row.roll_number,
+          rollNo: row.roll_number || "",
+          roll_number: row.roll_number || "",
           registrationId: row.registration_number || "",
           registration_number: row.registration_number || "",
           email: row.email || "",
           branch: departmentName,
           dept: departmentName,
-          year: className || (row.academic_classes?.year_of_study ? `Year ${row.academic_classes.year_of_study}` : ""),
+          year: yearLabels[yearOfStudy] || classYear || className,
           course: className,
+          cgpa: row.metadata?.cgpa ?? null,
           status: row.status,
           avatar: fullName.split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
         };
