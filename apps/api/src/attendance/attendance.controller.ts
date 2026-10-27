@@ -1,8 +1,8 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
-import { CreateAttendanceSessionDto, SaveAttendanceRecordsDto, UpdateAttendanceRecordDto } from './attendance.dto';
+import { CreateAttendanceSessionDto, ReviewAttendanceDto, SaveAttendanceRecordsDto, UpdateAttendanceRecordDto } from './attendance.dto';
 
 @Controller('attendance')
 @UseGuards(SupabaseAuthGuard)
@@ -13,7 +13,7 @@ export class AttendanceController {
   async listSessions(@Req() request: AuthenticatedRequest, @Query('classId') classId?: string, @Query('status') status?: string) {
     const client = this.db.forRequest(request);
     let query = client.from('attendance_sessions')
-      .select('id,institution_id,department_id,class_id,subject_id,faculty_user_id,session_date,session_label,academic_year,semester,lecture_no,status,submitted_at,verified_by,verified_at,created_at,updated_at')
+      .select('id,institution_id,department_id,class_id,subject_id,faculty_user_id,session_date,session_label,academic_year,semester,lecture_no,status,submitted_at,verified_by,verified_at,review_note,created_at,updated_at')
       .order('session_date', { ascending: false }).limit(100);
     if (classId) query = query.eq('class_id', classId);
     if (status && ['draft','submitted','verified','returned'].includes(status)) query = query.eq('status', status);
@@ -142,4 +142,75 @@ export class AttendanceController {
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
   }
+
+  @Post('sessions/:id/submit')
+  async submitSession(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
+    const client = this.db.forRequest(request);
+    const { data: session, error: sessionError } = await client.from('attendance_sessions')
+      .select('id,institution_id,department_id,class_id,faculty_user_id,status')
+      .eq('id', id).maybeSingle();
+    if (sessionError) throw sessionError;
+    if (!session) throw new NotFoundException('Attendance session not found');
+    if (session.faculty_user_id !== request.authUser!.id || !['draft', 'returned'].includes(session.status)) {
+      throw new ForbiddenException('Only the session owner can submit a draft or returned attendance session');
+    }
+
+    const { data: students, error: studentsError } = await client.from('academic_students')
+      .select('id').eq('class_id', session.class_id).eq('department_id', session.department_id)
+      .eq('status', 'active').limit(1000);
+    if (studentsError) throw studentsError;
+    if (!students?.length) throw new BadRequestException('There are no active students in this class');
+
+    const { data: records, error: recordsError } = await client.from('attendance_records')
+      .select('student_id').eq('session_id', session.id).limit(1000);
+    if (recordsError) throw recordsError;
+    const recordedIds = new Set((records ?? []).map((record) => record.student_id));
+    const missingCount = students.filter((student) => !recordedIds.has(student.id)).length;
+    if (missingCount) throw new BadRequestException(`Attendance is incomplete: ${missingCount} active student(s) still need a record`);
+
+    const { data, error } = await client.from('attendance_sessions').update({
+      status: 'submitted', submitted_at: new Date().toISOString(), review_note: null,
+    }).eq('id', session.id).select('id,status,submitted_at,review_note,updated_at').maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Attendance session could not be submitted');
+    return data;
+  }
+
+  @Post('sessions/:id/review')
+  async reviewSession(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: ReviewAttendanceDto,
+  ) {
+    const client = this.db.forRequest(request);
+    const { data: session, error: sessionError } = await client.from('attendance_sessions')
+      .select('id,department_id,status').eq('id', id).maybeSingle();
+    if (sessionError) throw sessionError;
+    if (!session) throw new NotFoundException('Attendance session not found');
+
+    const { data: roles, error: rolesError } = await client.from('role_assignments')
+      .select('role,department_id').eq('user_id', request.authUser!.id).eq('status', 'active');
+    if (rolesError) throw rolesError;
+    const canReview = (roles ?? []).some((assignment) =>
+      ['principal', 'administrator'].includes(assignment.role)
+      || (['hod', 'coordinator'].includes(assignment.role) && assignment.department_id === session.department_id),
+    );
+    if (!canReview) throw new ForbiddenException('Only the Principal, administrator, or department leadership can review attendance');
+    if (session.status !== 'submitted') throw new BadRequestException('Only submitted attendance sessions can be reviewed');
+    if (body.decision === 'returned' && !body.reason?.trim()) {
+      throw new BadRequestException('A correction reason is required when returning attendance');
+    }
+
+    const verified = body.decision === 'verified';
+    const { data, error } = await client.from('attendance_sessions').update({
+      status: body.decision,
+      verified_by: verified ? request.authUser!.id : null,
+      verified_at: verified ? new Date().toISOString() : null,
+      review_note: verified ? null : body.reason!.trim(),
+    }).eq('id', session.id).select('id,status,verified_by,verified_at,review_note,updated_at').maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Attendance session could not be reviewed');
+    return data;
+  }
+
 }
