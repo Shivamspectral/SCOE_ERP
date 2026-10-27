@@ -336,6 +336,19 @@ export function PortalProvider({ children }) {
       setUsersLoaded(false);
       setDepartmentsList(null);
       setInstitutionStudents(null);
+      setStudent({ ...initialStudent, ...ROLE_PROFILE_DEFAULTS.Faculty });
+      setFacultyClassesList(initialFacultyClasses);
+      setAttendanceSheet(initialClassStudents);
+      setMarksList(initialClassStudents);
+      setMentees(initialMenteesList);
+      setTasks(initialTasks);
+      setLogs(initialSystemLogs);
+      setReportsList(initialReports);
+      setFeedbackList(initialFeedbackTickets);
+      setRegisteredEvents(new Set(["ev4"]));
+      setJoinedClubs(new Set(["c1", "c2"]));
+      setAppliedCompanies(new Set(["co1"]));
+      setReservedBooks(new Set(["b5"]));
       if (window.history && window.history.pushState) {
         window.history.pushState(null, "", "/login");
       }
