@@ -50,7 +50,7 @@ export class TasksController {
     const { client } = await this.taskScope(request, undefined, false);
     let query = client.from('faculty_workspace_records')
       .select('id,institution_id,owner_user_id,department_id,title,status,priority,due_at,payload,created_at,updated_at,departments(name,code)')
-      .eq('resource', 'tasks').order('updated_at', { ascending: false }).limit(200);
+      .eq('resource', 'tasks').neq('status', 'cancelled').order('updated_at', { ascending: false }).limit(200);
     if (status && ['draft', 'completed'].includes(status)) query = query.eq('status', status);
     const { data, error } = await query;
     if (error) throw error;
