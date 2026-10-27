@@ -56,8 +56,9 @@ export function LoginPage() {
       const response = await fetch("/api/demo-login", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ email: account.email, password: account.password }) });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Demo sign-in failed.");
-      const roleMap = { Principal: "Principal", Administrator: "Super Admin", Coordinator: "Vice-Principal", "HOD (Computer Eng.)": "HOD", Faculty: "Faculty", Staff: "Faculty", "New member (pending)": "Student" };
-      previewSignIn(roleMap[account.label] || "Student");
+      // The server has set an HttpOnly demo cookie. Reload so PortalContext
+      // restores that cookie; do not call previewSignIn when a backend exists.
+      window.location.assign("/dashboard");
     } catch (error) {
       toast({ title: "Demo sign-in failed", description: error?.message || "Please try again.", variant: "error" });
       setIsLoading(false);
