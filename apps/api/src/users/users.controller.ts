@@ -213,6 +213,16 @@ export class UsersController {
     if (hasAccessChange && activeRoles.length > 1 && body.responsibilityId === undefined) {
       throw new BadRequestException('This member has multiple active role assignments; specify responsibilityId to change one assignment.');
     }
+    const assignment = body.responsibilityId
+      ? activeRoles.find((role) => role.responsibility_id === body.responsibilityId)
+      : activeRoles[0];
+    if (body.responsibilityId !== undefined && !assignment) {
+      throw new BadRequestException('The selected responsibility does not match an active role assignment for this staff member');
+    }
+    const role = body.role !== undefined ? roleToDatabase[body.role] : assignment?.role ?? 'staff';
+    if (hasAccessChange && (!role || !['administrator','coordinator','hod','faculty','staff'].includes(role))) {
+      throw new BadRequestException('Unsupported role change');
+    }
 
     if (body.name !== undefined || body.title !== undefined || body.phone !== undefined) {
       const patch: Record<string, unknown> = {};
@@ -224,13 +234,6 @@ export class UsersController {
     }
 
     if (hasAccessChange) {
-      const assignment = body.responsibilityId
-        ? activeRoles.find((role) => role.responsibility_id === body.responsibilityId)
-        : activeRoles[0];
-      const role = body.role ? roleToDatabase[body.role] : assignment?.role ?? 'staff';
-      if (!role || !['administrator','coordinator','hod','faculty','staff'].includes(role)) {
-        throw new BadRequestException('Unsupported role change');
-      }
       const { error } = await client.rpc('manage_member', {
         p_user_id: id,
         p_status: body.status ?? current.status,
