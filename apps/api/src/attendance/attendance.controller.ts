@@ -26,7 +26,7 @@ export class AttendanceController {
   async byClass(@Req() request: AuthenticatedRequest, @Param('classId', new ParseUUIDPipe()) classId: string) {
     const client = this.db.forRequest(request);
     const { data, error } = await client.from('attendance_sessions')
-      .select('id,class_id,subject_id,faculty_user_id,session_date,session_label,status,submitted_at,verified_by,verified_at,created_at')
+      .select('id,class_id,subject_id,faculty_user_id,session_date,session_label,status,submitted_at,verified_by,verified_at,review_note,created_at')
       .eq('class_id', classId).order('session_date', { ascending: false }).limit(200);
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
