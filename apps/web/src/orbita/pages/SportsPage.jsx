@@ -17,7 +17,8 @@ import { Badge } from "../components/Badge";
 import { usePortal } from "../context/PortalContext";
 
 export function SportsPage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [bookingModalSport, setBookingModalSport] = useState(null);
   const [selectedSlotTime, setSelectedSlotTime] = useState("06:00 AM - 07:00 AM");
@@ -41,6 +42,8 @@ export function SportsPage() {
       variant: "success",
     });
   };
+
+  if (liveSession) return <div className="space-y-6"><Breadcrumb title="Sports & Recreation" subtitle="Institutional sports facilities and bookings" /><p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">The verified sports-facility inventory and booking service are not connected. Sample facilities and booking slots are hidden.</p></div>;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
