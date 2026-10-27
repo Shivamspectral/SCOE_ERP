@@ -10,7 +10,7 @@ pnpm install
 pnpm dev
 ```
 
-Required environment: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, WEB_ORIGIN, PORT. Never commit private keys or database passwords.
+Required environment: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, WEB_ORIGIN, PORT. SUPABASE_SERVICE_ROLE_KEY is optional and required only for authorized staff invitations. It must remain server-side; never commit private keys or database passwords.
 
 ## Data security
 Every business request verifies the caller's Supabase token and forwards that same JWT to Supabase PostgREST. Existing PostgreSQL RLS and security-definer workflow functions remain authoritative for record scope and transitions. Ordinary requests must not use a service-role client.
