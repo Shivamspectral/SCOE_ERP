@@ -27,7 +27,8 @@ export function FacultyMentoringPage() {
   const [meetingNotes, setMeetingNotes] = useState("");
   const [meetingActionPlan, setMeetingActionPlan] = useState("");
 
-  const filteredMentees = mentees.filter((m) => {
+  const displayedMentees = liveSession ? [] : mentees;
+  const filteredMentees = displayedMentees.filter((m) => {
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -116,7 +117,7 @@ export function FacultyMentoringPage() {
         <div className="flex items-center gap-2">
           <div className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-xs">
             <span className="text-muted-foreground">Assigned Mentees: </span>
-            <span className="font-bold text-foreground">{mentees.length}</span>
+            <span className="font-bold text-foreground">{displayedMentees.length}</span>
           </div>
         </div>
       </div>
