@@ -154,9 +154,9 @@ export function DashboardPage() {
   const fallbackAverageCgpa = !realSession && mentees.length
     ? Number((mentees.reduce((sum, item) => sum + Number(item.cgpa || 0), 0) / mentees.length).toFixed(2))
     : null;
-  const fallbackBacklogStudents = realSession ? 0 : mentees.filter((item) => Number(item.backlogs || 0) > 0).length;
+  const fallbackBacklogStudents = realSession ? null : mentees.filter((item) => Number(item.backlogs || 0) > 0).length;
   const averageCgpa = realSession ? summary.averageCgpa : (summary.averageCgpa ?? fallbackAverageCgpa);
-  const backlogStudents = realSession ? (summary.backlogStudents ?? 0) : (summary.backlogStudents ?? fallbackBacklogStudents);
+  const backlogStudents = realSession ? (summary.backlogStudents ?? "—") : (summary.backlogStudents ?? fallbackBacklogStudents);
   const todayFormatted = new Date().toLocaleDateString("en-IN", {
     weekday: "long",
     day: "numeric",
@@ -176,14 +176,14 @@ export function DashboardPage() {
           ["Enter Exam Marks", "/marks"],
         ],
         cards: [
-          [ClipboardCheck, "Assigned Classes", summary.classes || facultyClassesList.length, "Class/advisor scope", "/classes", "primary"],
-          [BookOpen, "Assigned Subjects", summary.subjects || summary.assignments || "—", "Teaching allocation", "/academics", "success"],
-          [Users, "Students in Scope", summary.students || "—", "Assigned classes", "/students", "primary"],
+          [ClipboardCheck, "Assigned Classes", (realSession ? (summary.classes ?? "—") : (summary.classes || facultyClassesList.length)), "Class/advisor scope", "/classes", "primary"],
+          [BookOpen, "Assigned Subjects", (realSession ? (summary.subjects ?? "—") : (summary.subjects || summary.assignments || "—")), "Teaching allocation", "/academics", "success"],
+          [Users, "Students in Scope", (realSession ? (summary.students ?? "—") : (summary.students || "—")), "Assigned classes", "/students", "primary"],
           [CheckSquare, "Action Tasks", `${pendingTasksCount} Pending`, "Syllabus & exams", "/tasks", "warning"],
         ],
         secondary: [
           [ClipboardCheck, "Attendance Sessions", summary.attendanceSessions || "—", "Recorded in scope", "/attendance", "primary"],
-          [Users, "Mentee Students", summary.mentees || mentees.length, "Assigned mentees", "/mentoring", "success"],
+          [Users, "Mentee Students", (realSession ? (summary.mentees ?? "—") : (summary.mentees || mentees.length)), "Assigned mentees", "/mentoring", "success"],
           [FileCheck, "Pending Approvals", pendingApprovalsCount, "Requests awaiting action", "/approvals", "warning"],
           [Bell, "Unread Notices", unreadCount, "Official circulars", "/notices", "accent"],
         ],
@@ -228,7 +228,7 @@ export function DashboardPage() {
         secondary: [
           [Building2, "Active Classes", summary.classes || "—", "College-wide", "/classes", "primary"],
           [ClipboardCheck, "Attendance Sessions", summary.attendanceSessions || "—", "College-wide activity", "/attendance", "primary"],
-          [CalendarHeart, "Upcoming Events", `${events.length} Active`, `${registeredEvents.size} registered`, "/events", "success"],
+          [CalendarHeart, "Upcoming Events", (realSession ? "Unavailable" : `${events.length} Active`), (realSession ? "Event service not connected" : `${registeredEvents.size} registered`), "/events", "success"],
           [Bell, "Unread Notices", unreadCount, "Official circulars", "/notices", "accent"],
         ],
       };
