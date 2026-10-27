@@ -38,3 +38,8 @@ All data endpoints require a Supabase bearer token and forward it to PostgREST s
 
 ## Deployment
 Do not switch Vercel production root to apps/web or point the API at production until CI passes, API/auth/data integration tests pass, the current schema and RLS have been tested with each staff role, and a rollback plan is approved. The new apps are intentionally independent of the existing root package/lockfile until deployment migration is planned.
+
+## Deployment blueprint (not yet a production cutover)
+- Web: create a separate Vercel project for this repository with Root Directory set to apps/web, build command pnpm build, output directory dist. Set VITE_API_BASE_URL to the API origin only (no /api/v1 suffix), VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. Set VITE_ENABLE_DEMO_ACCOUNTS=false in production.
+- API: use the root render.yaml blueprint. Configure WEB_ORIGIN to the exact Vercel web origin, plus SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY. SUPABASE_SERVICE_ROLE_KEY is only needed for authorized staff invitation emails and must remain a server-side secret.
+- The existing root Vercel/Next.js project is deliberately unchanged. Do not switch its root directory until the replacement has passed staging, authentication, role-isolation, migration, backup, and rollback tests.
