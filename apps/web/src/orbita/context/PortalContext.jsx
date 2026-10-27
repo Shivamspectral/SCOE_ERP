@@ -377,53 +377,75 @@ export function PortalProvider({ children }) {
 
   // Approvals & Leave Requests State
   const [approvals, setApprovals] = useState(initialApprovals);
-  const approveRequest = useCallback((id, note = "") => {
-    setApprovals((prev) =>
-      prev.map((app) =>
-        app.id === id
-          ? {
-              ...app,
-              status: "Approved",
-              actionDate: "Today, Just now",
-              approverNote: note || `Sanctioned by ${activeProfile.name} (${userRole})`,
-            }
-          : app
-      )
-    );
-  }, [activeProfile.name, userRole]);
 
-  const rejectRequest = useCallback((id, reason = "") => {
-    setApprovals((prev) =>
-      prev.map((app) =>
-        app.id === id
-          ? {
-              ...app,
-              status: "Rejected",
-              actionDate: "Today, Just now",
-              rejectionReason: reason || `Declined by ${activeProfile.name} (${userRole})`,
-            }
-          : app
-      )
-    );
-  }, [activeProfile.name, userRole]);
+  useEffect(() => {
+    if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
+    let cancelled = false;
+    const statusLabels = { pending: "Pending", approved: "Approved", rejected: "Rejected", returned: "Pending", completed: "Approved", cancelled: "Rejected" };
+    const urgencyLabels = { low: "Low", normal: "Medium", high: "High", urgent: "High" };
+    api.get("/api/workflows").then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      setApprovals(rows.map((row) => ({
+        id: row.id,
+        type: row.title || row.module || "Institutional request",
+        applicant: row.requester_name || "Institutional member",
+        role: row.requester_title || "Staff member",
+        department: row.department_name || "Institution",
+        details: row.description || row.title || "",
+        date: row.created_at ? new Date(row.created_at).toLocaleDateString("en-IN") : "",
+        status: statusLabels[row.status] || "Pending",
+        urgency: urgencyLabels[row.priority] || "Medium",
+        budget: row.payload?.budget ?? null,
+        backendStatus: row.status,
+      })));
+    }).catch((error) => console.warn("[workflows] unable to load queue", error));
+    return () => { cancelled = true; };
+  }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
-  const addApprovalRequest = useCallback((req) => {
-    const newId = `APP-2026-${String(Math.floor(200 + Math.random() * 800))}`;
+  const approveRequest = useCallback(async (id, note = "") => {
+    if (isBackendConfigured && session?.access_token) {
+      await api.post(`/api/workflows/${id}/decision`, { decision: "approve", comment: note || undefined });
+    }
+    setApprovals((prev) => prev.map((app) => app.id === id
+      ? { ...app, status: "Approved", actionDate: "Just now", approverNote: note || `Approved by ${activeProfile.name} (${userRole})` }
+      : app));
+  }, [activeProfile.name, userRole, isBackendConfigured, session?.access_token]);
+
+  const rejectRequest = useCallback(async (id, reason = "") => {
+    if (isBackendConfigured && session?.access_token) {
+      await api.post(`/api/workflows/${id}/decision`, { decision: "reject", comment: reason });
+    }
+    setApprovals((prev) => prev.map((app) => app.id === id
+      ? { ...app, status: "Rejected", actionDate: "Just now", rejectionReason: reason || `Declined by ${activeProfile.name} (${userRole})` }
+      : app));
+  }, [activeProfile.name, userRole, isBackendConfigured, session?.access_token]);
+
+  const addApprovalRequest = useCallback(async (req) => {
+    const title = req.type || "Requisition";
+    let id;
+    if (isBackendConfigured && session?.access_token) {
+      const module = /leave|medical/i.test(title) ? "leave"
+        : /budget|equipment|department/i.test(title) ? "department"
+        : /syllabus|academic/i.test(title) ? "syllabus"
+        : /attendance/i.test(title) ? "attendance" : "other";
+      const created = await api.post("/api/workflows", {
+        module, title, description: req.details,
+        priority: req.urgency === "High" ? "high" : req.urgency === "Low" ? "low" : "normal",
+        payload: { budget: req.budget || null },
+      });
+      id = created?.id;
+    } else {
+      id = `APP-2026-${String(Math.floor(200 + Math.random() * 800))}`;
+    }
     const newEntry = {
-      id: newId,
-      type: req.type || "Requisition",
-      applicant: activeProfile.name,
-      role: activeProfile.designation,
-      department: activeProfile.dept,
-      details: req.details,
-      date: "Today, 16 Sep 2026",
-      status: "Pending",
-      urgency: req.urgency || "Medium",
-      budget: req.budget || null,
+      id, type: title, applicant: activeProfile.name, role: activeProfile.designation,
+      department: activeProfile.dept, details: req.details,
+      date: new Date().toLocaleDateString("en-IN"), status: "Pending",
+      urgency: req.urgency || "Medium", budget: req.budget || null,
     };
     setApprovals((prev) => [newEntry, ...prev]);
     return newEntry;
-  }, [activeProfile]);
+  }, [activeProfile, isBackendConfigured, session?.access_token]);
 
   // Faculty Attendance Management State
   const [facultyClassesList, setFacultyClassesList] = useState(initialFacultyClasses);
