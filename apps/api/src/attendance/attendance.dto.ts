@@ -27,3 +27,8 @@ export class UpdateAttendanceRecordDto {
   @IsOptional() @IsIn(['present','absent','late','excused','on_duty']) status?: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
 }
+
+export class ReviewAttendanceDto {
+  @IsIn(['verified', 'returned']) decision!: string;
+  @IsOptional() @IsString() @MaxLength(1000) reason?: string;
+}
