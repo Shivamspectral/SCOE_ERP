@@ -206,25 +206,25 @@ export function FacultyTasksPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <span className="text-xs text-muted-foreground">Total Action Items</span>
           <span className="mt-1 block font-display text-2xl font-bold text-foreground">
-            {liveSession && !tasksLoaded ? "—" : liveSession ? displayedTasks.length : tasks.length}
+            {liveSession && (!tasksLoaded || taskLoadFailed) ? "—" : liveSession ? displayedTasks.length : tasks.length}
           </span>
         </div>
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-4">
           <span className="text-xs text-warning-foreground font-medium">Pending Tasks</span>
           <span className="mt-1 block font-display text-2xl font-bold text-warning-foreground">
-            {liveSession && !tasksLoaded ? "—" : pendingCount}
+            {liveSession && (!tasksLoaded || taskLoadFailed) ? "—" : pendingCount}
           </span>
         </div>
         <div className="rounded-xl border border-success/30 bg-success/10 p-4">
           <span className="text-xs text-success font-medium">Completed</span>
           <span className="mt-1 block font-display text-2xl font-bold text-success">
-            {liveSession && !tasksLoaded ? "—" : completedCount}
+            {liveSession && (!tasksLoaded || taskLoadFailed) ? "—" : completedCount}
           </span>
         </div>
         <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
           <span className="text-xs text-primary font-medium">Completion Rate</span>
           <span className="mt-1 block font-display text-2xl font-bold text-primary">
-            {liveSession && !tasksLoaded ? "—" : liveSession ? Math.round((completedCount / (displayedTasks.length || 1)) * 100) + "%" : Math.round((completedCount / (tasks.length || 1)) * 100) + "%"}
+            {liveSession && (!tasksLoaded || taskLoadFailed) ? "—" : liveSession ? Math.round((completedCount / (displayedTasks.length || 1)) * 100) + "%" : Math.round((completedCount / (tasks.length || 1)) * 100) + "%"}
           </span>
         </div>
       </div>
