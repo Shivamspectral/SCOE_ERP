@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
@@ -17,7 +17,7 @@ export class CreateAcademicSubjectDto {
   @IsOptional() @IsString() @MaxLength(32) code?: string;
   @IsString() @MinLength(2) @MaxLength(140) name!: string;
   @IsOptional() @IsInt() @Min(1) @Max(12) semester?: number;
-  @IsOptional() @IsInt() @Min(0) @Max(100) credits?: number;
+  @IsOptional() @IsNumber({ maxDecimalPlaces: 1 }) @Min(0) @Max(100) credits?: number;
 }
 
 export class CreateTimetableEntryDto {
