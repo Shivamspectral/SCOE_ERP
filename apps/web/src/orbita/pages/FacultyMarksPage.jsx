@@ -78,7 +78,7 @@ export function FacultyMarksPage() {
           endSemRecordId: rows.find((record) => /end.?sem|university/i.test(record.assessment_name))?.id || student.endSemRecordId,
         };
       }));
-      return true;
+      return Array.isArray(records) ? records : [];
     } finally {
       setSaving(false);
     }
@@ -119,7 +119,7 @@ export function FacultyMarksPage() {
     }
   };
 
-  const handleSubmitToSPPU = async () => {
+  const handleSubmitForReview = async () => {
     setConfirmModalOpen(false);
     try {
       const saved = await persistMarks();
@@ -127,9 +127,9 @@ export function FacultyMarksPage() {
         toast({ title: "Demo preview only", description: "Sample marks cannot be submitted to an institution or SPPU.", variant: "info" });
         return;
       }
-      const records = await marksApi.list({ limit: 300 });
-      const ids = new Set(liveMarks.flatMap((student) => [student.inSemRecordId, student.endSemRecordId]).filter(Boolean));
-      await Promise.all((records || []).filter((record) => ids.has(record.id) && ["draft", "returned"].includes(record.status)).map((record) => marksApi.submit(record.id)));
+      const records = Array.isArray(saved) ? saved : [];
+      const studentIds = new Set(liveMarks.map((student) => student.id));
+      await Promise.all(records.filter((record) => studentIds.has(record.student_id) && ["draft", "returned"].includes(record.status)).map((record) => marksApi.submit(record.id)));
       addSystemLog("Submitted examination marks for internal review", "Success");
       toast({ title: "Submitted for internal review", description: "The marks are recorded in the ERP review workflow. This does not upload anything to SPPU.", variant: "success" });
     } catch (error) {
@@ -331,7 +331,7 @@ export function FacultyMarksPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <h3 className="font-display text-lg font-bold text-foreground">
-              Confirm Submission to SPPU
+              Confirm Internal Review Submission
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Are you sure you want to lock and transmit final continuous assessment marks for TE Computer Div A? Once submitted, modifications require HOD & Principal authorization.
@@ -344,10 +344,10 @@ export function FacultyMarksPage() {
                 Cancel
               </button>
               <button
-                onClick={handleSubmitToSPPU}
+                onClick={handleSubmitForReview}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
               >
-                Confirm & Lock
+                Submit for Review
               </button>
             </div>
           </div>
