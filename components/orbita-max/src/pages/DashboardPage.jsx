@@ -17,17 +17,6 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 import { usePortal } from "../context/PortalContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";

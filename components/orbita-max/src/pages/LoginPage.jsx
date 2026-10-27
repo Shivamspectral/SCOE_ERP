@@ -1,6 +1,8 @@
+"use client";
 import React, { useState } from "react";
 import {
   Lock,
+  ArrowRight,
   LoaderCircle,
   ShieldCheck,
   Eye,
