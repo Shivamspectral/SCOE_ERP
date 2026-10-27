@@ -102,7 +102,7 @@ export function TransportPage() {
         subtitle="Daily commuter buses connecting Pune, Pimpri-Chinchwad, Talegaon and Chakan with Siddhant Campus"
         actions={
           <button
-            onClick={() => setPassModalOpen(true)}
+            onClick={() => setPassModalOpen(true)} disabled={liveSession}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
           >
             <Ticket className="size-3.5" />
@@ -128,6 +128,7 @@ export function TransportPage() {
       </div>
 
       {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">No verified institutional routes are available. Sample routes are hidden in live sessions until the transport service is connected.</p>}
+      {!liveSession && <>
       <div className="grid gap-5 md:grid-cols-2">
         {filteredRoutes.map((r) => (
           <Card key={r.no} className="hover:border-primary/40 transition-colors flex flex-col justify-between">
@@ -160,8 +161,8 @@ export function TransportPage() {
                 <button
                   onClick={() =>
                     toast({
-                      title: "Calling Bus In-charge",
-                      description: `Connecting to ${r.driver} (${r.phone})…`,
+                      title: "Contact details are sample data",
+                      description: "This preview does not initiate a phone call. Verify the official transport contact before calling.",
                       variant: "info",
                     })
                   }
@@ -176,6 +177,7 @@ export function TransportPage() {
         ))}
       </div>
 
+      </>}
       {/* Track Route Modal */}
       {trackRouteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
