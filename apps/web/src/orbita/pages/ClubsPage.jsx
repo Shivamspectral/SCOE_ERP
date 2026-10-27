@@ -7,7 +7,8 @@ import { clubs as initialClubs } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
 
 export function ClubsPage() {
-  const { joinedClubs, toggleClub, toast } = usePortal();
+  const { joinedClubs, toggleClub, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
@@ -20,6 +21,10 @@ export function ClubsPage() {
   });
 
   const handleClubToggle = (club) => {
+    if (liveSession) {
+      toast({ title: "Club membership unavailable", description: "Club listings and membership are not connected to the institutional backend. No membership change was made.", variant: "info" });
+      return;
+    }
     const isJoined = joinedClubs.has(club.id);
     toggleClub(club.id);
     if (!isJoined) {
@@ -44,13 +49,7 @@ export function ClubsPage() {
         subtitle="Co-curricular tech teams, cultural societies, robotics fleets and startup incubation cells"
         actions={
           <button
-            onClick={() =>
-              toast({
-                title: "Propose a New Club",
-                description: "Club Charter guidelines forwarded to Student Council General Secretary.",
-                variant: "info",
-              })
-            }
+            onClick={() => toast({ title: "Club charter unavailable", description: "No club charter service is connected; nothing was forwarded.", variant: "info" })}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
           >
             <PlusCircle className="size-3.5" />
@@ -58,6 +57,8 @@ export function ClubsPage() {
           </button>
         }
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> Club listings and membership counts are sample content. Live membership and club charter submissions are not connected.</div>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
