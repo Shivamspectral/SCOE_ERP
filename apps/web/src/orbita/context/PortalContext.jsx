@@ -725,15 +725,30 @@ export function PortalProvider({ children }) {
     };
   }, [scope?.college_wide, userRole, activeProfile.dept, activeProfile.branch]);
 
+  const [departmentsList, setDepartmentsList] = useState(initialDepartments);
+  useEffect(() => {
+    if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
+    let cancelled = false;
+    api.get("/api/departments", { status: "active" }).then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      setDepartmentsList(rows.map((row) => ({
+        id: row.id, code: row.code, name: row.name,
+        description: row.description || "", status: row.status,
+        hod_user_id: row.hod_user_id || null,
+      })));
+    }).catch((error) => console.warn("[departments] unable to load directory", error));
+    return () => { cancelled = true; };
+  }, [isBackendConfigured, isAuthenticated, session?.access_token]);
+
   // Seed-data filtering mirrors the server scope when the portal is running
   // without a backend. With a backend configured, API authorization remains
   // authoritative and these lists are only UI fallbacks.
   const scopedDepartments = useMemo(() => {
-    if (scopeMeta.level === "college") return initialDepartments;
+    if (scopeMeta.level === "college") return departmentsList;
     const dept = activeProfile.dept?.toLowerCase();
-    if (!dept) return initialDepartments;
-    return initialDepartments.filter((item) => item.name?.toLowerCase() === dept);
-  }, [scopeMeta.level, activeProfile.dept]);
+    if (!dept) return departmentsList;
+    return departmentsList.filter((item) => item.name?.toLowerCase() === dept);
+  }, [scopeMeta.level, activeProfile.dept, departmentsList]);
 
   const scopedFaculty = useMemo(() => {
     if (scopeMeta.level === "college") return initialFaculty;
