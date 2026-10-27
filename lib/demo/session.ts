@@ -3,17 +3,19 @@ import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { demoAccounts, type DemoAccount } from '@/lib/demo/accounts'
 
-// Demo-only deployment: no Vercel environment variables are required.
-// WARNING: this signing key is in source control, so these sessions are NOT
-// suitable for protecting real or sensitive institutional data.
-const secret = 'astra-demo-session-key-public-source-demo-only-2026'
-
+// Demo login is permitted only in an explicit demo deployment or when no
+// Supabase project is configured. Demo cookies must never bypass real auth.
 export function isLiveDemoLoginEnabled() {
-  return true
+  const demoFlag = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+  const hasSupabaseConfig = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+  )
+  return demoFlag || !hasSupabaseConfig
 }
 
 export function createDemoSessionValue(accountId: string) {
-  const signature = createHmac('sha256', secret).update(accountId).digest('hex')
+  const signature = createHmac('sha256', 'local-demo-only').update(accountId).digest('hex')
   return `${accountId}.${signature}`
 }
 
