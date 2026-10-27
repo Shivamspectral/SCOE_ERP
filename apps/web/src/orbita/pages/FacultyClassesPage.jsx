@@ -265,10 +265,11 @@ export function FacultyClassesPage() {
           </button>
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            disabled={liveSession && Boolean(liveAttendanceSession?.status && !["draft", "returned"].includes(liveAttendanceSession.status))}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save className="size-4" />
-            <span>Save Attendance</span>
+            <span>{liveAttendanceSession?.status === "submitted" ? "Submitted" : liveAttendanceSession?.status === "verified" ? "Verified" : "Save Attendance"}</span>
           </button>
           {liveSession && (
             <button
