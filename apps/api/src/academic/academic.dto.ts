@@ -1,6 +1,6 @@
 import { IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
-const timePattern = /^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$/;
+const timePattern = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
 export class CreateTimetableEntryDto {
   @IsUUID() departmentId!: string;
