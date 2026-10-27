@@ -159,10 +159,33 @@ export function PortalProvider({ children }) {
     if (!isBackendConfigured) return null;
     const me = await safeGet("/api/auth/me", undefined, null);
     if (!me) return null;
-    setServerProfile(me.profile || me.user || null);
-    setScope(me.scope || null);
-    setUserRole(roleLabel(me.role || me.profile?.role));
-    return me;
+    const roleLabels = {
+      principal: "Principal",
+      administrator: "Super Admin",
+      coordinator: "Vice-Principal",
+      hod: "HOD",
+      faculty: "Faculty",
+      staff: "Staff",
+    };
+    const rawRole = me.primaryRole || me.roles?.[0]?.role || null;
+    const normalizedRole = rawRole
+      ? (roleLabels[String(rawRole).toLowerCase()] || roleLabel(rawRole))
+      : "Pending";
+    const sourceProfile = me.profile || me.user || null;
+    const profile = sourceProfile ? {
+      ...sourceProfile,
+      id: sourceProfile.user_id || sourceProfile.id,
+      name: sourceProfile.full_name || sourceProfile.name,
+      designation: sourceProfile.title || sourceProfile.designation,
+      department_name: sourceProfile.departments?.name || sourceProfile.department_name,
+      email: me.identity?.email || sourceProfile.email || "",
+    } : null;
+    const accessStatus = me.accessStatus || profile?.status || "profile_missing";
+    const effectiveRole = accessStatus === "active" && normalizedRole !== "Pending" ? normalizedRole : "Pending";
+    setServerProfile(profile);
+    setScope({ institution_id: profile?.institution_id, department_id: profile?.department_id, roles: me.roles || [] });
+    setUserRole(effectiveRole);
+    return { ...me, profile, role: effectiveRole, scope: { institution_id: profile?.institution_id, department_id: profile?.department_id } };
   }, []);
 
   /** Restore an existing Supabase session on boot. */
@@ -293,7 +316,7 @@ export function PortalProvider({ children }) {
       ...roleDefaults,
       id: serverProfile.registration_id || serverProfile.id || roleDefaults.id,
       name,
-      role: roleLabel(serverProfile.role || roleEnum(userRole)),
+      role: userRole,
       designation: serverProfile.designation || roleDefaults.designation,
       dept: serverProfile.department_name || serverProfile.department || roleDefaults.dept,
       branch: serverProfile.department_name || roleDefaults.branch,
