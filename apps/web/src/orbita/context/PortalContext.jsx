@@ -407,8 +407,29 @@ export function PortalProvider({ children }) {
     return updated;
   }, [serverProfile?.id]);
 
-  const changePassword = useCallback((payload) => authApi.changePassword(payload), []);
-  const changeEmail = useCallback((payload) => authApi.changeEmail(payload), []);
+  const changePassword = useCallback(async ({ new_password }) => {
+    if (!new_password || new_password.length < 8) {
+      throw new Error("Password must contain at least 8 characters.");
+    }
+    const result = await supabase.auth.updateUser({ password: new_password });
+    return result?.data?.user || result;
+  }, []);
+
+  const changeEmail = useCallback(async ({ email, current_password, new_email }) => {
+    const currentEmail = String(email || serverProfile?.email || "").trim().toLowerCase();
+    const nextEmail = String(new_email || "").trim().toLowerCase();
+    if (!currentEmail || !current_password || !nextEmail) {
+      throw new Error("Current email, current password and new email are required.");
+    }
+    if (currentEmail === nextEmail) {
+      throw new Error("The new email address must be different from the current email.");
+    }
+
+    // Re-authenticate before changing the account's sign-in email.
+    await supabase.auth.signInWithPassword({ email: currentEmail, password: current_password });
+    const result = await supabase.auth.updateUser({ email: nextEmail });
+    return result?.data?.user || result;
+  }, [serverProfile?.email]);
 
   // Approvals & Leave Requests State
   const [approvals, setApprovals] = useState(initialApprovals);
