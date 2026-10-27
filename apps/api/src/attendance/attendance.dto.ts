@@ -22,3 +22,8 @@ export class SaveAttendanceRecordsDto {
   @ValidateNested({ each: true }) @Type(() => AttendanceRecordInput)
   records!: AttendanceRecordInput[];
 }
+
+export class UpdateAttendanceRecordDto {
+  @IsOptional() @IsIn(['present','absent','late','excused','on_duty']) status?: string;
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
