@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { cookieOptions, getSupabaseConfig, isDemoMode } from '@/lib/supabase/config'
 import { DEMO_COOKIE, demoAccounts } from '@/lib/demo/accounts'
+import { isLiveDemoLoginEnabled, verifyDemoSessionValue } from '@/lib/demo/session'
 
 const PUBLIC_PATHS = ['/login', '/signup', '/auth', '/api/health']
 
@@ -20,6 +21,13 @@ export async function updateSession(request: NextRequest) {
       loginUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`)
       return NextResponse.redirect(loginUrl)
     }
+    return NextResponse.next({ request })
+  }
+
+  // Live demo sessions are signed server-side cookies, not Supabase Auth sessions.
+  // Validate them before applying the normal Supabase-auth redirect.
+  const demoSession = verifyDemoSessionValue(request.cookies.get(DEMO_COOKIE)?.value)
+  if (isLiveDemoLoginEnabled() && demoSession) {
     return NextResponse.next({ request })
   }
 
