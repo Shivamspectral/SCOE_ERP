@@ -244,6 +244,13 @@ export function FacultyClassesPage() {
         ]}
       />
 
+      {liveSession && liveAttendanceSession?.status === "returned" && liveAttendanceSession?.review_note && (
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-foreground">
+          <p className="font-semibold">Attendance returned for correction</p>
+          <p className="mt-1 text-muted-foreground">{liveAttendanceSession.review_note}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
