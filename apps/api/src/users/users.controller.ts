@@ -96,11 +96,17 @@ export class UsersController {
     const { data: actorRoles, error: actorRolesError } = await client.from('role_assignments')
       .select('role').eq('user_id', request.authUser!.id).eq('status', 'active');
     if (actorRolesError) throw actorRolesError;
-    if (!(actorRoles ?? []).some((item) => ['principal', 'administrator'].includes(item.role))) {
+    const roles = actorRoles ?? [];
+    const isPrincipal = roles.some((item) => item.role === 'principal');
+    const canInviteStaff = isPrincipal || roles.some((item) => item.role === 'administrator');
+    if (!canInviteStaff) {
       throw new ForbiddenException('Only the Principal or an authorized administrator can invite staff accounts');
     }
 
     const role = roleToDatabase[body.role];
+    if (role === 'administrator' && !isPrincipal) {
+      throw new ForbiddenException('Only the Principal can invite another administrator');
+    }
     if (!role || !['administrator','coordinator','hod','faculty','staff'].includes(role)) {
       throw new BadRequestException('Unsupported staff role');
     }
