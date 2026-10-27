@@ -22,7 +22,8 @@ import { events as initialEvents } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
 
 export function EventsPage() {
-  const { registeredEvents, toggleEvent, toast } = usePortal();
+  const { registeredEvents, toggleEvent, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeModalEvent, setActiveModalEvent] = useState(null);
@@ -39,6 +40,10 @@ export function EventsPage() {
   });
 
   const handleRegistrationToggle = (ev) => {
+    if (liveSession) {
+      toast({ title: "Registration unavailable", description: "Event listings and registration are not connected to the institutional backend. No registration was created or cancelled.", variant: "info" });
+      return;
+    }
     const isCurrentlyReg = registeredEvents.has(ev.id);
     toggleEvent(ev.id);
 
@@ -59,11 +64,22 @@ export function EventsPage() {
   };
 
   const handleAddToCalendar = (ev) => {
-    toast({
-      title: "Event Added to Calendar",
-      description: `${ev.name} on ${ev.date} at ${ev.time} synced to your device calendar.`,
-      variant: "success",
-    });
+    if (liveSession) {
+      toast({ title: "Calendar export unavailable", description: "These events are sample previews and are not connected to the institutional event calendar.", variant: "info" });
+      return;
+    }
+    const start = new Date(`${ev.date} ${ev.time}`);
+    if (Number.isNaN(start.getTime())) {
+      toast({ title: "Calendar export unavailable", description: "The sample event date/time could not be parsed.", variant: "info" });
+      return;
+    }
+    const toIcsDate = (date) => date.toISOString().replace(/[-:]/g, "").replace(/\\.\\d{3}Z$/, "Z");
+    const escapeIcs = (value) => String(value || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Astra Campus//Event Preview//EN", "BEGIN:VEVENT", `UID:${ev.id}@astra-campus.local`, `DTSTAMP:${toIcsDate(new Date())}`, `DTSTART:${toIcsDate(start)}`, `DTEND:${toIcsDate(end)}`, `SUMMARY:${escapeIcs(ev.name)}`, `LOCATION:${escapeIcs(ev.venue)}`, `DESCRIPTION:${escapeIcs(ev.description)}`, "END:VEVENT", "END:VCALENDAR"];
+    const url = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = `${String(ev.name || "event").replace(/[^a-z0-9-_]+/gi, "-")}.ics`; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    toast({ title: "Calendar file exported", description: "An .ics file was downloaded. The event itself is sample preview data.", variant: "info" });
   };
 
   return (
@@ -80,6 +96,8 @@ export function EventsPage() {
           </div>
         }
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> These event listings and registration counts are sample content, not confirmed college events. Registration and cancellation are unavailable until an institutional events service is connected.</div>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-sm md:flex-row md:items-center md:justify-between">
