@@ -15,6 +15,10 @@ begin
       or new.review_note is distinct from old.review_note then
       raise exception 'Attendance review metadata can only change during a valid status transition' using errcode = '42501';
     end if;
+    if old.status in ('submitted', 'verified')
+      and (to_jsonb(new) - 'updated_at') is distinct from (to_jsonb(old) - 'updated_at') then
+      raise exception 'Submitted or verified attendance sessions cannot be edited' using errcode = '42501';
+    end if;
     return new;
   end if;
 
