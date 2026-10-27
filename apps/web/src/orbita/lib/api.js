@@ -156,6 +156,8 @@ export const facultyApi = {
 };
 
 export const attendanceApi = {
+  sessions: (query) => api.get("/api/attendance/sessions", query),
+  records: (sessionId) => api.get(`/api/attendance/sessions/${sessionId}/records`),
   createSession: (payload) => api.post("/api/attendance/sessions", payload),
   markRecords: (sessionId, records) =>
     api.post(`/api/attendance/sessions/${sessionId}/records`, { records }),
