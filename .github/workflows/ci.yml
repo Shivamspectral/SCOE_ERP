@@ -7,21 +7,24 @@ on:
 
 jobs:
   app:
+    name: Workspace typecheck and builds
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
-          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      - name: Install workspace dependencies
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
+      - name: Typecheck frontend and API
+        run: pnpm typecheck
+      - name: Build Vite frontend
+        run: pnpm build
+      - name: Build NestJS API
+        run: pnpm build:api
 
   migrations:
     runs-on: ubuntu-latest
