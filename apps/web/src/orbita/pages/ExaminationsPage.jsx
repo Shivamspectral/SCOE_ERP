@@ -17,7 +17,8 @@ import { student, college } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
 
 export function ExaminationsPage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const insemSchedule = [
     { code: "CE-501", subject: "Data Structures", date: "28 Sep 2026", time: "10:30 AM - 11:30 AM", room: "Hall A-102", marks: 30, units: "Units I & II" },
@@ -30,9 +31,11 @@ export function ExaminationsPage() {
 
   const handleDownloadHallTicket = () => {
     toast({
-      title: "Hall Ticket Downloaded",
-      description: `Insem Exam Hall Ticket for ${student.id} downloaded with barcode & verified seating.`,
-      variant: "success",
+      title: "Hall ticket unavailable",
+      description: liveSession
+        ? "Official hall-ticket generation is not connected to the institutional backend. No document was downloaded."
+        : "This is sample preview data only. No official hall ticket or barcode was generated.",
+      variant: "info",
     });
   };
 
@@ -44,6 +47,7 @@ export function ExaminationsPage() {
         actions={
           <button
             onClick={handleDownloadHallTicket}
+            disabled={liveSession}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
           >
             <Download className="size-3.5" />
@@ -51,6 +55,10 @@ export function ExaminationsPage() {
           </button>
         }
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status">
+        <strong>Preview data only.</strong> Examination dates, seat numbers, grades and CGPA on this screen are sample values, not verified college or SPPU records. Official examination data and hall-ticket downloads are not connected.
+      </div>
 
       {/* Top Academic Standing Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -155,13 +163,8 @@ export function ExaminationsPage() {
                     <span className="font-display text-2xl font-bold text-primary">{s.sgpa}</span>
                   </div>
                   <button
-                    onClick={() =>
-                      toast({
-                        title: `Downloaded ${s.sem} Result Sheet`,
-                        description: "Verified university grade ledger saved.",
-                        variant: "info",
-                      })
-                    }
+                    onClick={() => toast({ title: "Result sheet unavailable", description: "No official grade card is attached to this preview; nothing was downloaded.", variant: "info" })}
+                    disabled={liveSession}
                     className="text-xs font-semibold text-primary hover:underline"
                   >
                     View Sheet →
