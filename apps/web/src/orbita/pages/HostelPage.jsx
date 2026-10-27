@@ -18,7 +18,8 @@ import { Badge } from "../components/Badge";
 import { usePortal } from "../context/PortalContext";
 
 export function HostelPage() {
-  const { toast, addApprovalRequest } = usePortal();
+  const { toast, addApprovalRequest, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   // Modals
   const [applyModalOpen, setApplyModalOpen] = useState(false);
@@ -37,6 +38,7 @@ export function HostelPage() {
 
   const handleApplyHostel = (e) => {
     e.preventDefault();
+    if (liveSession) { toast({ title: "Hostel service unavailable", description: "Room inventory is sample data and the hostel service is not connected. No room request was submitted.", variant: "info" }); return; }
     addApprovalRequest({
       type: "Hostel Room Allocation",
       details: `Request for ${roomType} in ${hostelBlock}. Justification: ${emergencyReason}`,
@@ -53,6 +55,7 @@ export function HostelPage() {
 
   const handleApplyPass = (e) => {
     e.preventDefault();
+    if (liveSession) { toast({ title: "Hostel service unavailable", description: "Pass rules and resident records are not connected to the institutional backend. No pass request was submitted.", variant: "info" }); return; }
     addApprovalRequest({
       type: "Hostel Outing Night Pass",
       details: `Night pass: ${passPurpose}. From ${passOutDate} to ${passInDate}. Parent contact verified.`,
@@ -99,7 +102,7 @@ export function HostelPage() {
         }
       />
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {liveSession && <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and pass status are sample values. Live hostel applications and gate passes are unavailable.</div>}\n\n      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and live pass status are sample values. The form can submit an approval request, but it does not reserve a room or issue a gate pass.</div>
 
       {/* Block A */}
