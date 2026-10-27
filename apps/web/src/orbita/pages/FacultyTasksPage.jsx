@@ -15,7 +15,8 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function FacultyTasksPage() {
-  const { tasks, toggleTask, addTask, deleteTask, toast } = usePortal();
+  const { tasks, toggleTask, addTask, deleteTask, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [activeTab, setActiveTab] = useState("All");
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -61,7 +62,7 @@ export function FacultyTasksPage() {
     });
   };
 
-  const handleDelete = (id, title) => {
+  const handleDelete = (id, title) => {\n    if (liveSession) { toast({ title: "Task service unavailable", description: "Tasks are not connected to the institutional backend. No task was deleted.", variant: "info" }); return; }
     deleteTask(id);
     toast({
       title: "Task Deleted",
@@ -161,7 +162,7 @@ export function FacultyTasksPage() {
             >
               <div className="flex items-center gap-3.5">
                 <button
-                  onClick={() => toggleTask(t.id)}
+                  onClick={() => liveSession ? toast({ title: "Task service unavailable", description: "No task status was changed.", variant: "info" }) : toggleTask(t.id)}
                   className="rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {t.completed ? (
