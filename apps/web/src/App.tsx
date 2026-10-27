@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
   Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, CheckCheck,
   ChevronDown, ClipboardCheck, Clock3, FileText, GraduationCap, LayoutDashboard,
@@ -47,7 +47,7 @@ export default function App() {
     setPage('Overview');
     setError('');
   };
-  const submitLogin = (event: React.FormEvent) => {
+  const submitLogin = (event: FormEvent) => {
     event.preventDefault();
     const selected = demoAccounts.find((item) => item.email.toLowerCase() === email.trim().toLowerCase() && item.password === password);
     if (!selected) { setError('Invalid demo email or password.'); return; }
