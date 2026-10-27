@@ -11,6 +11,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { CircularsModule } from './circulars/circulars.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { UsersModule } from './users/users.module';
+import { StudentsModule } from './students/students.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UsersModule } from './users/users.module';
     CircularsModule,
     AttendanceModule,
     UsersModule,
+    StudentsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
