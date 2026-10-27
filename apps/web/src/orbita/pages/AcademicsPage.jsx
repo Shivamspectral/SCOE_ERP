@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BookOpen, User, Download, FileText, CheckCircle2, Sparkles, Building } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { faculty, college, syllabusCompletion } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
+import { academicApi } from "../lib/api";
 
 export function AcademicsPage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
 
   const courses = [
     { code: "CE-501", name: "Data Structures", credits: 4, type: "Theory + Lab", hours: "4L + 2P", faculty: "Prof. R. Kale", progress: 78, units: ["Unit I: Stacks & Queues", "Unit II: Trees & BST", "Unit III: Graphs & Shortest Path", "Unit IV: Hashing & Heaps"] },
@@ -17,6 +18,42 @@ export function AcademicsPage() {
     { code: "CE-505", name: "Software Engineering", credits: 3, type: "Theory", hours: "3L", faculty: "Prof. N. Kulkarni", progress: 85, units: ["Unit I: Agile & Waterfall Models", "Unit II: SRS & Requirements", "Unit III: UML & System Design", "Unit IV: Testing & QA"] },
     { code: "CE-506", name: "Theory of Computation", credits: 3, type: "Theory", hours: "3L", faculty: "Dr. V. Shinde", progress: 60, units: ["Unit I: Regular Expressions & Finite Automata", "Unit II: Context-Free Grammars", "Unit III: Pushdown Automata", "Unit IV: Turing Machines"] },
   ];
+
+  const [liveCourses, setLiveCourses] = useState(null);
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+
+  useEffect(() => {
+    if (!liveSession) return;
+    let cancelled = false;
+    Promise.all([academicApi.subjects({ status: "active" }), academicApi.syllabus()])
+      .then(([subjects, syllabus]) => {
+        if (cancelled) return;
+        const progressRows = Array.isArray(syllabus) ? syllabus : [];
+        const rows = (Array.isArray(subjects) ? subjects : []).map((subject) => {
+          const units = progressRows.filter((row) => row.subject?.toLowerCase() === subject.name?.toLowerCase());
+          const planned = units.reduce((sum, row) => sum + (Number(row.planned_hours) || 0), 0);
+          const completed = units.reduce((sum, row) => sum + (Number(row.completed_hours) || 0), 0);
+          return {
+            code: subject.code || subject.name?.slice(0, 8) || subject.id,
+            name: subject.name,
+            credits: Number(subject.credits) || 0,
+            type: "Course",
+            hours: `${Number(subject.credits) || 0} credits`,
+            faculty: "Assigned faculty",
+            progress: planned ? Math.round((completed / planned) * 100) : 0,
+            units: units.map((row) => row.unit),
+          };
+        });
+        setLiveCourses(rows);
+      })
+      .catch((error) => {
+        console.warn("[academics] unable to load live curriculum", error);
+        if (!cancelled) setLiveCourses([]);
+      });
+    return () => { cancelled = true; };
+  }, [liveSession, session?.access_token]);
+
+  const displayedCourses = liveSession ? (liveCourses ?? []) : courses;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -42,7 +79,7 @@ export function AcademicsPage() {
 
       {/* Courses List */}
       <div className="space-y-4">
-        {courses.map((c) => (
+        {displayedCourses.map((c) => (
           <Card key={c.code} className="hover:border-primary/40 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
