@@ -120,9 +120,6 @@ export async function safeGet(path, query, fallback = null) {
 
 export const authApi = {
   me: () => api.get("/api/auth/me"),
-  verifyRegistrationId: (registrationId) =>
-    api.post("/api/auth/verify-registration-id", { registration_id: registrationId }),
-  register: (payload) => api.post("/api/auth/register", payload),
   logout: () => api.post("/api/auth/logout", {}),
   changePassword: (payload) => api.post("/api/auth/change-password", payload),
   changeEmail: (payload) => api.post("/api/auth/change-email", payload),
@@ -133,12 +130,6 @@ export const usersApi = {
   get: (id) => api.get(`/api/users/${id}`),
   update: (id, payload) => api.patch(`/api/users/${id}`, payload),
   remove: (id) => api.del(`/api/users/${id}`),
-};
-
-export const registrationIdsApi = {
-  list: (query) => api.get("/api/registration-ids", query),
-  generate: (payload) => api.post("/api/registration-ids", payload),
-  disable: (id) => api.post(`/api/registration-ids/${id}/disable`, {}),
 };
 
 export const studentsApi = {
