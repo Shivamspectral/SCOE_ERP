@@ -15,7 +15,7 @@ export class AuthController {
 
     const { data: profile, error: profileError } = await client
       .from('profiles')
-      .select('user_id,institution_id,full_name,title,phone,department_id,status,created_at,updated_at')
+      .select('user_id,institution_id,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)')
       .eq('user_id', user.id)
       .maybeSingle();
     if (profileError) throw profileError;
