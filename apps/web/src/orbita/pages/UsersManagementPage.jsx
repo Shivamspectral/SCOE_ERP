@@ -196,11 +196,10 @@ export function UsersManagementPage() {
                       onChange={(e) => handleRoleChange(u, e.target.value)}
                       className="rounded border border-input bg-card px-2 py-1 text-xs font-semibold text-foreground outline-none focus:border-primary"
                     >
-                      <option value="Staff">Staff</option>
-                      <option value="Faculty">Faculty</option>
+                        <option value="Faculty">Faculty</option>
                       <option value="HOD">HOD</option>
-                      <option value="Vice-Principal">Vice-Principal</option>
                       <option value="Coordinator">Coordinator</option>
+                      <option value="Vice-Principal">Vice-Principal</option>
                       <option value="Staff">Staff</option>
                       <option value="Principal" disabled>Principal (system-controlled)</option>
                       <option value="Super Admin">Super Admin</option>
