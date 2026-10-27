@@ -186,6 +186,12 @@ export const academicApi = {
   updateSyllabusProgress: (id, payload) => api.patch(`/api/academic/syllabus/${id}`, payload),
 };
 
+export const documentsApi = {
+  list: (query) => api.get("/api/documents", query),
+  create: (payload) => api.post("/api/documents", payload),
+  update: (id, payload) => api.patch(`/api/documents/${id}`, payload),
+};
+
 export const noticesApi = {
   list: (query) => api.get("/api/circulars", query),
   create: (payload) => api.post("/api/circulars", payload),
