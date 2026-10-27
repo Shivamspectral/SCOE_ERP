@@ -17,6 +17,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { MarksModule } from './marks/marks.module';
 import { DocumentsModule } from './documents/documents.module';
 import { AuditModule } from './audit/audit.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AuditModule } from './audit/audit.module';
     MarksModule,
     DocumentsModule,
     AuditModule,
+    TasksModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
