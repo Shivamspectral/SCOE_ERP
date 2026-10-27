@@ -117,6 +117,18 @@ export class AcademicController {
     if (!department || department.institution_id !== profile.institution_id || department.status !== 'active') {
       throw new BadRequestException('Department is not available in your permitted scope');
     }
+    if (body.facultyId) {
+      const { data: facultyProfile, error: facultyError } = await client.from('profiles')
+        .select('user_id,institution_id,status').eq('user_id', body.facultyId).maybeSingle();
+      if (facultyError) throw facultyError;
+      if (!facultyProfile || facultyProfile.institution_id !== profile.institution_id || facultyProfile.status !== 'active') {
+        throw new BadRequestException('Assigned faculty member is not active in this institution');
+      }
+      const { data: facultyRoles, error: rolesError } = await client.from('role_assignments')
+        .select('id').eq('user_id', body.facultyId).eq('role', 'faculty').eq('status', 'active').eq('department_id', department.id).limit(1);
+      if (rolesError) throw rolesError;
+      if (!facultyRoles?.length) throw new BadRequestException('Assigned user does not have an active faculty role in this department');
+    }
     const { data, error } = await client.from('timetable_entries').insert({
       institution_id: profile.institution_id, department_id: department.id,
       faculty_id: body.facultyId ?? request.authUser!.id,
