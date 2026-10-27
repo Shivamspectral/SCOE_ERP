@@ -171,14 +171,14 @@ export function FacultyMarksPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={handleSaveMarks} disabled={saving}
+            onClick={handleSaveMarks} disabled={saving || (liveMode && (liveLoading || !liveMarks))}
             className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-muted"
           >
             <Save className="size-4 text-muted-foreground" />
             <span>Save Draft</span>
           </button>
           <button
-            onClick={() => setConfirmModalOpen(true)}
+            onClick={() => setConfirmModalOpen(true)} disabled={saving || (liveMode && (liveLoading || !liveMarks))}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
           >
             <Send className="size-4" />
@@ -267,7 +267,11 @@ export function FacultyMarksPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-foreground">
-              {filteredStudents.map((s) => {
+              {liveLoading ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading institutional marks…</td></tr>
+              ) : filteredStudents.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">{liveMode ? "No institutional student or marks records are available in your permitted scope." : "No sample marks match your search."}</td></tr>
+              ) : filteredStudents.map((s) => {
                 const inSem = s.marksInSem || 0;
                 const endSem = s.marksEndSem || 0;
                 const total = inSem + endSem;
