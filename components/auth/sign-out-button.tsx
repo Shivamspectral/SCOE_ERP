@@ -12,6 +12,7 @@ export function SignOutButton({ compact = false }: { compact?: boolean }) {
 
   async function signOut() {
     setBusy(true)
+    await fetch('/api/demo-login', { method: 'DELETE' }).catch(() => undefined)
     const supabase = createClient()
     await supabase.auth.signOut()
     router.replace('/login')
