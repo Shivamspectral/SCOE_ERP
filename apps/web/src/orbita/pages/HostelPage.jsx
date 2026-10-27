@@ -61,8 +61,8 @@ export function HostelPage() {
 
     setPassModalOpen(false);
     toast({
-      title: "Night Outing Pass Approved",
-      description: `Digital Gate Pass generated for ${passPurpose}. Parent SMS dispatched.`,
+      title: "Night-pass request submitted",
+      description: "Your request was sent to the approval workflow. No gate pass was issued and no parent SMS was sent.",
       variant: "success",
     });
   };
@@ -100,7 +100,9 @@ export function HostelPage() {
       />
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Block A */}
+        <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and live pass status are sample values. The form can submit an approval request, but it does not reserve a room or issue a gate pass.</div>
+
+      {/* Block A */}
         <Card className="hover:border-primary/40 transition-colors flex flex-col justify-between">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -133,8 +135,8 @@ export function HostelPage() {
               <button
                 onClick={() =>
                   toast({
-                    title: "Connecting to Rector Office",
-                    description: "Dialing +91 98224 11223…",
+                    title: "Contact details are sample data",
+                    description: "This preview does not initiate a phone call. Verify the official hostel contact before calling.
                     variant: "info",
                   })
                 }
