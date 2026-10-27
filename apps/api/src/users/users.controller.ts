@@ -7,7 +7,7 @@ import { SupabaseRequestClient } from '../database/supabase-request-client.servi
 import { UpdateMemberDto } from './member.dto';
 import { InviteMemberDto } from './invite-member.dto';
 
-const roleToDisplay: Record<string, string> = { administrator: 'Super Admin', coordinator: 'Vice-Principal', hod: 'HOD', faculty: 'Faculty', staff: 'Staff' };
+const roleToDisplay: Record<string, string> = { principal: 'Principal', administrator: 'Super Admin', coordinator: 'Vice-Principal', hod: 'HOD', faculty: 'Faculty', staff: 'Staff' };
 
 const roleToDatabase: Record<string, string> = {
   'Super Admin': 'administrator', Administrator: 'administrator',
@@ -34,6 +34,7 @@ export class UsersController {
     if (rolesError) throw rolesError;
     return {
       id: profile.user_id,
+      email: '',
       institution_id: profile.institution_id,
       name: profile.full_name,
       title: profile.title,
@@ -73,7 +74,7 @@ export class UsersController {
     const data = (profiles ?? []).map((profile) => {
       const memberRoles = roles.filter((role) => role.user_id === profile.user_id);
       return {
-        id: profile.user_id, institution_id: profile.institution_id,
+        id: profile.user_id, email: '', institution_id: profile.institution_id,
         name: profile.full_name, title: profile.title, phone: profile.phone,
         department_id: profile.department_id, department: profile.departments,
         status: profile.status, roles: memberRoles, role: roleToDisplay[memberRoles[0]?.role ?? ''] ?? memberRoles[0]?.role ?? null,
