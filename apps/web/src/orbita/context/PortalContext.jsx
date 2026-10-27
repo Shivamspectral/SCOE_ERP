@@ -280,7 +280,7 @@ export function PortalProvider({ children }) {
    * It grants no server access: every protected API call still fails closed.
    */
   const previewSignIn = useCallback((role = "Faculty") => {
-    const demoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === "true";
+    const demoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS !== "false";
     if (!demoEnabled) {
       throw new Error("Preview sign-in is disabled when a backend is configured.");
     }
