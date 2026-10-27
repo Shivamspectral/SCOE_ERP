@@ -17,7 +17,8 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function FacultyMentoringPage() {
-  const { mentees, logMentoringMeeting, addSystemLog, toast } = usePortal();
+  const { mentees, logMentoringMeeting, addSystemLog, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -47,6 +48,10 @@ export function FacultyMentoringPage() {
 
   const handleSaveMeeting = (e) => {
     e.preventDefault();
+    if (liveSession) {
+      toast({ title: "Mentoring records unavailable", description: "Mentor assignments and counselling notes are not connected to the institutional backend. No official record was saved.", variant: "info" });
+      return;
+    }
     if (!meetingNotes.trim()) {
       toast({
         title: "Meeting Notes Required",
@@ -70,6 +75,10 @@ export function FacultyMentoringPage() {
   };
 
   const handleQuickContact = (mentee, type) => {
+    if (liveSession) {
+      toast({ title: type === "phone" ? "Call not initiated" : "Reminder not sent", description: "Contact and messaging integrations are not connected. No call or message was initiated.", variant: "info" });
+      return;
+    }
     if (type === "phone") {
       toast({
         title: "Initiating Voice Call",
@@ -111,6 +120,8 @@ export function FacultyMentoringPage() {
           </div>
         </div>
       </div>
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>{liveSession ? "Mentoring service unavailable." : "Demo preview only."}</strong> {liveSession ? "Mentee data and counselling logs are not loaded from the college database; live write actions are disabled." : "Sample mentees and counselling notes are local preview data."}</div>
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
