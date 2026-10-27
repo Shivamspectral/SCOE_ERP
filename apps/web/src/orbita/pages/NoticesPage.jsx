@@ -41,7 +41,13 @@ export function NoticesPage() {
         pinned: row.category === "urgent",
         attachment: null,
       })));
-    }).catch((error) => { console.warn("[circulars] unable to load published notices", error); if (!cancelled) setNotices([]); });
+    }).catch((error) => {
+      console.warn("[circulars] unable to load published notices", error);
+      if (!cancelled) {
+        setNotices([]);
+        toast({ title: "Could not load published circulars", description: error?.message || "The institutional notice service is unavailable.", variant: "error" });
+      }
+    });
     return () => { cancelled = true; };
   }, [backendConfigured, isAuthenticated, session?.access_token]);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -82,9 +88,9 @@ export function NoticesPage() {
             <button
               onClick={() => {
                 toast({
-                  title: "Notice Alerts Subscribed",
-                  description: "You will receive immediate mobile and email notifications for Urgent academic circulars.",
-                  variant: "success",
+                  title: "Alert subscriptions are not enabled",
+                  description: "This portal does not yet have a notification-subscription workflow connected. No alert subscription was created.",
+                  variant: "info",
                 });
               }}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
