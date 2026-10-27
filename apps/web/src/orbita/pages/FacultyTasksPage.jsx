@@ -15,6 +15,12 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { tasksApi } from "../lib/api";
 
+const toLocalDateValue = (date) => {
+  const local = new Date(date);
+  local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+  return local.toISOString().slice(0, 10);
+};
+
 export function FacultyTasksPage() {
   const { tasks, toggleTask, addTask, deleteTask, toast, backendConfigured, isAuthenticated, session, departments, activeProfile } = usePortal();
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
@@ -23,7 +29,7 @@ export function FacultyTasksPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskPriority, setTaskPriority] = useState("High");
-  const [taskDueDate, setTaskDueDate] = useState("Tomorrow");
+  const [taskDueDate, setTaskDueDate] = useState(() => toLocalDateValue(new Date(Date.now() + 24 * 60 * 60 * 1000)));
   const [taskCategory, setTaskCategory] = useState("Academics");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [liveTasks, setLiveTasks] = useState([]);
@@ -101,14 +107,15 @@ export function FacultyTasksPage() {
         toast({ title: "Choose a department", description: "Select the department this task belongs to.", variant: "warning" });
         return;
       }
-      const dueDate = new Date();
-      if (taskDueDate === "Tomorrow") dueDate.setDate(dueDate.getDate() + 1);
-      else if (taskDueDate === "This Week") dueDate.setDate(dueDate.getDate() + 7);
-      dueDate.setHours(12, 0, 0, 0);
+      const dueDate = new Date(taskDueDate + "T12:00:00");
+      if (!taskDueDate || Number.isNaN(dueDate.getTime())) {
+        toast({ title: "Valid due date required", description: "Choose a valid calendar date for the task.", variant: "warning" });
+        return;
+      }
       try {
         const created = await tasksApi.create({
           title: taskTitle.trim(),
-          priority: taskPriority.toLowerCase(),
+          priority: taskPriority === "Medium" ? "normal" : taskPriority.toLowerCase(),
           dueAt: dueDate.toISOString(),
           category: taskCategory,
           departmentId: selectedDepartmentId || undefined,
@@ -384,10 +391,10 @@ export function FacultyTasksPage() {
                     Due Date
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     value={taskDueDate}
-                    onChange={(e) => setTaskDueDate(e.target.value)}
-                    placeholder="e.g. Tomorrow, 5 PM"
+                    min={toLocalDateValue(new Date())}
+                    onChange={(e) => setTaskDueDate(e.target.value)
                     className="w-full h-9 rounded-lg border border-input bg-card px-2.5 outline-none focus:border-primary text-xs"
                   />
                 </div>
