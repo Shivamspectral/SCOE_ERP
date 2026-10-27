@@ -80,6 +80,11 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
         credentials: 'same-origin',
         body: JSON.stringify({ email, password }),
       })
+      if (response.redirected || !response.headers.get('content-type')?.includes('application/json')) {
+        setMessage('The demo sign-in endpoint did not return a valid response. Please try again after the latest deployment finishes.')
+        setBusy(false)
+        return
+      }
       const result = await response.json().catch(() => ({}))
 
       if (!response.ok) {
@@ -92,6 +97,7 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
 
       router.replace(safeNextPath(next))
       router.refresh()
+      setBusy(false)
     } catch {
       setMessage('Could not reach the demo sign-in service. Please try again.')
       setBusy(false)
