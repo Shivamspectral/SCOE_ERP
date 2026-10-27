@@ -14,13 +14,17 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function ReportsPage() {
-  const { reportsList, toast } = usePortal();
+  const { reportsList, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveMode = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  // Reports API generation/download is not implemented on the server yet. Never
+  // present the demo catalog as institutional reports in a live session.
+  const displayedReports = liveMode ? [] : reportsList;
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
 
-  const filteredReports = reportsList.filter((r) => {
+  const filteredReports = displayedReports.filter((r) => {
     const matchesCategory =
       categoryFilter === "All" || r.category === categoryFilter;
 
@@ -33,9 +37,21 @@ export function ReportsPage() {
   });
 
   const handleDownload = (r) => {
+    const columns = ["title", "category", "department", "author", "publishedDate", "summary"];
+    const escapeCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const csv = [columns.join(","), ...[r].map((row) => columns.map((key) => escapeCell(row[key])).join(","))].join("\\r\\n");
+    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `report-metadata-${String(r.id || "preview").replace(/[^a-zA-Z0-9_-]/g, "")}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
     toast({
-      title: "Downloading Report",
-      description: `Dispatched official PDF: ${r.title} (${r.fileSize}).`,
+      title: "Report metadata exported",
+      description: "Downloaded a CSV summary. This does not include or represent an official PDF document.",
       variant: "info",
     });
   };
@@ -61,7 +77,7 @@ export function ReportsPage() {
 
         <div className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-xs">
           <span className="text-muted-foreground">Published Reports: </span>
-          <span className="font-bold text-foreground">{reportsList.length}</span>
+          <span className="font-bold text-foreground">{displayedReports.length}</span>
         </div>
       </div>
 
@@ -95,8 +111,19 @@ export function ReportsPage() {
         </div>
       </div>
 
+      {liveMode && (
+        <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          Institutional report generation and file delivery are not connected yet. Demo report entries are hidden in this signed-in session to avoid confusing sample metadata with official college records.
+        </div>
+      )}
+
       {/* Reports List */}
       <div className="space-y-3.5">
+        {filteredReports.length === 0 && (
+          <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+            {liveMode ? "No institutional reports are available from the connected report service yet." : "No sample reports match your filters."}
+          </div>
+        )}
         {filteredReports.map((r) => (
           <div
             key={r.id}
@@ -147,7 +174,7 @@ export function ReportsPage() {
                 className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
               >
                 <Download className="size-3.5" />
-                <span>PDF ({r.fileSize})</span>
+                <span>Export CSV</span>
               </button>
             </div>
           </div>
@@ -191,11 +218,11 @@ export function ReportsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Audit Document Format:</span>
-                  <span className="font-semibold text-foreground">Official SPPU / NBA Attested PDF</span>
+                  <span className="font-semibold text-foreground">No official file attached in this preview</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Internal Downloads:</span>
-                  <span className="font-semibold text-foreground">{selectedReport.downloads} downloads</span>
+                  <span className="font-semibold text-foreground">{selectedReport.downloads ?? "Not tracked"}</span>
                 </div>
               </div>
 
