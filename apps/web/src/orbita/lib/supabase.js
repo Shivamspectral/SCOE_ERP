@@ -119,8 +119,9 @@ export const supabase = {
         method: "POST",
         body: JSON.stringify({ email, password, data: { ...(options.data || {}) } }),
       });
-      if (data?.access_token) persist(data);
-      return { data, error: null };
+      const sessionData = data?.session || (data?.access_token ? data : null);
+      if (sessionData?.access_token) persist(sessionData);
+      return { data: { ...data, session: sessionData }, error: null };
     },
 
     async signOut() {
