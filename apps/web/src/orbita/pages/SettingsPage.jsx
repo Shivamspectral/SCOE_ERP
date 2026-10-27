@@ -46,7 +46,8 @@ export function SettingsPage() {
                 </div>
                 <input
                   type="checkbox"
-                  checked={emailAlerts}\n                  disabled={liveSession}
+                  checked={emailAlerts}
+                  disabled={liveSession}
                   onChange={(e) => setEmailAlerts(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
@@ -59,7 +60,8 @@ export function SettingsPage() {
                 </div>
                 <input
                   type="checkbox"
-                  checked={smsAlerts}\n                  disabled={liveSession}
+                  checked={smsAlerts}
+                  disabled={liveSession}
                   onChange={(e) => setSmsAlerts(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
@@ -72,7 +74,8 @@ export function SettingsPage() {
                 </div>
                 <input
                   type="checkbox"
-                  checked={attendanceWarnings}\n                  disabled={liveSession}
+                  checked={attendanceWarnings}
+                  disabled={liveSession}
                   onChange={(e) => setAttendanceWarnings(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
