@@ -12,6 +12,7 @@ import { CircularsModule } from './circulars/circulars.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { UsersModule } from './users/users.module';
 import { StudentsModule } from './students/students.module';
+import { AcademicModule } from './academic/academic.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { StudentsModule } from './students/students.module';
     AttendanceModule,
     UsersModule,
     StudentsModule,
+    AcademicModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
