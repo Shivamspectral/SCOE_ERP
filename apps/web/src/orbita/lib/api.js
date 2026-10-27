@@ -87,12 +87,33 @@ async function request(method, path, { body, query, signal } = {}) {
   return payload && typeof payload === "object" && "data" in payload ? payload.data : payload;
 }
 
+async function uploadRequest(path, file) {
+  if (!isBackendConfigured) throw new ApiError("Backend API is not configured (VITE_API_BASE_URL).", 0, "NO_BACKEND");
+  const token = await accessToken();
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(buildUrl(path), {
+    method: "POST",
+    headers: token ? { Authorization: "Bearer " + token } : {},
+    body: form,
+  });
+  const text = await res.text();
+  let payload = null;
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
+  if (!res.ok) {
+    const err = payload && typeof payload === "object" ? payload.error || payload : {};
+    throw new ApiError(err.message || "File upload failed (" + res.status + ")", res.status, err.code || String(res.status), err.details);
+  }
+  return payload && typeof payload === "object" && "data" in payload ? payload.data : payload;
+}
+
 export const api = {
   get: (path, query, opts) => request("GET", path, { query, ...opts }),
   post: (path, body, opts) => request("POST", path, { body, ...opts }),
   patch: (path, body, opts) => request("PATCH", path, { body, ...opts }),
   put: (path, body, opts) => request("PUT", path, { body, ...opts }),
   del: (path, opts) => request("DELETE", path, opts),
+  upload: (path, file) => uploadRequest(path, file),
 };
 
 /**
@@ -186,6 +207,8 @@ export const documentsApi = {
   list: (query) => api.get("/api/documents", query),
   create: (payload) => api.post("/api/documents", payload),
   update: (id, payload) => api.patch(`/api/documents/${id}`, payload),
+  uploadFile: (id, file) => api.upload(`/api/documents/${id}/file`, file),
+  fileUrl: (id) => api.get(`/api/documents/${id}/file`),
 };
 
 export const noticesApi = {
