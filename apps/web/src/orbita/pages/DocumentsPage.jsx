@@ -21,7 +21,7 @@ const categoryLabels = {
 export function DocumentsPage() {
   const { toast, backendConfigured, isAuthenticated, session, departments = [] } = usePortal();
   const liveMode = Boolean(backendConfigured && isAuthenticated && session?.access_token);
-  const [documents, setDocuments] = useState(previewDocuments);
+  const [documents, setDocuments] = useState(liveMode ? [] : previewDocuments);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -36,6 +36,7 @@ export function DocumentsPage() {
       const rows = await documentsApi.list();
       setDocuments(Array.isArray(rows) ? rows : []);
     } catch (error) {
+      setDocuments([]);
       toast({ title: "Could not load document register", description: error?.message || "Check your access and try again.", variant: "error" });
     } finally {
       setLoading(false);
@@ -49,7 +50,10 @@ export function DocumentsPage() {
     documentsApi.list().then((rows) => {
       if (!cancelled) setDocuments(Array.isArray(rows) ? rows : []);
     }).catch((error) => {
-      if (!cancelled) toast({ title: "Could not load document register", description: error?.message || "Check your access and try again.", variant: "error" });
+      if (!cancelled) {
+        setDocuments([]);
+        toast({ title: "Could not load document register", description: error?.message || "Check your access and try again.", variant: "error" });
+      }
     }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [liveMode]);
