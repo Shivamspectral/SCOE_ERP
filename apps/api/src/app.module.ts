@@ -27,6 +27,7 @@ import { DocumentsModule } from './documents/documents.module';
         WEB_ORIGIN: Joi.string().required(),
         SUPABASE_URL: Joi.string().uri().required(),
         SUPABASE_PUBLISHABLE_KEY: Joi.string().min(1).required(),
+        SUPABASE_SERVICE_ROLE_KEY: Joi.string().min(1).optional(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().allow('').optional(),
       }),
       validationOptions: { allowUnknown: true, abortEarly: false },
