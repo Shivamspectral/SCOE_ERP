@@ -186,6 +186,28 @@ export function FacultyClassesPage() {
     });
   };
 
+  const handleSubmitAttendance = async () => {
+    if (!liveSession) {
+      toast({ title: "Preview only", description: "Demo attendance is not submitted to college records.", variant: "info" });
+      return;
+    }
+    if (!liveAttendanceSession?.id) {
+      toast({ title: "Save attendance first", description: "Save the complete roll call before submitting it for HOD review.", variant: "warning" });
+      return;
+    }
+    if (liveRoster.some((student) => student.status === "Pending")) {
+      toast({ title: "Attendance incomplete", description: "Every active student must have an attendance status before submission.", variant: "warning" });
+      return;
+    }
+    try {
+      const submitted = await attendanceApi.submit(liveAttendanceSession.id);
+      setLiveAttendanceSession((current) => ({ ...current, ...submitted }));
+      toast({ title: "Attendance submitted", description: "The session is now locked for editing and awaits authorized department review.", variant: "success" });
+    } catch (error) {
+      toast({ title: "Submission failed", description: error?.message || "The attendance session could not be submitted.", variant: "error" });
+    }
+  };
+
   const handleExportCSV = () => {
     const headers = "Roll No,Student ID,Name,Branch,Status,Overall Attendance\n";
     const rows = filteredStudents
@@ -248,12 +270,22 @@ export function FacultyClassesPage() {
             <Save className="size-4" />
             <span>Save Attendance</span>
           </button>
+          {liveSession && (
+            <button
+              onClick={handleSubmitAttendance}
+              disabled={!liveAttendanceSession?.id || !["draft", "returned"].includes(liveAttendanceSession.status)}
+              className="flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <CheckCircle2 className="size-4" />
+              <span>{liveAttendanceSession?.status === "submitted" ? "Submitted for review" : liveAttendanceSession?.status === "verified" ? "Verified" : "Submit for review"}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Class Cards Selector */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {facultyClassesList.map((cls) => {
+        {availableClasses.map((cls) => {
           const isSelected = cls.id === selectedClassId;
           return (
             <button
