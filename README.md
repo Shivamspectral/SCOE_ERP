@@ -24,6 +24,12 @@ A college staff ERP for principals, administrators, coordinators, HODs, faculty 
 
 **Production readiness note:** this is an actively developed ERP foundation, not yet a verified production-ready ₹3 lakh delivery. Some Orbita Max screens still use synthetic local data or UI-only actions; several modules still need dedicated API endpoints, automated integration/security tests, and end-to-end validation against a real Supabase project before real college records are used. Demo data must never be represented as institutional data.
 
+## Live-data boundaries
+
+Authenticated sessions are restricted to routes backed by institutional API calls: dashboard summary, timetable, attendance, marks, published circulars, notifications, profile, academics, classes, departments, staff and student directories, approvals/workflows, document metadata, and audit logs. Live data is never silently replaced with sample fixtures when these requests fail.
+
+The following remain unavailable until their API, persistence, permissions, and acceptance tests are implemented: binary document upload/download; official exam schedules, result cards and hall tickets; report generation/file delivery; grievance tickets; event registrations; placement applications; library reservations; hostel and transport operations; club/sports/alumni services; persistent task and mentoring records; notification subscriptions/delivery; and saved notification preferences. These routes are blocked or show an explicit unavailable state for authenticated sessions. A successful workflow request means only that the request was recorded for review; it does not imply that an external action (SMS, email, gate pass, official PDF or university upload) occurred.
+
 ## Local development
 
 Requirements: Node.js 22.12+ and pnpm 12.3.4.
