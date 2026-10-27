@@ -77,10 +77,12 @@ export class UsersController {
   @Get()
   async list(@Req() request: AuthenticatedRequest, @Query('limit') rawLimit?: string, @Query('offset') rawOffset?: string, @Query('status') status?: string, @Query('departmentId') departmentId?: string, @Query('search') search?: string) {
     const client = this.db.forRequest(request);
+    const { actor } = await this.requireManager(client, request.authUser!.id);
     const limit = Math.min(100, Math.max(1, Number.parseInt(rawLimit ?? '50', 10) || 50));
     const offset = Math.max(0, Number.parseInt(rawOffset ?? '0', 10) || 0);
     let query = client.from('profiles')
       .select('user_id,institution_id,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)', { count: 'exact' })
+      .eq('institution_id', actor.institution_id)
       .order('full_name', { ascending: true }).range(offset, offset + limit - 1);
     if (status && ['pending','active','suspended'].includes(status)) query = query.eq('status', status);
     if (departmentId) query = query.eq('department_id', departmentId);
@@ -169,7 +171,13 @@ export class UsersController {
 
   @Get(':id')
   async get(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
-    return this.readMember(this.db.forRequest(request), id);
+    const client = this.db.forRequest(request);
+    const { actor } = await this.requireManager(client, request.authUser!.id);
+    const member = await this.readMember(client, id);
+    if (member.institution_id !== actor.institution_id) {
+      throw new NotFoundException('Staff member not found');
+    }
+    return member;
   }
 
   @Patch(':id')
@@ -201,6 +209,11 @@ export class UsersController {
       }
     }
 
+    const activeRoles = current.roles as Array<{ role: string; department_id: string | null; responsibility_id: string | null }>;
+    if (hasAccessChange && activeRoles.length > 1 && body.responsibilityId === undefined) {
+      throw new BadRequestException('This member has multiple active role assignments; specify responsibilityId to change one assignment.');
+    }
+
     if (body.name !== undefined || body.title !== undefined || body.phone !== undefined) {
       const patch: Record<string, unknown> = {};
       if (body.name !== undefined) patch.full_name = body.name.trim();
@@ -211,10 +224,6 @@ export class UsersController {
     }
 
     if (hasAccessChange) {
-      const activeRoles = current.roles as Array<{ role: string; department_id: string | null; responsibility_id: string | null }>;
-      if (activeRoles.length > 1 && body.responsibilityId === undefined) {
-        throw new BadRequestException('This member has multiple active role assignments; specify responsibilityId to change one assignment.');
-      }
       const assignment = body.responsibilityId
         ? activeRoles.find((role) => role.responsibility_id === body.responsibilityId)
         : activeRoles[0];
