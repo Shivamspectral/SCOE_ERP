@@ -102,7 +102,9 @@ export function HostelPage() {
         }
       />
 
-      {liveSession && <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and pass status are sample values. Live hostel applications and gate passes are unavailable.</div>}\n\n      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {liveSession && <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and pass status are sample values. Live hostel applications and gate passes are unavailable.</div>}
+
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and live pass status are sample values. The form can submit an approval request, but it does not reserve a room or issue a gate pass.</div>
 
       {/* Block A */}
