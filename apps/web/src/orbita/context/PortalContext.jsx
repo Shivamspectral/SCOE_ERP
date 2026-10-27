@@ -265,11 +265,24 @@ export function PortalProvider({ children }) {
    * Activate an account against an institutional registration ID (README §8).
    * The backend verifies the ID and its status; the client only relays it.
    */
-  const activateAccount = useCallback(async ({ registrationId, email, password, name }) => {
-    await authApi.verifyRegistrationId(registrationId);
-    await authApi.register({ registration_id: registrationId, email, password, name });
-    return signIn({ email, password });
-  }, [signIn]);
+  const activateAccount = useCallback(async ({ email, password, name }) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: { data: { full_name: name.trim() } },
+    });
+    if (error) throw error;
+    const newSession = data?.session || (data?.access_token ? data : null);
+    if (!newSession?.access_token) return { needsEmailConfirmation: true };
+
+    setSession(newSession);
+    setIsDemoPreview(false);
+    setIsAuthenticated(true);
+    const me = await hydrateIdentity();
+    setCurrentRoute("/dashboard");
+    if (window.history && window.history.pushState) window.history.pushState(null, "", "/dashboard");
+    return { needsEmailConfirmation: false, me };
+  }, [hydrateIdentity]);
 
   const requestPasswordReset = useCallback(async (email) => {
     return supabaseResetPassword(email);
