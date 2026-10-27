@@ -73,6 +73,22 @@ export default function App() {
 
   // Routing Switch
   const renderCurrentPage = () => {
+    const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
+    const liveDataRoutes = new Set([
+      "/dashboard", "/timetable", "/notices", "/notifications", "/profile",
+      "/academics", "/courses", "/subjects", "/classes", "/enrollments",
+      "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
+    ]);
+    if (liveSession && !liveDataRoutes.has(currentRoute)) {
+      return (
+        <section className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-7 shadow-sm">
+          <div className="mb-4 inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">LIVE DATA SAFETY</div>
+          <h1 className="font-display text-2xl font-bold text-foreground">This module is not connected to live records yet</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Sample fixtures are intentionally hidden for authenticated institutional accounts. This module needs its database workflows, permissions, and acceptance tests connected before it can operate on college records.</p>
+          <button onClick={() => navigate("/dashboard")} className="mt-6 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">Back to live dashboard</button>
+        </section>
+      );
+    }
     switch (currentRoute) {
       case "/dashboard":
         return <DashboardPage />;
