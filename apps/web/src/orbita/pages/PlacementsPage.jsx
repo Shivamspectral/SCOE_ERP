@@ -40,28 +40,28 @@ export function PlacementsPage() {
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Highest Package</span>
             <p className="font-display text-2xl font-bold text-success mt-1">{liveSession ? "—" : placementStats.highestPackage}</p>
-            <span className="text-[10px] text-muted-foreground mt-1 block">Amazon AWS India</span>
+            <span className="text-[10px] text-muted-foreground mt-1 block">{liveSession ? "Institutional data unavailable" : "Amazon AWS India"}</span>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-primary">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Average Package</span>
             <p className="font-display text-2xl font-bold text-foreground mt-1">{liveSession ? "—" : placementStats.averagePackage}</p>
-            <span className="text-[10px] text-muted-foreground mt-1 block">Across Tech Streams</span>
+            <span className="text-[10px] text-muted-foreground mt-1 block">{liveSession ? "Institutional data unavailable" : "Across Tech Streams"}</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Students Placed</span>
             <p className="font-display text-2xl font-bold text-foreground mt-1">{liveSession ? "—" : placementStats.placedStudents}</p>
-            <span className="text-[10px] text-success font-medium mt-1 block">65% Batch Placed</span>
+            <span className="text-[10px] text-success font-medium mt-1 block">{liveSession ? "No verified rate available" : "65% Batch Placed"}</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Recruiting Partners</span>
             <p className="font-display text-2xl font-bold text-foreground mt-1">{liveSession ? "—" : `${placementStats.companies}+`}</p>
-            <span className="text-[10px] text-muted-foreground mt-1 block">MNCs & Unicorn Startups</span>
+            <span className="text-[10px] text-muted-foreground mt-1 block">{liveSession ? "Institutional data unavailable" : "MNCs & Unicorn Startups"}</span>
           </CardContent>
         </Card>
       </div>
