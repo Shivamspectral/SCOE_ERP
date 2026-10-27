@@ -16,8 +16,7 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function DepartmentsPage() {
-  const { departments, navigate, backendConfigured, isAuthenticated, session } = usePortal();
-  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const { departments, navigate } = usePortal();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState(null);
