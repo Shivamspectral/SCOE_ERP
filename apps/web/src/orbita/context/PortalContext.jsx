@@ -111,6 +111,7 @@ export function PortalProvider({ children }) {
   // Auth state. Nothing is trusted until Supabase Auth returns a session AND the
   // backend resolves the caller's role + institutional scope (README §9, §25).
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDemoPreview, setIsDemoPreview] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState("Faculty");
@@ -243,6 +244,7 @@ export function PortalProvider({ children }) {
     if (error) throw error;
 
     setSession(data || null);
+    setIsDemoPreview(false);
     setIsAuthenticated(true);
 
     const me = await hydrateIdentity();
@@ -278,10 +280,15 @@ export function PortalProvider({ children }) {
    * It grants no server access: every protected API call still fails closed.
    */
   const previewSignIn = useCallback((role = "Faculty") => {
-    if (isBackendConfigured && !import.meta.env.DEV) {
+    const demoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === "true";
+    if (!demoEnabled) {
       throw new Error("Preview sign-in is disabled when a backend is configured.");
     }
     setUserRole(role);
+    setSession(null);
+    setServerProfile(null);
+    setScope(null);
+    setIsDemoPreview(true);
     setIsAuthenticated(true);
     setCurrentRoute("/dashboard");
     if (window.history && window.history.pushState) {
@@ -297,6 +304,7 @@ export function PortalProvider({ children }) {
       await supabase.auth.signOut();
     } finally {
       setSession(null);
+      setIsDemoPreview(false);
       setServerProfile(null);
       setScope(null);
       setIsAuthenticated(false);
@@ -790,6 +798,7 @@ export function PortalProvider({ children }) {
 
   const value = {
     isAuthenticated,
+    isDemoPreview,
     authLoading,
     session,
     userRole,
