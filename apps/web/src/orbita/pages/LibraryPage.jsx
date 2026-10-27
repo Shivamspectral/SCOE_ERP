@@ -46,7 +46,8 @@ export function LibraryPage() {
 
       <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> Catalogue entries, borrower details, loan counts and due dates are sample values. Live reservations are disabled until the library service is connected.</div>
 
-      {!liveSession && <>\n      {/* Library Pass Info */}
+      {!liveSession && <>
+      {/* Library Pass Info */}
       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
           <Library className="size-6 text-primary shrink-0" />
@@ -137,6 +138,8 @@ export function LibraryPage() {
           );
         })}
       </div>
+      </>}
+      {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">The institutional library catalogue, borrower records, and loan history are not connected. Sample inventory is hidden in live sessions.</p>}
     </div>
   );
 }
