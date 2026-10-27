@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { supabase, supabaseResetPassword } from "../lib/supabase";
-import { authApi, usersApi, isBackendConfigured, safeGet, api } from "../lib/api";
+import { usersApi, isBackendConfigured, safeGet, api } from "../lib/api";
 import { roleLabel, roleEnum, ROLES } from "../lib/roles";
 import {
   student as initialStudent,
@@ -319,8 +319,6 @@ export function PortalProvider({ children }) {
   // Logout: clears the Supabase session and resets local state.
   const logout = useCallback(async () => {
     try {
-      await fetch("/api/demo-login", { method: "DELETE", credentials: "same-origin" }).catch(() => {});
-      if (isBackendConfigured) await authApi.logout().catch(() => {});
       await supabase.auth.signOut();
     } finally {
       setSession(null);
