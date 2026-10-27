@@ -24,7 +24,8 @@ import { usePortal } from "../context/PortalContext";
 import { college } from "../data/portalData";
 
 export function ProfilePage() {
-  const { student, updateStudentProfile, changePassword, changeEmail, toast, serverProfile } = usePortal();
+  const { student, updateStudentProfile, changePassword, changeEmail, toast, serverProfile, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [activeTab, setActiveTab] = useState("overview");
   const [emailForm, setEmailForm] = useState({ registrationId: "", currentPassword: "", newEmail: "" });
@@ -107,9 +108,9 @@ export function ProfilePage() {
 
   const handleDownloadIDCard = () => {
     toast({
-      title: "Downloading Student ID Card",
-      description: "High-resolution digital student identity card generated as PDF.",
-      variant: "success",
+      title: "Identity card unavailable",
+      description: "No official identity-card PDF service is connected. Nothing was generated or downloaded.",
+      variant: "info",
     });
   };
 
@@ -122,7 +123,7 @@ export function ProfilePage() {
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={handleDownloadIDCard}
+              onClick={handleDownloadIDCard}\n              disabled={liveSession}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
             >
               <Download className="size-3.5" />
