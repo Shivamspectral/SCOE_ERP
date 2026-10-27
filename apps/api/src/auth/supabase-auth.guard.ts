@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import type { Request } from 'express';
 
-export type AuthenticatedRequest = Request & { authUser?: { id: string; email?: string } };
+export type AuthenticatedRequest = Request & { authUser?: { id: string; email?: string }; accessToken?: string };
 
 /**
  * Verifies the bearer token with Supabase. This proves identity only; role,
