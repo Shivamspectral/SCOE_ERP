@@ -634,17 +634,50 @@ export function PortalProvider({ children }) {
 
   // Notifications
   const [notifications, setNotifications] = useState(initialNotifications);
-  const markRead = useCallback((id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
-  }, []);
-  const markAllRead = useCallback(() => {
+
+  useEffect(() => {
+    if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
+    let cancelled = false;
+    const kindToType = { info: "academic", approval: "warning", workflow: "warning", circular: "academic", access: "warning" };
+    api.get("/api/notifications").then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      setNotifications(rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        description: row.body || "",
+        type: kindToType[row.kind] || "academic",
+        href: row.href || "/notifications",
+        unread: !row.read_at,
+        time: row.created_at ? new Date(row.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "",
+      })));
+    }).catch((error) => console.warn("[notifications] unable to load inbox", error));
+    return () => { cancelled = true; };
+  }, [isBackendConfigured, isAuthenticated, session?.access_token]);
+
+  const markRead = useCallback(async (id) => {
+    if (isBackendConfigured && session?.access_token) {
+      try { await api.patch(`/api/notifications/${id}/read`, {}); }
+      catch (error) { console.warn("[notifications] mark-read failed", error); return; }
+    }
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, unread: false } : n));
+  }, [isBackendConfigured, session?.access_token]);
+
+  const markAllRead = useCallback(async () => {
+    if (isBackendConfigured && session?.access_token) {
+      const unread = notifications.filter((item) => item.unread);
+      try {
+        await Promise.all(unread.map((item) => api.patch(`/api/notifications/${item.id}/read`, {})));
+      } catch (error) {
+        console.warn("[notifications] mark-all-read failed", error);
+        return;
+      }
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-  }, []);
+  }, [isBackendConfigured, session?.access_token, notifications]);
+
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  // Toasts
+    // Toasts
   const [toasts, setToasts] = useState([]);
   const toastIdRef = useRef(0);
   const toast = useCallback(({ title, description, variant = "success" }) => {
