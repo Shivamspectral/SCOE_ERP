@@ -60,6 +60,15 @@ begin
     return new;
   end if;
 
+  if v_content_changed and not (
+    old.status in ('draft','returned')
+    and new.status = 'submitted'
+    and v_is_owner
+    and v_can_edit
+  ) then
+    raise exception 'Marks values cannot change as part of a review decision' using errcode = '42501';
+  end if;
+
   if old.status in ('draft','returned') and new.status = 'submitted' then
     if not (v_is_owner and v_can_edit) then
       raise exception 'Only the faculty owner can submit marks for review' using errcode = '42501';
