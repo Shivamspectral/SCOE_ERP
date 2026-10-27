@@ -168,7 +168,13 @@ export function Navbar({ onMenuClick, onCollapseToggle, collapsed }) {
               { label: "Institution Reports", icon: BookOpen, href: "/reports" },
               { label: "Faculty Directory", icon: UserRound, href: "/faculty" },
             ]
-          : [
+          : userRole === "Staff"
+            ? [
+                { label: "Official Notices", icon: Bell, href: "/notices" },
+                { label: "Documents", icon: FileBadge, href: "/documents" },
+                { label: "My Tasks", icon: CheckCircle2, href: "/tasks" },
+              ]
+            : [
               { label: "Raise Grievance", icon: FileUp, href: "/grievances" },
               { label: "View Attendance", icon: ClipboardCheck, href: "/attendance" },
               { label: "View Timetable", icon: CalendarDays, href: "/timetable" },
