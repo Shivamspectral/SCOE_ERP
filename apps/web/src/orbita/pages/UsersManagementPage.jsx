@@ -83,24 +83,32 @@ export function UsersManagementPage() {
     }
   };
 
-  const handleDeleteUser = (u) => {
-    deleteUser(u.id);
-    addSystemLog(`Revoked user access for ${u.name} (${u.id})`, "Warning");
-    toast({
-      title: "User Access Revoked",
-      description: `Removed account ${u.id} (${u.name}).`,
-      variant: "info",
-    });
+  const handleDeleteUser = async (u) => {
+    try {
+      await deleteUser(u.id);
+      addSystemLog(`Revoked user access for ${u.name} (${u.id})`, "Warning");
+      toast({
+        title: "User Access Revoked",
+        description: `Removed account ${u.id} (${u.name}).`,
+        variant: "info",
+      });
+    } catch (error) {
+      toast({ title: "Access revocation failed", description: error?.message || "The account could not be suspended.", variant: "destructive" });
+    }
   };
 
-  const handleRoleChange = (u, role) => {
-    updateUserRole(u.id, role);
-    addSystemLog(`Elevated/Modified role of ${u.name} to ${role}`, "Security");
-    toast({
-      title: "User Role Updated",
-      description: `${u.name} is now designated as ${role}.`,
-      variant: "success",
-    });
+  const handleRoleChange = async (u, role) => {
+    try {
+      await updateUserRole(u.id, role);
+      addSystemLog(`Updated role of ${u.name} to ${role}`, "Security");
+      toast({
+        title: "User Role Updated",
+        description: `${u.name} is now designated as ${role}.`,
+        variant: "success",
+      });
+    } catch (error) {
+      toast({ title: "Role update failed", description: error?.message || "The role could not be changed.", variant: "destructive" });
+    }
   };
 
   return (
@@ -206,7 +214,7 @@ export function UsersManagementPage() {
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-semibold text-success">
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${["active", "Active"].includes(u.status) ? "bg-success/15 text-success" : "bg-warning/15 text-warning-foreground"}`}>
                       {u.status}
                     </span>
                   </td>
