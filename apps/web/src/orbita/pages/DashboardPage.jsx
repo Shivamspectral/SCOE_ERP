@@ -89,10 +89,16 @@ export function DashboardPage() {
     facultyClassesList,
     mentees,
     scopeMeta,
+    backendConfigured,
+    isAuthenticated,
+    session,
   } = usePortal();
 
   const [greeting, setGreeting] = useState("Good morning");
   const [summary, setSummary] = useState(emptySummary);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState(false);
+  const realSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -102,24 +108,31 @@ export function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!realSession) {
+      setSummary(emptySummary);
+      setSummaryError(false);
+      return;
+    }
     let cancelled = false;
+    setSummaryLoading(true);
+    setSummaryError(false);
     safeGet("/api/dashboard/summary", undefined, null).then((data) => {
-      if (!cancelled && data) setSummary({ ...emptySummary, ...data });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [userRole]);
+      if (cancelled) return;
+      if (data) setSummary({ ...emptySummary, ...data });
+      else { setSummary(emptySummary); setSummaryError(true); }
+    }).finally(() => { if (!cancelled) setSummaryLoading(false); });
+    return () => { cancelled = true; };
+  }, [realSession, userRole, session?.access_token]);
 
-  const pendingApprovalsCount = summary.pendingApprovals || approvals.filter((a) => a.status === "Pending").length;
-  const pendingTasksCount = summary.pendingTasks || tasks.filter((t) => !t.completed).length;
-  const activeNoticesCount = summary.notices || notices.length;
-  const fallbackAverageCgpa = mentees.length
+  const pendingApprovalsCount = realSession ? summary.pendingApprovals : (summary.pendingApprovals || approvals.filter((a) => a.status === "Pending").length);
+  const pendingTasksCount = realSession ? summary.pendingTasks : (summary.pendingTasks || tasks.filter((t) => !t.completed).length);
+  const activeNoticesCount = realSession ? summary.notices : (summary.notices || notices.length);
+  const fallbackAverageCgpa = !realSession && mentees.length
     ? Number((mentees.reduce((sum, item) => sum + Number(item.cgpa || 0), 0) / mentees.length).toFixed(2))
     : null;
-  const fallbackBacklogStudents = mentees.filter((item) => Number(item.backlogs || 0) > 0).length;
-  const averageCgpa = summary.averageCgpa ?? fallbackAverageCgpa;
-  const backlogStudents = summary.backlogStudents ?? fallbackBacklogStudents;
+  const fallbackBacklogStudents = realSession ? 0 : mentees.filter((item) => Number(item.backlogs || 0) > 0).length;
+  const averageCgpa = realSession ? summary.averageCgpa : (summary.averageCgpa ?? fallbackAverageCgpa);
+  const backlogStudents = realSession ? (summary.backlogStudents ?? 0) : (summary.backlogStudents ?? fallbackBacklogStudents);
   const todayFormatted = new Date().toLocaleDateString("en-IN", {
     weekday: "long",
     day: "numeric",
@@ -234,13 +247,57 @@ export function DashboardPage() {
     };
   }, [userRole, student, activeProfile, scopeMeta, summary, facultyClassesList.length, mentees.length, pendingApprovalsCount, pendingTasksCount, unreadCount, registeredEvents.size, activeNoticesCount, averageCgpa, backlogStudents]);
 
-  const chartData = isCollegeWide
-    ? departmentStrength
-    : userRole === "HOD"
-      ? attendanceTrend
-      : userRole === "Faculty"
-        ? attendanceTrend
-        : attendanceTrend;
+  const chartData = realSession ? [] : (isCollegeWide ? departmentStrength : attendanceTrend);
+
+  if (realSession) {
+    const liveMetrics = [
+      [Users, "Active staff", summary.faculty, "Active role assignments", "/faculty", "success"],
+      [GraduationCap, "Active students", summary.students, "Staff-managed roster", "/students", "primary"],
+      [Building2, "Departments", summary.departments, "Visible within your access scope", "/departments", "accent"],
+      [BookOpen, "Active classes", summary.classes, "Academic structure", "/classes", "primary"],
+      [ClipboardCheck, "Pending approvals", summary.pendingApprovals, "Workflow queue", "/approvals", "warning"],
+      [CalendarHeart, "Attendance rate", summary.attendanceRate == null ? "—" : `${summary.attendanceRate}%`, "Recorded attendance entries", "/classes", "success"],
+      [FileText, "Published circulars", summary.notices, "Official notices", "/notices", "accent"],
+      [CheckSquare, "Assignments", summary.assignments, "Assignment records", "/academics", "primary"],
+    ];
+    return (
+      <div className="space-y-5 overflow-x-hidden pb-2 animate-fade-in-up sm:space-y-6">
+        <section className="rounded-2xl bg-primary p-5 text-primary-foreground shadow-lg sm:p-7">
+          <p className="text-xs text-primary-foreground/75">{todayFormatted} · Live institutional workspace</p>
+          <h1 className="mt-2 font-display text-2xl font-bold sm:text-3xl">{greeting}, {activeProfile.name || student.name}</h1>
+          <p className="mt-2 text-sm text-primary-foreground/85">{activeProfile.dept || scopeMeta.label} · {userRole}</p>
+          <p className="mt-4 text-xs text-primary-foreground/70">Figures below are read from records your account is permitted to access.</p>
+        </section>
+        {summaryError && <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground">Live metrics could not be loaded. Check the API connection or contact the ERP administrator.</div>}
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {liveMetrics.map(([icon, label, value, detail, href, tone]) => (
+            <MetricCard key={label} icon={icon} label={label} value={summaryLoading ? "…" : (value ?? "—")} detail={detail} onClick={() => navigate(href)} tone={tone} />
+          ))}
+        </section>
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader><CardTitle>Work queue</CardTitle><p className="text-xs text-muted-foreground">Review requests that are visible to your assigned role and department.</p></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-border p-3"><span className="text-sm">Pending approvals</span><Badge>{summary.pendingApprovals}</Badge></div>
+              <div className="flex items-center justify-between rounded-lg border border-border p-3"><span className="text-sm">Pending tasks</span><Badge>{summary.pendingTasks}</Badge></div>
+              <button onClick={() => navigate("/approvals")} className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline">Open approvals <ArrowRight className="size-4" /></button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Quick actions</CardTitle><p className="text-xs text-muted-foreground">Common institutional operations.</p></CardHeader>
+            <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                ["Take attendance", "/classes", ClipboardCheck],
+                ["View timetable", "/timetable", CalendarHeart],
+                ["Academic records", "/academics", BookOpen],
+                ["Official circulars", "/notices", FileText],
+              ].map(([label, href, Icon]) => <button key={label} onClick={() => navigate(href)} className="flex items-center gap-2 rounded-lg border border-border p-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-muted/40"><Icon className="size-4 text-primary" />{label}</button>)}
+            </CardContent>
+          </Card>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 overflow-x-hidden pb-2 animate-fade-in-up sm:space-y-6">
