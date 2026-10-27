@@ -394,7 +394,7 @@ export function FacultyTasksPage() {
                     type="date"
                     value={taskDueDate}
                     min={toLocalDateValue(new Date())}
-                    onChange={(e) => setTaskDueDate(e.target.value)
+                    onChange={(e) => setTaskDueDate(e.target.value)}
                     className="w-full h-9 rounded-lg border border-input bg-card px-2.5 outline-none focus:border-primary text-xs"
                   />
                 </div>
