@@ -4,6 +4,8 @@ import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
 import { UpdateMemberDto } from './member.dto';
 
+const roleToDisplay: Record<string, string> = { administrator: 'Super Admin', coordinator: 'Vice-Principal', hod: 'HOD', faculty: 'Faculty', staff: 'Staff' };
+
 const roleToDatabase: Record<string, string> = {
   'Super Admin': 'administrator', Administrator: 'administrator',
   Coordinator: 'coordinator', 'Vice-Principal': 'coordinator',
@@ -37,7 +39,7 @@ export class UsersController {
       department: profile.departments,
       status: profile.status,
       roles: roles ?? [],
-      role: roles?.[0]?.role ?? null,
+      role: roleToDisplay[roles?.[0]?.role ?? ''] ?? roles?.[0]?.role ?? null,
       created_at: profile.created_at,
       updated_at: profile.updated_at,
     };
@@ -71,7 +73,7 @@ export class UsersController {
         id: profile.user_id, institution_id: profile.institution_id,
         name: profile.full_name, title: profile.title, phone: profile.phone,
         department_id: profile.department_id, department: profile.departments,
-        status: profile.status, roles: memberRoles, role: memberRoles[0]?.role ?? null,
+        status: profile.status, roles: memberRoles, role: roleToDisplay[memberRoles[0]?.role ?? ''] ?? memberRoles[0]?.role ?? null,
         created_at: profile.created_at, updated_at: profile.updated_at,
       };
     });
