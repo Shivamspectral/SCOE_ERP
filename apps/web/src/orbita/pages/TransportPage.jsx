@@ -18,7 +18,8 @@ import { Badge } from "../components/Badge";
 import { usePortal } from "../context/PortalContext";
 
 export function TransportPage() {
-  const { toast, addApprovalRequest } = usePortal();
+  const { toast, addApprovalRequest, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [passModalOpen, setPassModalOpen] = useState(false);
@@ -87,8 +88,8 @@ export function TransportPage() {
 
     setPassModalOpen(false);
     toast({
-      title: "Bus Pass Application Lodged",
-      description: `Dispatched to Transport Cell. Pass valid for ${selectedRouteNo} from ${boardingStop}.`,
+      title: "Bus-pass request submitted",
+      description: `Your request for ${selectedRouteNo} from ${boardingStop} was sent for approval. No pass was issued.`,
       variant: "success",
     });
   };
@@ -108,6 +109,8 @@ export function TransportPage() {
           </button>
         }
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Transport preview data only.</strong> Routes, drivers, vehicle numbers, timings and stop status are sample values, not live GPS or verified fleet information. A bus-pass form submits an approval request only.</div>
 
       {/* Search Bar */}
       <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
