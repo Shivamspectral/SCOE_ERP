@@ -60,6 +60,20 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
     setBusy(true)
 
     try {
+      // Preserve the local, no-Supabase demo flow for development.
+      if (isDemoMode()) {
+        const supabase = createClient()
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) {
+          setMessage('That demo account could not be signed in.')
+          setBusy(false)
+          return
+        }
+        router.replace(safeNextPath(next))
+        router.refresh()
+        return
+      }
+
       const response = await fetch('/api/demo-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
