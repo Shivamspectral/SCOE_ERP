@@ -22,8 +22,8 @@ export function DepartmentsPage() {
   const [selectedDept, setSelectedDept] = useState(null);
 
   const filteredDepts = departments.filter((d) =>
-    d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(d.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(d.code || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     String(d.hod || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
