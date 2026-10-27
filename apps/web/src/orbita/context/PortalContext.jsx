@@ -88,6 +88,12 @@ export const ROLE_PROFILE_DEFAULTS = {
     email: "",
     avatar: "VP",
   },
+  Staff: {
+    id: "SCOE-STAFF-01", name: "Pooja Nair", role: "Staff", designation: "Administrative Staff", dept: "Administration Office", year: "Staff", branch: "Administration", email: "", avatar: "PN",
+  },
+  Pending: {
+    id: "SCOE-PENDING-01", name: "Arjun Mehta", role: "Pending", designation: "Awaiting institutional approval", dept: "Unassigned", year: "Pending", branch: "Unassigned", email: "", avatar: "AM",
+  },
   "Super Admin": {
     id: "SCOE-ADMIN-ROOT",
     name: "ASTRA SysAdmin",
@@ -178,7 +184,7 @@ export function PortalProvider({ children }) {
           const response = await fetch("/api/demo-login", { credentials: "same-origin" }).catch(() => null);
           const demo = response?.ok ? await response.json().catch(() => null) : null;
           if (!cancelled && demo?.ok && demo?.account) {
-            const roleMap = { Principal: "Principal", Administrator: "Super Admin", Coordinator: "Vice-Principal", "HOD (Computer Eng.)": "HOD", Faculty: "Faculty", Staff: "Faculty", "New member (pending)": "Student" };
+            const roleMap = { Principal: "Principal", Administrator: "Super Admin", Coordinator: "Vice-Principal", "HOD (Computer Eng.)": "HOD", Faculty: "Faculty", Staff: "Staff", "New member (pending)": "Pending" };
             setUserRole(roleMap[demo.account.label] || "Student");
             setIsAuthenticated(true);
             const path = window.location.pathname;
@@ -248,8 +254,8 @@ export function PortalProvider({ children }) {
    * Demo entry point used only when no backend is configured (pure UI preview).
    * It grants no server access: every protected API call still fails closed.
    */
-  const previewSignIn = useCallback((role = "Student") => {
-    if (isBackendConfigured) {
+  const previewSignIn = useCallback((role = "Faculty") => {
+    if (isBackendConfigured && !import.meta.env.DEV) {
       throw new Error("Preview sign-in is disabled when a backend is configured.");
     }
     setUserRole(role);
@@ -279,7 +285,7 @@ export function PortalProvider({ children }) {
   }, []);
 
   // Active user profile: server identity wins, cosmetic defaults fill the gaps.
-  const roleDefaults = ROLE_PROFILE_DEFAULTS[userRole] || ROLE_PROFILE_DEFAULTS.Student;
+  const roleDefaults = ROLE_PROFILE_DEFAULTS[userRole] || ROLE_PROFILE_DEFAULTS.Faculty;
   const activeProfile = React.useMemo(() => {
     if (!serverProfile) return roleDefaults;
     const name = serverProfile.name || roleDefaults.name;
