@@ -23,7 +23,8 @@ import { usePortal } from "../context/PortalContext";
 import { college } from "../data/portalData";
 
 export function FeedbackPage() {
-  const { feedbackList, addFeedbackTicket, toast } = usePortal();
+  const { feedbackList, addFeedbackTicket, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -54,6 +55,10 @@ export function FeedbackPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (liveSession) {
+      toast({ title: "Grievance submission unavailable", description: "The grievance service is not connected to the institutional backend. Your message was not submitted or stored.", variant: "info" });
+      return;
+    }
     if (!formData.title.trim() || !formData.description.trim()) {
       toast({
         title: "Incomplete Form",
@@ -84,7 +89,8 @@ export function FeedbackPage() {
     }, 700);
   };
 
-  const filteredTickets = feedbackList.filter((ticket) => {
+  const displayedTickets = liveSession ? [] : feedbackList;
+  const filteredTickets = displayedTickets.filter((ticket) => {
     const matchStatus = statusFilter === "All" || ticket.status === statusFilter;
     const matchSearch =
       ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
