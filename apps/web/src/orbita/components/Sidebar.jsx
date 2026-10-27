@@ -77,6 +77,21 @@ export function getNavigationForRole(role) {
     ];
   }
 
+  if (role === "Staff") {
+    return [
+      { title: "Main", items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, tooltip: "Office operations overview" }] },
+      { title: "Office Operations", items: [
+        { label: "Notices & Alerts", href: "/notices", icon: Bell, tooltip: "Official circulars and updates", aliases: ["/notifications"] },
+        { label: "Documents", href: "/documents", icon: FileBadge, tooltip: "Institutional documents and records" },
+        { label: "Tasks & Requests", href: "/tasks", icon: CheckSquare, tooltip: "Assigned office tasks" },
+      ] },
+      { title: "System", items: [
+        { label: "Profile", href: "/profile", icon: UserRound, tooltip: "Staff profile" },
+        { label: "Settings", href: "/settings", icon: Settings, tooltip: "Preferences and security" },
+      ] },
+    ];
+  }
+
   if (role === "HOD") {
     return [
       {
