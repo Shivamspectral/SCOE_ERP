@@ -297,13 +297,14 @@ export function PortalProvider({ children }) {
     const newSession = data?.session || (data?.access_token ? data : null);
     if (!newSession?.access_token) return { needsEmailConfirmation: true };
 
-    setSession(newSession);
+    // A successful sign-up is only an access request. Do not keep a newly created,
+    // unapproved account signed in or route it into the staff workspace.
+    await supabase.auth.signOut();
+    setSession(null);
     setIsDemoPreview(false);
-    setIsAuthenticated(true);
-    const me = await hydrateIdentity();
-    setCurrentRoute("/dashboard");
-    if (window.history && window.history.pushState) window.history.pushState(null, "", "/dashboard");
-    return { needsEmailConfirmation: false, me };
+    setIsAuthenticated(false);
+    setUserRole("Pending");
+    return { needsEmailConfirmation: false, pendingApproval: true };
   }, [hydrateIdentity]);
 
   const requestPasswordReset = useCallback(async (email) => {
