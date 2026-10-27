@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: astra-campus-api
+    runtime: node
+    rootDir: .
+    buildCommand: pnpm install --no-frozen-lockfile --ignore-scripts && pnpm --filter @astra-campus/api build
+    startCommand: pnpm --filter @astra-campus/api start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: WEB_ORIGIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
