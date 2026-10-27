@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { isDemoMode } from '@/lib/supabase/config'
+import { verifyDemoSessionValue } from '@/lib/demo/session'
 import { DEMO_COOKIE, demoAccounts } from '@/lib/demo/accounts'
 import { createDemoSessionValue, isLiveDemoLoginEnabled } from '@/lib/demo/session'
 
@@ -22,7 +25,7 @@ export async function POST(request: Request) {
   if (!account) return NextResponse.json({ error: 'Invalid demo email or password.' }, { status: 401 })
 
   const response = NextResponse.json({ ok: true })
-  response.cookies.set(DEMO_COOKIE, createDemoSessionValue(account.id), {
+  response.cookies.set(DEMO_COOKIE, isDemoMode() ? account.id : createDemoSessionValue(account.id), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -42,4 +45,11 @@ export async function DELETE() {
     maxAge: 0,
   })
   return response
+}
+
+export async function GET() {
+  const jar = await cookies()
+  const account = verifyDemoSessionValue(jar.get(DEMO_COOKIE)?.value)
+  if (!account) return NextResponse.json({ ok: false }, { status: 401 })
+  return NextResponse.json({ ok: true, account: { id: account.id, email: account.email, name: account.name, label: account.label } })
 }
