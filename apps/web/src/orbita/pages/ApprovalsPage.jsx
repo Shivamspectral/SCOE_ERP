@@ -72,7 +72,7 @@ export function ApprovalsPage() {
       addSystemLog(`Approved Sanction Request ${app.id} (${app.type})`, "Success");
       toast({
         title: "Request Sanctioned & Approved",
-        description: `Dispatched official authorization for ${app.applicant}.`,
+        description: `The request status was updated to approved for ${app.applicant}. No separate official authorization was dispatched.`,
         variant: "success",
       });
     } catch (error) {
