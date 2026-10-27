@@ -308,7 +308,16 @@ export function PortalProvider({ children }) {
       setServerProfile(null);
       setScope(null);
       setIsAuthenticated(false);
+      setUserRole("Faculty");
       setCurrentRoute("/login");
+      setApprovals(initialApprovals);
+      setWorkflowsLoaded(false);
+      setNotifications(initialNotifications);
+      setNotificationsLoaded(false);
+      setUsersList(initialAdminUsers);
+      setUsersLoaded(false);
+      setDepartmentsList(null);
+      setInstitutionStudents(null);
       if (window.history && window.history.pushState) {
         window.history.pushState(null, "", "/login");
       }
