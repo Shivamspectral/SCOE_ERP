@@ -67,7 +67,6 @@ export function UsersManagementPage() {
       departmentId: departments.find((department) => department.name === newDept)?.id,
       title: newRole,
     });
-    });
 
     addSystemLog(`Provisioned user account for ${created.name} (${created.role})`, "Success");
     setAddModalOpen(false);
