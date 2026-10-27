@@ -9,6 +9,25 @@ import { CreateCircularDto } from './circular.dto';
 export class CircularsController {
   constructor(private readonly db: SupabaseRequestClient) {}
 
+  private async requirePublisher(client: ReturnType<SupabaseRequestClient['forRequest']>, userId: string) {
+    const { data: profile, error: profileError } = await client.from('profiles')
+      .select('institution_id,status').eq('user_id', userId).maybeSingle();
+    if (profileError) throw profileError;
+    if (!profile || profile.status !== 'active') {
+      throw new ForbiddenException('Active institutional access is required');
+    }
+    const { data: roles, error: roleError } = await client.from('role_assignments')
+      .select('role,department_id').eq('user_id', userId).eq('status', 'active');
+    if (roleError) throw roleError;
+    const allowed = (roles ?? []).some((row) =>
+      ['principal', 'administrator'].includes(row.role)
+      || (row.role === 'coordinator' && row.department_id === null));
+    if (!allowed) {
+      throw new ForbiddenException('Circular publication requires the Principal, Administrator, or campus-wide Coordinator role');
+    }
+    return profile;
+  }
+
   @Get()
   async list(@Req() request: AuthenticatedRequest, @Query('status') status?: string) {
     const client = this.db.forRequest(request);
@@ -25,10 +44,7 @@ export class CircularsController {
   @Post()
   async create(@Req() request: AuthenticatedRequest, @Body() body: CreateCircularDto) {
     const client = this.db.forRequest(request);
-    const { data: profile, error: profileError } = await client.from('profiles')
-      .select('institution_id,status').eq('user_id', request.authUser!.id).maybeSingle();
-    if (profileError) throw profileError;
-    if (!profile || profile.status !== 'active') throw new BadRequestException('Active institutional access is required');
+    const profile = await this.requirePublisher(client, request.authUser!.id);
 
     const { data, error } = await client.from('circulars').insert({
       institution_id: profile.institution_id,
@@ -47,11 +63,7 @@ export class CircularsController {
   @Post(':id/publish')
   async publish(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
     const client = this.db.forRequest(request);
-    const { data: roles, error: roleError } = await client.from('role_assignments')
-      .select('role').eq('user_id', request.authUser!.id).eq('status', 'active');
-    if (roleError) throw roleError;
-    const canPublish = (roles ?? []).some((row) => ['administrator','coordinator','principal','hod'].includes(row.role));
-    if (!canPublish) throw new ForbiddenException('Publishing circulars requires an authorised institutional role');
+    await this.requirePublisher(client, request.authUser!.id);
     const { data, error } = await client.from('circulars').update({
       status: 'published', publish_at: new Date().toISOString(),
     }).eq('id', id).eq('status', 'draft')
