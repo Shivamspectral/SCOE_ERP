@@ -85,7 +85,7 @@ export class AttendanceController {
       .select('role,department_id').eq('user_id', request.authUser!.id).eq('status', 'active');
     if (roleError) throw roleError;
     const canCreateAttendance = (roles ?? []).some((role) =>
-      ['faculty', 'hod', 'coordinator', 'principal', 'administrator'].includes(role.role)
+      ['faculty', 'hod', 'coordinator'].includes(role.role)
       && (role.department_id === null || role.department_id === academicClass.department_id));
     if (!canCreateAttendance) {
       throw new ForbiddenException('Attendance sessions require an authorized academic role in this department');
