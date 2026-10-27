@@ -748,6 +748,40 @@ export function PortalProvider({ children }) {
     return () => { cancelled = true; };
   }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
+  const [institutionStudents, setInstitutionStudents] = useState(null);
+  useEffect(() => {
+    if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
+    let cancelled = false;
+    api.get("/api/students", { limit: 200, status: "active" }).then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      setInstitutionStudents(rows.map((row) => {
+        const departmentName = row.departments?.name || "";
+        const className = row.academic_classes?.name || "";
+        const fullName = row.full_name || "Unnamed record";
+        return {
+          id: row.id,
+          name: fullName,
+          full_name: fullName,
+          rollNo: row.roll_number,
+          roll_number: row.roll_number,
+          registrationId: row.registration_number || "",
+          registration_number: row.registration_number || "",
+          email: row.email || "",
+          branch: departmentName,
+          dept: departmentName,
+          year: className || (row.academic_classes?.year_of_study ? `Year ${row.academic_classes.year_of_study}` : ""),
+          course: className,
+          status: row.status,
+          avatar: fullName.split(/\\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
+        };
+      }));
+    }).catch((error) => {
+      console.warn("[students] unable to load staff-managed roster", error);
+      if (!cancelled) setInstitutionStudents([]);
+    });
+    return () => { cancelled = true; };
+  }, [isBackendConfigured, isAuthenticated, session?.access_token]);
+
   // Seed-data filtering mirrors the server scope when the portal is running
   // without a backend. With a backend configured, API authorization remains
   // authoritative and these lists are only UI fallbacks.
@@ -771,9 +805,11 @@ export function PortalProvider({ children }) {
   }, [scopeMeta.level, activeProfile.dept, activeProfile.id, activeProfile.email, userRole]);
 
   const scopedStudents = useMemo(() => {
+    if (isBackendConfigured && isAuthenticated && session?.access_token) {
+      return institutionStudents ?? [];
+    }
     if (scopeMeta.level === "college") return initialStudents;
     if (userRole === "Faculty") {
-      // The local preview has one representative assigned-class roster.
       return initialClassStudents.map((item) => ({
         ...item,
         branch: item.branch || "Computer Engineering",
@@ -784,7 +820,7 @@ export function PortalProvider({ children }) {
     return initialStudents.filter((item) =>
       `${item.branch || ""}`.toLowerCase().includes(dept.replace(" engineering", ""))
     );
-  }, [scopeMeta.level, userRole, activeProfile.dept]);
+  }, [scopeMeta.level, userRole, activeProfile.dept, isBackendConfigured, isAuthenticated, session?.access_token, institutionStudents]);
 
   const scopedFacultyClasses = useMemo(() => {
     if (scopeMeta.level === "college") return facultyClassesList;
