@@ -223,3 +223,8 @@ export const tasksApi = {
   update: (id, payload) => api.patch(`/api/tasks/${id}`, payload),
   cancel: (id) => api.del(`/api/tasks/${id}`),
 };
+
+export const settingsApi = {
+  preferences: () => api.get("/api/notifications/preferences"),
+  savePreferences: (payload) => api.put("/api/notifications/preferences", payload),
+};
