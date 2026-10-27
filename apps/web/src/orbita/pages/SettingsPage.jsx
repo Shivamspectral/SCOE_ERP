@@ -111,7 +111,7 @@ export function SettingsPage() {
                 <input
                   type="checkbox"
                   checked={smsAlerts}
-                  disabled={liveSession}
+                  disabled={liveSession && (preferencesLoading || preferencesLoadFailed || saving)}
                   onChange={(e) => setSmsAlerts(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
@@ -125,7 +125,7 @@ export function SettingsPage() {
                 <input
                   type="checkbox"
                   checked={attendanceWarnings}
-                  disabled={liveSession}
+                  disabled={liveSession && (preferencesLoading || preferencesLoadFailed || saving)}
                   onChange={(e) => setAttendanceWarnings(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
