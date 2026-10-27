@@ -18,6 +18,7 @@ Every business request verifies the caller's Supabase token and forwards that sa
 ## Current API
 - GET /api/v1/health and /api/v1/health/ready
 - GET /api/v1/auth/me
+- GET /api/v1/dashboard/summary
 - GET /api/v1/departments
 - GET /api/v1/users, GET/PATCH/DELETE /api/v1/users/:id
 - GET/POST /api/v1/workflows, POST /api/v1/workflows/:id/decision
