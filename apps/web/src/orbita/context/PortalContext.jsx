@@ -218,16 +218,6 @@ export function PortalProvider({ children }) {
           }
           const path = window.location.pathname;
           setCurrentRoute(!path || path === "/" || path === "/login" ? "/dashboard" : path);
-        } else {
-          const response = await fetch("/api/demo-login", { credentials: "same-origin" }).catch(() => null);
-          const demo = response?.ok ? await response.json().catch(() => null) : null;
-          if (!cancelled && demo?.ok && demo?.account) {
-            const roleMap = { Principal: "Principal", Administrator: "Super Admin", Coordinator: "Vice-Principal", "HOD (Computer Eng.)": "HOD", Faculty: "Faculty", Staff: "Staff", "New member (pending)": "Pending" };
-            setUserRole(roleMap[demo.account.label] || "Student");
-            setIsAuthenticated(true);
-            const path = window.location.pathname;
-            setCurrentRoute(!path || path === "/" || path === "/login" ? "/dashboard" : path);
-          }
         }
       } finally {
         if (!cancelled) setAuthLoading(false);
@@ -310,7 +300,7 @@ export function PortalProvider({ children }) {
    * It grants no server access: every protected API call still fails closed.
    */
   const previewSignIn = useCallback((role = "Faculty") => {
-    const demoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS !== "false";
+    const demoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === "true";
     if (!demoEnabled) {
       throw new Error("Demo previews are disabled by VITE_ENABLE_DEMO_ACCOUNTS=false.");
     }
