@@ -88,6 +88,22 @@ export class MarksController {
     if (!allowed) throw new ForbiddenException('Only an academic approver can lock or unlock marks');
   }
 
+  @Post(':id/submit')
+  async submitForReview(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
+    const client = this.db.forRequest(request);
+    const { data: record, error: readError } = await client.from('marks_records')
+      .select('id,faculty_user_id,marks_obtained,status').eq('id', id).maybeSingle();
+    if (readError) throw readError;
+    if (!record || record.faculty_user_id !== request.authUser!.id) throw new NotFoundException('Draft marks record not found');
+    if (record.marks_obtained === null || record.marks_obtained === undefined) throw new BadRequestException('Enter marks before submitting for review');
+    if (!['draft','returned'].includes(record.status)) throw new BadRequestException('Only draft or returned marks can be submitted');
+    const { data, error } = await client.from('marks_records').update({ status: 'submitted' })
+      .eq('id', id).select('id,status,updated_at').maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Marks record could not be submitted');
+    return data;
+  }
+
   @Post(':id/lock')
   async lock(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: MarkLockDto) {
     const client = this.db.forRequest(request);
