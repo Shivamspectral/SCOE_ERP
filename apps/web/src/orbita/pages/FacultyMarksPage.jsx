@@ -17,11 +17,15 @@ import { isBackendConfigured, marksApi, studentsApi } from "../lib/api";
 export function FacultyMarksPage() {
   const { marksList: previewMarks, updateStudentMarks: updatePreviewMarks, addSystemLog, toast, session } = usePortal();
   const [liveMarks, setLiveMarks] = useState(null);
+  const [liveLoading, setLiveLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const liveMode = Boolean(isBackendConfigured && session?.access_token);
 
   useEffect(() => {
-    if (!isBackendConfigured || !session?.access_token) return;
+    if (!liveMode) return;
     let cancelled = false;
+    setLiveLoading(true);
+    setLiveMarks(null);
     Promise.all([studentsApi.list({ status: "active", limit: 200 }), marksApi.list({ limit: 300 })])
       .then(([students, records]) => {
         if (cancelled || !Array.isArray(students) || !Array.isArray(records)) return;
