@@ -155,7 +155,7 @@ export function DocumentsPage() {
     <div className="space-y-6 animate-fade-in-up">
       <Breadcrumb
         title="Institutional Document Register"
-        subtitle="Manage policies, procedures, department records and quality-assurance evidence. This register stores metadata; file storage is a separate future integration."
+        subtitle="Manage policies, procedures, department records and quality-assurance evidence. Attach private files up to 10 MB; downloads use short-lived secure links."
         actions={
           <button onClick={() => setCreateOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
             <Plus className="size-3.5" /> Register document
