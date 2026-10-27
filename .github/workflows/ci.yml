@@ -21,6 +21,8 @@ jobs:
         run: pnpm install --no-frozen-lockfile --ignore-scripts
       - name: Typecheck frontend and API
         run: pnpm typecheck
+      - name: Run API regression tests
+        run: pnpm --filter @astra-campus/api test
       - name: Build Vite frontend
         run: pnpm build
       - name: Build NestJS API
