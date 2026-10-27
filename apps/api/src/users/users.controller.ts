@@ -1,10 +1,12 @@
 import { BadRequestException, Body, ConflictException, Controller, Delete, ForbiddenException, Get, InternalServerErrorException, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, ServiceUnavailableException, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
+import { ConfigService } from '@nestjs/config';
+import { createClient } from '@supabase/supabase-js';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
-import { UpdateMemberDto } from './member.dto';
+import { InviteMemberDto, UpdateMemberDto } from './member.dto';
 import { InviteMemberDto } from './invite-member.dto';
 
 const roleToDisplay: Record<string, string> = { principal: 'Principal', administrator: 'Super Admin', coordinator: 'Vice-Principal', hod: 'HOD', faculty: 'Faculty', staff: 'Staff' };
