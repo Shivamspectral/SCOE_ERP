@@ -25,12 +25,12 @@ export function StudentsManagementPage() {
 
   const filteredStudents = studentsList.filter((s) => {
     const matchesSearch =
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.id.toLowerCase().includes(searchQuery.toLowerCase());
+      String(s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(s.rollNo || s.roll_number || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(s.id || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesBranch =
-      branchFilter === "All" || s.branch.toLowerCase().includes(branchFilter.toLowerCase());
+      branchFilter === "All" || String(s.branch || "").toLowerCase().includes(branchFilter.toLowerCase());
 
     const matchesYear =
       yearFilter === "All" || s.year === yearFilter;
@@ -39,11 +39,14 @@ export function StudentsManagementPage() {
   });
 
   const handleExportList = () => {
-    const headers = "PRN,Roll No,Name,Branch,Year,CGPA,Email\n";
-    const rows = filteredStudents
-      .map((s) => `"${s.registrationId || ""}","${s.rollNo}","${s.name}","${s.branch}","${s.year}","${s.cgpa ?? ""}","${s.email}"`)
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const csvCell = (value) => {
+      const text = String(value ?? "");
+      const safe = /^[=+@\\-\\t\\r]/.test(text) ? "'" + text : text;
+      return '"' + safe.replace(/"/g, '""') + '"';
+    };
+    const headers = ["PRN", "Roll No", "Name", "Branch", "Year", "CGPA", "Email"].map(csvCell).join(",");
+    const rows = filteredStudents.map((s) => [s.registrationId || s.registration_number, s.rollNo || s.roll_number, s.name || s.full_name, s.branch, s.year, s.cgpa, s.email].map(csvCell).join(","));
+    const blob = new Blob(["\\uFEFF", headers, ...rows].join("\\r\\n"), { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
