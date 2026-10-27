@@ -39,8 +39,7 @@ export function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Activation (registration ID) fields
-  const [registrationId, setRegistrationId] = useState("");
+  // Staff access request fields
   const [fullName, setFullName] = useState("");
 
   // Forgot password modal
@@ -51,7 +50,7 @@ export function LoginPage() {
   const describeError = (error) => error?.message || "Please check your details and try again.";
 
   const handleDemoAccount = async (account) => {
-    if (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS !== "true") return;
+    if (!import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === "false") return;
     setIsLoading(true);
     try {
       const roleMap = {
@@ -90,15 +89,6 @@ export function LoginPage() {
       });
       return;
     }
-    if (mode === "activate" && !registrationId.trim()) {
-      toast({
-        title: "Registration ID required",
-        description: "Enter the institutional ID issued to you, e.g. STU-CSE-2026-00421.",
-        variant: "warning",
-      });
-      return;
-    }
-
     setIsLoading(true);
     try {
       if (!backendConfigured) {
@@ -107,17 +97,25 @@ export function LoginPage() {
       }
 
       if (mode === "activate") {
-        await activateAccount({
-          registrationId: registrationId.trim().toUpperCase(),
+        const result = await activateAccount({
           email: email.trim().toLowerCase(),
           password,
           name: fullName.trim(),
         });
-        toast({
-          title: "Account activated",
-          description: "Your institutional ID is now linked to this account.",
-          variant: "success",
-        });
+        if (result?.needsEmailConfirmation) {
+          toast({
+            title: "Confirm your college email",
+            description: "Use the confirmation link sent to your email. Your staff profile will then wait for an administrator to approve and assign your role.",
+            variant: "info",
+          });
+          setMode("signin");
+        } else {
+          toast({
+            title: "Staff access request created",
+            description: "Your account is awaiting institutional role approval.",
+            variant: "success",
+          });
+        }
       } else {
         await signIn({ email: email.trim().toLowerCase(), password });
         toast({
@@ -216,11 +214,11 @@ export function LoginPage() {
         {/* Right Form Panel */}
         <div className="flex flex-col justify-center p-8 sm:p-10 bg-card relative">
           <h2 className="font-display text-2xl font-bold text-foreground">
-            {mode === "activate" ? "Activate your account" : "Sign in to your account"}
+            {mode === "activate" ? "Request staff access" : "Sign in to your account"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "activate"
-              ? "Enter the institutional ID issued to you by your college."
+              ? "Create your account with your college email. Access is enabled only after institutional approval."
               : "Use your college-issued credentials to continue."}
           </p>
 
@@ -228,7 +226,7 @@ export function LoginPage() {
           <div className="mt-5 grid grid-cols-2 gap-1 rounded-lg bg-muted/60 p-1">
             {[
               { key: "signin", label: "Sign in" },
-              { key: "activate", label: "Activate with ID" },
+              { key: "activate", label: "Request access" },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -367,12 +365,12 @@ export function LoginPage() {
               {isLoading ? (
                 <>
                   <LoaderCircle className="size-4 animate-spin" />
-                  <span>{mode === "activate" ? "Activating…" : "Signing in…"}</span>
+                  <span>{mode === "activate" ? "Submitting request…" : "Signing in…"}</span>
                 </>
               ) : (
                 <>
                   {mode === "activate" ? <KeyRound className="size-4" /> : <Lock className="size-4" />}
-                  <span>{mode === "activate" ? "Activate account" : "Login"}</span>
+                  <span>{mode === "activate" ? "Request access" : "Login"}</span>
                 </>
               )}
             </button>
