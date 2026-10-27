@@ -18,7 +18,8 @@ import { Badge } from "../components/Badge";
 import { usePortal } from "../context/PortalContext";
 
 export function AlumniPage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [mentorModalAlumni, setMentorModalAlumni] = useState(null);
@@ -76,6 +77,8 @@ export function AlumniPage() {
       variant: "success",
     });
   };
+
+  if (liveSession) return <div className="space-y-6"><Breadcrumb title="Alumni Network & Mentorship" subtitle="Institutional alumni directory" /><p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">The institutional alumni directory and mentorship request service are not connected. Sample alumni and contact details are hidden.</p></div>;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
