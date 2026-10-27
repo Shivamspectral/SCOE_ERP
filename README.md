@@ -47,7 +47,7 @@ Requirements: Node.js 22.12+ and pnpm 12.3.4.
 
 ## Demo previews
 
-The login page includes synthetic role previews for Principal, Administrator, Coordinator, HOD, Faculty, Staff and a pending account. They only switch the local UI into sample-data mode; they do **not** create a Supabase session, grant API access, or authenticate as a real employee. Set `VITE_ENABLE_DEMO_ACCOUNTS=false` to hide them. Never add real credentials to the demo list.
+The login page includes synthetic role previews for Principal, Administrator, Coordinator, HOD, Faculty, Staff and a pending account. They only switch the local UI into sample-data mode; they do **not** create a Supabase session, grant API access, or authenticate as a real employee. Previews are enabled automatically in development and disabled by default in production; set `VITE_ENABLE_DEMO_ACCOUNTS=true` only when intentionally exposing sample-data previews on a production deployment. Never add real credentials to the demo list.
 
 ## Database
 
@@ -70,7 +70,7 @@ Never edit an already-applied migration; add a new migration instead.
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY` (or `VITE_SUPABASE_ANON_KEY`)
 - `VITE_API_BASE_URL` — deployed NestJS API origin, e.g. `https://your-api-host.example`
-- Optional: `VITE_ENABLE_DEMO_ACCOUNTS=false` to hide sample previews.
+- Optional: `VITE_ENABLE_DEMO_ACCOUNTS=true` only if you intentionally want production sample previews; unset/false keeps them hidden.
 
 ### API (Render)
 
