@@ -4,7 +4,7 @@ import { cookieOptions, getSupabaseConfig, isDemoMode } from '@/lib/supabase/con
 import { DEMO_COOKIE, demoAccounts } from '@/lib/demo/accounts'
 import { isLiveDemoLoginEnabled, verifyDemoSessionValue } from '@/lib/demo/session'
 
-const PUBLIC_PATHS = ['/login', '/signup', '/auth', '/api/health']
+const PUBLIC_PATHS = ['/login', '/signup', '/auth', '/api/health', '/api/demo-login']
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
