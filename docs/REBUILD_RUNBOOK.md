@@ -23,14 +23,16 @@ The existing Next.js demo login endpoint is separately restricted to explicit de
 5. OpenAPI docs: /api/v1/docs.
 
 ## Implemented API surface (initial vertical slices)
-- GET /api/v1/auth/me — authenticated identity, profile and persisted role assignments.
+- GET /api/v1/auth/me
+- GET /api/v1/dashboard/summary — authenticated identity, profile and persisted role assignments.
 - GET /api/v1/departments — RLS-scoped departments.
 - GET /api/v1/users and GET/PATCH/DELETE /api/v1/users/:id — staff directory, role/status updates through manage_member RPC, and suspension.
 - GET/POST /api/v1/workflows and POST /api/v1/workflows/:id/decision — workflow queue and database approval RPCs.
 - GET/PATCH /api/v1/notifications — caller-scoped inbox and read markers.
 - GET/POST /api/v1/circulars and POST /api/v1/circulars/:id/publish — circular drafts and publication.
-- GET/POST /api/v1/attendance/sessions and POST /api/v1/attendance/sessions/:id/records
-- GET/POST /api/v1/students, GET/PATCH /api/v1/students/:id — scoped session and validated bulk attendance records.
+- GET/POST /api/v1/attendance/sessions, GET /api/v1/attendance/class/:classId, /student/:studentId, /sessions/:id/records, PATCH /api/v1/attendance/records/:id, and POST /api/v1/attendance/sessions/:id/records
+- GET/POST /api/v1/students, GET/PATCH /api/v1/students/:id
+- GET /api/v1/academic/classes, /subjects, /timetable, /syllabus; POST /api/v1/academic/timetable and /syllabus; PATCH /api/v1/academic/syllabus/:id — scoped session and validated bulk attendance records.
 
 All data endpoints require a Supabase bearer token and forward it to PostgREST so database RLS is enforced. The API has not yet been verified against the live institutional project; use an isolated Supabase project and test accounts first.
 
