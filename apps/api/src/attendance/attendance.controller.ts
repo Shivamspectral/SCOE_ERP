@@ -32,9 +32,9 @@ export class AttendanceController {
 
     if (body.subjectId) {
       const { data: subject, error: subjectError } = await client.from('academic_subjects')
-        .select('id,department_id,status').eq('id', body.subjectId).maybeSingle();
+        .select('id,department_id,class_id,status').eq('id', body.subjectId).maybeSingle();
       if (subjectError) throw subjectError;
-      if (!subject || subject.status !== 'active' || subject.department_id !== academicClass.department_id) {
+      if (!subject || subject.status !== 'active' || subject.department_id !== academicClass.department_id || (subject.class_id && subject.class_id !== academicClass.id)) {
         throw new BadRequestException('Subject is not active in the selected class department');
       }
     }
