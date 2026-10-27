@@ -69,7 +69,7 @@ export function SystemLogsPage() {
   });
 
   const handleExportCSV = () => {
-    const headers = "Timestamp,User,Action,IP,Severity\n";
+    const headers = "Timestamp,Actor,Action,Entity,Severity\n";
     const rows = filteredLogs
       .map((l) => `"${l.timestamp}","${l.user}","${l.action}","${l.entity || l.ip || "—"}","${l.severity}"`)
       .join("\n");
