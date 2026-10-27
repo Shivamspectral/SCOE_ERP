@@ -75,9 +75,9 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
         {busy ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : <ArrowRight data-icon="inline-end" />}
         {busy ? 'Signing in…' : 'Sign in to Astra+'}
       </Button>
-      {isDemoMode() ? (
+      {(isDemoMode() || process.env.NEXT_PUBLIC_DEMO_LOGIN_ENABLED === 'true') ? (
         <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Demo mode · one-click logins</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Demo accounts · isolated preview session</p>
           <p className="text-xs text-muted-foreground">No database needed. Password for all: <code className="font-mono">Demo@1234</code></p>
           <div className="mt-1 flex flex-col gap-1.5">
             {demoAccounts.map((account) => (
@@ -85,7 +85,7 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
                 key={account.id}
                 type="button"
                 disabled={busy}
-                onClick={() => signIn(account.email, account.password)}
+                onClick={() => signInDemo(account.email, account.password)}
                 className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-muted disabled:opacity-60"
               >
                 <span className="min-w-0">
