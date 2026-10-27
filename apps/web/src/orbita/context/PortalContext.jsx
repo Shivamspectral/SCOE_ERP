@@ -385,10 +385,12 @@ export function PortalProvider({ children }) {
 
   // Approvals & Leave Requests State
   const [approvals, setApprovals] = useState(initialApprovals);
+  const [workflowsLoaded, setWorkflowsLoaded] = useState(false);
 
   useEffect(() => {
     if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
     let cancelled = false;
+    setWorkflowsLoaded(false);
     const statusLabels = { pending: "Pending", approved: "Approved", rejected: "Rejected", returned: "Pending", completed: "Approved", cancelled: "Rejected" };
     const urgencyLabels = { low: "Low", normal: "Medium", high: "High", urgent: "High" };
     api.get("/api/workflows").then((rows) => {
@@ -406,7 +408,11 @@ export function PortalProvider({ children }) {
         budget: row.payload?.budget ?? null,
         backendStatus: row.status,
       })));
-    }).catch((error) => console.warn("[workflows] unable to load queue", error));
+      setWorkflowsLoaded(true);
+    }).catch((error) => {
+      console.warn("[workflows] unable to load queue", error);
+      if (!cancelled) { setApprovals([]); setWorkflowsLoaded(true); }
+    });
     return () => { cancelled = true; };
   }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
@@ -642,10 +648,12 @@ export function PortalProvider({ children }) {
 
   // Notifications
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [notificationsLoaded, setNotificationsLoaded] = useState(false);
 
   useEffect(() => {
     if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
     let cancelled = false;
+    setNotificationsLoaded(false);
     const kindToType = { info: "academic", approval: "warning", workflow: "warning", circular: "academic", access: "warning" };
     api.get("/api/notifications").then((rows) => {
       if (cancelled || !Array.isArray(rows)) return;
@@ -658,7 +666,11 @@ export function PortalProvider({ children }) {
         unread: !row.read_at,
         time: row.created_at ? new Date(row.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "",
       })));
-    }).catch((error) => console.warn("[notifications] unable to load inbox", error));
+      setNotificationsLoaded(true);
+    }).catch((error) => {
+      console.warn("[notifications] unable to load inbox", error);
+      if (!cancelled) { setNotifications([]); setNotificationsLoaded(true); }
+    });
     return () => { cancelled = true; };
   }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
@@ -683,7 +695,9 @@ export function PortalProvider({ children }) {
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
   }, [isBackendConfigured, session?.access_token, notifications]);
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const realSession = Boolean(isBackendConfigured && isAuthenticated && session?.access_token);
+  const visibleNotifications = realSession ? (notificationsLoaded ? notifications : []) : notifications;
+  const unreadCount = visibleNotifications.filter((n) => n.unread).length;
 
     // Toasts
   const [toasts, setToasts] = useState([]);
@@ -868,7 +882,7 @@ export function PortalProvider({ children }) {
     reserveBook,
     feedbackList,
     addFeedbackTicket,
-    notifications,
+    notifications: visibleNotifications,
     markRead,
     markAllRead,
     unreadCount,
@@ -876,7 +890,7 @@ export function PortalProvider({ children }) {
     toast,
     dismissToast,
     // Role-based state & actions
-    approvals,
+    approvals: realSession ? (workflowsLoaded ? approvals : []) : approvals,
     approveRequest,
     rejectRequest,
     addApprovalRequest,
