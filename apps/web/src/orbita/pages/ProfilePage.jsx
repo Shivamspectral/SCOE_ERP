@@ -82,7 +82,7 @@ export function ProfilePage() {
         email: serverProfile?.email || student.email,
         new_password: passwords.newPass,
       });
-      setPasswords({ current: "", newPass: "", confirmPass: "" });
+      setPasswords({ newPass: "", confirmPass: "" });
       toast({ title: "Password Changed", description: "Your password was updated.", variant: "success" });
     } catch (error) {
       toast({ title: "Password Change Failed", description: error.message, variant: "destructive" });
@@ -94,6 +94,7 @@ export function ProfilePage() {
     try {
       await changeEmail({
         registration_id: emailForm.registrationId || serverProfile?.registration_id || student.id,
+        email: serverProfile?.email || student.email,
         current_password: emailForm.currentPassword,
         new_email: emailForm.newEmail,
       });
@@ -576,7 +577,8 @@ export function ProfilePage() {
                   type="password"
                   value={passwords.newPass}
                   onChange={(e) => setPasswords({ ...passwords, newPass: e.target.value })}
-                  placeholder="Min 8 characters, letters & numbers"
+                  placeholder="At least 8 characters"
+                  minLength={8}
                   className="w-full h-9 rounded-lg border border-input bg-card px-2.5 outline-none focus:border-primary"
                   required
                 />
