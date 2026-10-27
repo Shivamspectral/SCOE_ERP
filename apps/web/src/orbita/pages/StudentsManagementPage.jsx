@@ -41,12 +41,12 @@ export function StudentsManagementPage() {
   const handleExportList = () => {
     const csvCell = (value) => {
       const text = String(value ?? "");
-      const safe = /^[=+@\\-\\t\\r]/.test(text) ? "'" + text : text;
+      const safe = /^[=+@\-\t\r]/.test(text) ? "'" + text : text;
       return '"' + safe.replace(/"/g, '""') + '"';
     };
     const headers = ["PRN", "Roll No", "Name", "Branch", "Year", "CGPA", "Email"].map(csvCell).join(",");
     const rows = filteredStudents.map((s) => [s.registrationId || s.registration_number, s.rollNo || s.roll_number, s.name || s.full_name, s.branch, s.year, s.cgpa, s.email].map(csvCell).join(","));
-    const blob = new Blob(["\\uFEFF", headers, ...rows].join("\\r\\n"), { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF", headers, ...rows].join("\r\n"), { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
