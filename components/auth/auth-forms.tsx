@@ -55,6 +55,35 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
     router.refresh()
   }
 
+  async function signInDemo(email: string, password: string) {
+    setMessage('')
+    setBusy(true)
+
+    try {
+      const response = await fetch('/api/demo-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ email, password }),
+      })
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setMessage(typeof result.error === 'string'
+          ? result.error
+          : 'Demo sign-in is unavailable. Check the demo-login environment settings.')
+        setBusy(false)
+        return
+      }
+
+      router.replace(safeNextPath(next))
+      router.refresh()
+    } catch {
+      setMessage('Could not reach the demo sign-in service. Please try again.')
+      setBusy(false)
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <FieldGroup>
@@ -77,8 +106,8 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
       </Button>
       {(isDemoMode() || process.env.NEXT_PUBLIC_DEMO_LOGIN_ENABLED === 'true') ? (
         <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Demo accounts · isolated preview session</p>
-          <p className="text-xs text-muted-foreground">No database needed. Password for all: <code className="font-mono">Demo@1234</code></p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Quick demo access</p>
+          <p className="text-xs text-muted-foreground">Click a role to continue. Shared demo password: <code className="font-mono">Demo@1234</code></p>
           <div className="mt-1 flex flex-col gap-1.5">
             {demoAccounts.map((account) => (
               <button
