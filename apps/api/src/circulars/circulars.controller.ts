@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
@@ -16,6 +16,7 @@ export class CircularsController {
       .select('id,institution_id,title,content,category,audience,status,publish_at,acknowledge_by,author_id,created_at,updated_at')
       .order('created_at', { ascending: false }).limit(100);
     if (status && ['draft','published','archived'].includes(status)) query = query.eq('status', status);
+    else query = query.eq('status', 'published');
     const { data, error } = await query;
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
@@ -46,6 +47,11 @@ export class CircularsController {
   @Post(':id/publish')
   async publish(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
     const client = this.db.forRequest(request);
+    const { data: roles, error: roleError } = await client.from('role_assignments')
+      .select('role').eq('user_id', request.authUser!.id).eq('status', 'active');
+    if (roleError) throw roleError;
+    const canPublish = (roles ?? []).some((row) => ['administrator','coordinator','principal','hod'].includes(row.role));
+    if (!canPublish) throw new ForbiddenException('Publishing circulars requires an authorised institutional role');
     const { data, error } = await client.from('circulars').update({
       status: 'published', publish_at: new Date().toISOString(),
     }).eq('id', id).eq('status', 'draft')
