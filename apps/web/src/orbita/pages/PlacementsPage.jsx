@@ -7,9 +7,14 @@ import { companies, placementStats, student } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
 
 export function PlacementsPage() {
-  const { appliedCompanies, applyCompany, toast } = usePortal();
+  const { appliedCompanies, applyCompany, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const handleApply = (comp) => {
+    if (liveSession) {
+      toast({ title: "Application unavailable", description: "Placement drives and applications are not connected to the institutional backend. No application was submitted.", variant: "info" });
+      return;
+    }
     applyCompany(comp.id);
     toast({
       title: `Application Submitted: ${comp.name}`,
@@ -24,6 +29,8 @@ export function PlacementsPage() {
         title="Training & Placement Cell (T&P)"
         subtitle="Campus recruitment drives, internships, corporate recruitment guidelines and salary packages"
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> Placement statistics, company drives, eligibility and packages are sample values, not verified institutional placement records. Applying is disabled until the placement service is connected.</div>
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
