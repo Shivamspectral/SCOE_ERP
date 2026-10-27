@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Put, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Put, Query, Req, UseGuards } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
