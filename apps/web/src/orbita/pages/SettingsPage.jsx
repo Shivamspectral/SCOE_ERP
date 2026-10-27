@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "../components/Card";
 import { usePortal } from "../context/PortalContext";
 
 export function SettingsPage() {
-  const { toast } = usePortal();
+  const { toast, activeProfile, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(true);
   const [attendanceWarnings, setAttendanceWarnings] = useState(true);
@@ -13,9 +14,11 @@ export function SettingsPage() {
   const handleSave = (e) => {
     e.preventDefault();
     toast({
-      title: "Settings Saved",
-      description: "Portal preferences and notification subscriptions updated.",
-      variant: "success",
+      title: "Preferences not saved",
+      description: liveSession
+        ? "Notification preference persistence and delivery subscriptions are not connected to the institutional backend. Your selections were not saved."
+        : "This preview keeps preferences in local component state only; nothing was saved to an account.",
+      variant: "info",
     });
   };
 
@@ -25,6 +28,8 @@ export function SettingsPage() {
         title="Settings & Portal Preferences"
         subtitle="Manage communication channels, attendance alerts and security credentials"
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status">Notification preferences and delivery subscriptions are not persisted yet. {liveSession ? "Live account settings cannot be changed here." : "Demo changes are temporary and reset when the page reloads."}</div>
 
       <Card className="max-w-2xl">
         <CardHeader>
@@ -37,11 +42,11 @@ export function SettingsPage() {
               <label className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer">
                 <div>
                   <p className="font-semibold text-foreground">Email Notifications</p>
-                  <p className="text-muted-foreground text-[11px]">Receive exam schedules and circulars at rahul.patil@siddhantcoe.edu.in</p>
+                  <p className="text-muted-foreground text-[11px]">Receive exam schedules and circulars at {activeProfile.email || "your configured college email"}</p>
                 </div>
                 <input
                   type="checkbox"
-                  checked={emailAlerts}
+                  checked={emailAlerts}\n                  disabled={liveSession}
                   onChange={(e) => setEmailAlerts(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
@@ -50,11 +55,11 @@ export function SettingsPage() {
               <label className="flex items-center justify-between rounded-lg border border-border p-3 cursor-pointer">
                 <div>
                   <p className="font-semibold text-foreground">SMS Urgency Alerts</p>
-                  <p className="text-muted-foreground text-[11px]">Receive emergency college notices on registered mobile (+91 98220 41042)</p>
+                  <p className="text-muted-foreground text-[11px]">Receive emergency college notices on your configured mobile number</p>
                 </div>
                 <input
                   type="checkbox"
-                  checked={smsAlerts}
+                  checked={smsAlerts}\n                  disabled={liveSession}
                   onChange={(e) => setSmsAlerts(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
@@ -67,7 +72,7 @@ export function SettingsPage() {
                 </div>
                 <input
                   type="checkbox"
-                  checked={attendanceWarnings}
+                  checked={attendanceWarnings}\n                  disabled={liveSession}
                   onChange={(e) => setAttendanceWarnings(e.target.checked)}
                   className="size-4 rounded border-input accent-primary"
                 />
