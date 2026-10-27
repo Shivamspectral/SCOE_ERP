@@ -327,7 +327,7 @@ export function PortalProvider({ children }) {
       setWorkflowsLoaded(false);
       setNotifications(initialNotifications);
       setNotificationsLoaded(false);
-      setUsersList(initialAdminUsers);
+      setUsersList(initialAdminUsers.filter((user) => !['Student', 'Parent'].includes(user.role)));
       setUsersLoaded(false);
       setDepartmentsList(null);
       setInstitutionStudents(null);
@@ -843,7 +843,7 @@ export function PortalProvider({ children }) {
     return (departmentsList ?? initialDepartments).filter((item) => item.name?.toLowerCase() === dept);
   }, [scopeMeta.level, activeProfile.dept, departmentsList, realSession]);
 
-  const [usersList, setUsersList] = useState(initialAdminUsers);
+  const [usersList, setUsersList] = useState(initialAdminUsers.filter((user) => !['Student', 'Parent'].includes(user.role)));
   const [usersLoaded, setUsersLoaded] = useState(false);
   useEffect(() => {
     if (!realSession) return;
