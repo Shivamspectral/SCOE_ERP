@@ -155,6 +155,7 @@ export function UsersManagementPage() {
             <option value="Staff">Staff</option>
             <option value="Faculty">Faculty</option>
             <option value="HOD">HOD</option>
+            <option value="Coordinator">Coordinator</option>
             <option value="Vice-Principal">Vice-Principal</option>
             <option value="Principal">Principal</option>
             <option value="Super Admin">Super Admin</option>
@@ -195,7 +196,7 @@ export function UsersManagementPage() {
                       onChange={(e) => handleRoleChange(u, e.target.value)}
                       className="rounded border border-input bg-card px-2 py-1 text-xs font-semibold text-foreground outline-none focus:border-primary"
                     >
-                      <option value="Student">Student</option>
+                      <option value="Staff">Staff</option>
                       <option value="Faculty">Faculty</option>
                       <option value="HOD">HOD</option>
                       <option value="Vice-Principal">Vice-Principal</option>
@@ -286,27 +287,15 @@ export function UsersManagementPage() {
                     onChange={(e) => setNewRole(e.target.value)}
                     className="w-full h-9 rounded-lg border border-input bg-card px-2 outline-none focus:border-primary text-xs"
                   >
-                    <option value="Student">Student</option>
+                    <option value="Staff">Staff</option>
                     <option value="Faculty">Faculty</option>
                     <option value="HOD">HOD</option>
+                    <option value="Coordinator">Coordinator</option>
                     <option value="Vice-Principal">Vice-Principal</option>
-                    <option value="Principal">Principal</option>
                     <option value="Super Admin">Super Admin</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="block font-medium text-foreground mb-1">
-                    Employee / Student ID
-                  </label>
-                  <input
-                    type="text"
-                    value={newId}
-                    onChange={(e) => setNewId(e.target.value)}
-                    placeholder="e.g. SCOEFAC-CE12"
-                    className="w-full h-9 rounded-lg border border-input bg-card px-2.5 outline-none focus:border-primary text-xs"
-                  />
-                </div>
               </div>
 
               <div>
@@ -318,13 +307,7 @@ export function UsersManagementPage() {
                   onChange={(e) => setNewDept(e.target.value)}
                   className="w-full h-9 rounded-lg border border-input bg-card px-2 outline-none focus:border-primary text-xs"
                 >
-                  <option value="Computer Engineering">Computer Engineering</option>
-                  <option value="Information Technology">Information Technology</option>
-                  <option value="ENTC">ENTC</option>
-                  <option value="Mechanical Engineering">Mechanical Engineering</option>
-                  <option value="Civil Engineering">Civil Engineering</option>
-                  <option value="AI & Data Science">AI & Data Science</option>
-                  <option value="Institutional Administration">Institutional Administration</option>
+                  {departments.map((department) => <option key={department.id} value={department.name}>{department.name}</option>)}
                 </select>
               </div>
 
