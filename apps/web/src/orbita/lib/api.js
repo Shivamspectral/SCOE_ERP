@@ -10,7 +10,7 @@
 
 import { supabase } from "./supabase";
 
-const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "";
 export const API_BASE_URL = RAW_BASE.replace(/\/+$/, "");
 
 /** False in pure UI/demo mode (no backend deployed yet). */
@@ -36,7 +36,9 @@ async function accessToken() {
 }
 
 function buildUrl(path, query) {
-  const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  const rawPath = path.startsWith("/") ? path : `/${path}`;
+  const apiPath = rawPath.startsWith("/api/") ? rawPath.replace(/^\/api\//, "/api/v1/") : rawPath;
+  const url = `${API_BASE_URL}${apiPath}`;
   if (!query) return url;
   const qs = new URLSearchParams();
   Object.entries(query).forEach(([k, v]) => {
