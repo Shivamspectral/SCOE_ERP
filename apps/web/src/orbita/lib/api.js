@@ -172,6 +172,16 @@ export const marksApi = {
   unlock: (id, reason) => api.post(`/api/marks/${id}/unlock`, { reason }),
 };
 
+export const academicApi = {
+  classes: (query) => api.get("/api/academic/classes", query),
+  subjects: (query) => api.get("/api/academic/subjects", query),
+  timetable: (query) => api.get("/api/academic/timetable", query),
+  createTimetableEntry: (payload) => api.post("/api/academic/timetable", payload),
+  syllabus: (query) => api.get("/api/academic/syllabus", query),
+  createSyllabusProgress: (payload) => api.post("/api/academic/syllabus", payload),
+  updateSyllabusProgress: (id, payload) => api.patch(`/api/academic/syllabus/${id}`, payload),
+};
+
 export const noticesApi = {
   list: (query) => api.get("/api/circulars", query),
   create: (payload) => api.post("/api/circulars", payload),
