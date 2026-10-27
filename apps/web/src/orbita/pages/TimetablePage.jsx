@@ -1,13 +1,45 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Clock, MapPin, Download, Filter, Calendar, User, BookOpen } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Card, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { weeklyTimetable, college } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
+import { academicApi } from "../lib/api";
 
 export function TimetablePage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const [liveTimetable, setLiveTimetable] = useState(null);
+
+  useEffect(() => {
+    if (!backendConfigured || !isAuthenticated || !session?.access_token) return;
+    let cancelled = false;
+    academicApi.timetable().then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      const dayNames = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
+      const grouped = {};
+      rows.forEach((row) => {
+        const day = dayNames[row.day_of_week];
+        if (!day) return;
+        if (!grouped[day]) grouped[day] = [];
+        grouped[day].push({
+          subject: row.subject,
+          type: /lab|practical/i.test(row.subject) ? "Lab" : "Lecture",
+          time: `${String(row.starts_at).slice(0, 5)} - ${String(row.ends_at).slice(0, 5)}`,
+          room: row.room || "Room not assigned",
+          faculty: row.faculty_name || "",
+          cohort: row.cohort,
+        });
+      });
+      if (!cancelled) setLiveTimetable(grouped);
+    }).catch((error) => {
+      console.warn("[timetable] unable to load live schedule", error);
+      if (!cancelled) setLiveTimetable({});
+    });
+    return () => { cancelled = true; };
+  }, [backendConfigured, isAuthenticated, session?.access_token]);
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const schedule = liveSession ? (liveTimetable ?? {}) : weeklyTimetable;
   const [selectedDay, setSelectedDay] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -110,7 +142,7 @@ export function TimetablePage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredDays.map((day) => {
           const isToday = day === currentDayName;
-          const slots = weeklyTimetable[day] || [];
+          const slots = schedule[day] || [];
           const visibleSlots = slots.filter((slot) => {
             if (typeFilter === "All") return true;
             if (typeFilter === "Lab") return slot.type.includes("Lab") || slot.type === "Project";
