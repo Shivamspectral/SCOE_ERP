@@ -30,7 +30,7 @@ export function EventsPage() {
 
   const categories = ["All", "Technical", "Cultural", "Sports", "Workshop", "Academics", "Networking"];
 
-  const filteredEvents = initialEvents.filter((ev) => {
+  const filteredEvents = (liveSession ? [] : initialEvents).filter((ev) => {
     const matchCategory = selectedCategory === "All" || ev.category === selectedCategory;
     const matchSearch =
       ev.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,7 +91,7 @@ export function EventsPage() {
         actions={
           <div className="flex items-center gap-2">
             <span className="rounded-lg bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent-foreground border border-accent/20">
-              {registeredEvents.size} Events Registered
+              {liveSession ? 0 : registeredEvents.size} Events Registered
             </span>
           </div>
         }
