@@ -9,7 +9,6 @@ import { usePortal } from "../context/PortalContext";
 export function LibraryPage() {
   const { reservedBooks, reserveBook, toast, backendConfigured, isAuthenticated, session } = usePortal();
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
-  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
