@@ -9,12 +9,13 @@ import { usePortal } from "../context/PortalContext";
 export function LibraryPage() {
   const { reservedBooks, reserveBook, toast, backendConfigured, isAuthenticated, session } = usePortal();
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
   const categories = ["All", "Algorithms", "Operating Systems", "Databases", "Networks", "Programming", "AI/ML"];
 
-  const filteredBooks = initialBooks.filter((b) => {
+  const filteredBooks = (liveSession ? [] : initialBooks).filter((b) => {
     const matchCat = categoryFilter === "All" || b.category === categoryFilter;
     const matchSearch =
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,7 +46,7 @@ export function LibraryPage() {
 
       <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> Catalogue entries, borrower details, loan counts and due dates are sample values. Live reservations are disabled until the library service is connected.</div>
 
-      {/* Library Pass Info */}
+      {!liveSession && <>\n      {/* Library Pass Info */}
       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-3">
           <Library className="size-6 text-primary shrink-0" />
