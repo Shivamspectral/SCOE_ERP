@@ -14,16 +14,23 @@ import {
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { StudentCreateForm } from "../components/StudentCreateForm";
 
 export function StudentsManagementPage() {
-  const { studentsList, toast } = usePortal();
+  const { studentsList, toast, departments, userRole, activeProfile, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const canManageStudents = ["Principal", "Super Admin", "Vice-Principal", "HOD"].includes(userRole);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newlyCreatedStudents, setNewlyCreatedStudents] = useState([]);
+  const defaultDepartmentId = departments.find((department) => department.name?.toLowerCase() === activeProfile.dept?.toLowerCase())?.id || "";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("All");
   const [yearFilter, setYearFilter] = useState("All");
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  const filteredStudents = studentsList.filter((s) => {
+  const allStudents = [...newlyCreatedStudents, ...studentsList.filter((student) => !newlyCreatedStudents.some((created) => created.id === student.id))];
+  const filteredStudents = allStudents.filter((s) => {
     const matchesSearch =
       String(s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(s.rollNo || s.roll_number || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -81,14 +88,33 @@ export function StudentsManagementPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleExportList}
-          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-muted transition-colors"
-        >
-          <Download className="size-4 text-muted-foreground" />
-          <span>Export Student Roll</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {(!liveSession || canManageStudents) && (
+            <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+              <Users className="size-4" />
+              <span>Add Student</span>
+            </button>
+          )}
+          <button
+            onClick={handleExportList}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-muted transition-colors"
+          >
+            <Download className="size-4 text-muted-foreground" />
+            <span>Export Student Roll</span>
+          </button>
+        </div>
       </div>
+
+      {createOpen && (
+        <StudentCreateForm
+          departments={departments}
+          defaultDepartmentId={defaultDepartmentId}
+          liveMode={liveSession}
+          toast={toast}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(student) => setNewlyCreatedStudents((previous) => [student, ...previous])}
+        />
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
