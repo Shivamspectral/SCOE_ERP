@@ -136,7 +136,7 @@ export function HostelPage() {
                 onClick={() =>
                   toast({
                     title: "Contact details are sample data",
-                    description: "This preview does not initiate a phone call. Verify the official hostel contact before calling.
+                    description: "This preview does not initiate a phone call. Verify the official hostel contact before calling.",
                     variant: "info",
                   })
                 }
