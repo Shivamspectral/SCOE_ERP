@@ -11,7 +11,7 @@ const TASK_ROLES = ['faculty', 'hod', 'coordinator', 'principal', 'administrator
 export class TasksController {
   constructor(private readonly db: SupabaseRequestClient) {}
 
-  private async taskScope(request: AuthenticatedRequest, requestedDepartmentId?: string) {
+  private async taskScope(request: AuthenticatedRequest, requestedDepartmentId?: string, requireDepartment = true) {
     const client = this.db.forRequest(request);
     const userId = request.authUser!.id;
     const { data: profile, error: profileError } = await client.from('profiles')
@@ -30,6 +30,7 @@ export class TasksController {
     const departmentId = requestedDepartmentId
       || profile.department_id
       || roles.find((role) => role.department_id)?.department_id;
+    if (!departmentId && !requireDepartment) return { client, userId, institutionId: profile.institution_id, departmentId: null };
     if (!departmentId) throw new BadRequestException('Choose a department for this task');
     if (!roles.some((role) => TASK_ROLES.includes(role.role) && (!role.department_id || role.department_id === departmentId))) {
       throw new ForbiddenException('You do not have task access in the selected department');
@@ -46,7 +47,7 @@ export class TasksController {
 
   @Get()
   async list(@Req() request: AuthenticatedRequest, @Query('status') status?: string) {
-    const { client } = await this.taskScope(request);
+    const { client } = await this.taskScope(request, undefined, false);
     let query = client.from('faculty_workspace_records')
       .select('id,institution_id,owner_user_id,department_id,title,status,priority,due_at,payload,created_at,updated_at,departments(name,code)')
       .eq('resource', 'tasks').order('updated_at', { ascending: false }).limit(200);
@@ -59,6 +60,7 @@ export class TasksController {
   @Post()
   async create(@Req() request: AuthenticatedRequest, @Body() body: CreateTaskDto) {
     const { client, userId, institutionId, departmentId } = await this.taskScope(request, body.departmentId);
+    if (!departmentId) throw new BadRequestException('Choose a department for this task');
     const { data, error } = await client.from('faculty_workspace_records').insert({
       institution_id: institutionId, owner_user_id: userId, department_id: departmentId,
       resource: 'tasks', title: body.title.trim(), status: 'draft', priority: body.priority,
@@ -71,7 +73,11 @@ export class TasksController {
 
   @Patch(':id')
   async update(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: UpdateTaskDto) {
-    const { client, userId } = await this.taskScope(request);
+    const preflight = await this.db.forRequest(request).from('faculty_workspace_records')
+      .select('department_id').eq('id', id).eq('resource', 'tasks').maybeSingle();
+    if (preflight.error) throw preflight.error;
+    if (!preflight.data) throw new NotFoundException('Task not found or update is not permitted');
+    const { client, userId } = await this.taskScope(request, preflight.data.department_id);
     const patch: Record<string, unknown> = { updated_by: userId };
     if (body.status !== undefined) patch.status = body.status;
     if (body.title !== undefined) patch.title = body.title.trim();
@@ -89,7 +95,11 @@ export class TasksController {
 
   @Delete(':id')
   async cancel(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
-    const { client, userId } = await this.taskScope(request);
+    const preflight = await this.db.forRequest(request).from('faculty_workspace_records')
+      .select('department_id').eq('id', id).eq('resource', 'tasks').maybeSingle();
+    if (preflight.error) throw preflight.error;
+    if (!preflight.data) throw new NotFoundException('Task not found or cancellation is not permitted');
+    const { client, userId } = await this.taskScope(request, preflight.data.department_id);
     const { data, error } = await client.from('faculty_workspace_records').update({
       status: 'cancelled', updated_by: userId,
     }).eq('id', id).eq('resource', 'tasks')
