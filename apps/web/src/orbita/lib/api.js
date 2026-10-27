@@ -216,3 +216,10 @@ export const notificationsApi = {
 export const auditLogsApi = {
   list: (query) => api.get("/api/audit-logs", query),
 };
+
+export const tasksApi = {
+  list: (query) => api.get("/api/tasks", query),
+  create: (payload) => api.post("/api/tasks", payload),
+  update: (id, payload) => api.patch(`/api/tasks/${id}`, payload),
+  cancel: (id) => api.del(`/api/tasks/${id}`),
+};
