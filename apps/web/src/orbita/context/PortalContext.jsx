@@ -410,8 +410,10 @@ export function PortalProvider({ children }) {
     if (!new_password || new_password.length < 8) {
       throw new Error("Password must contain at least 8 characters.");
     }
-    const result = await supabase.auth.updateUser({ password: new_password });
-    return result?.data?.user || result;
+    const { data, error } = await supabase.auth.updateUser({ password: new_password });
+    if (error) throw error;
+    if (!data?.user) throw new Error("Password update did not return a confirmed account result.");
+    return data.user;
   }, []);
 
   const changeEmail = useCallback(async ({ email, current_password, new_email }) => {
@@ -425,9 +427,12 @@ export function PortalProvider({ children }) {
     }
 
     // Re-authenticate before changing the account's sign-in email.
-    await supabase.auth.signInWithPassword({ email: currentEmail, password: current_password });
-    const result = await supabase.auth.updateUser({ email: nextEmail });
-    return result?.data?.user || result;
+    const { error: reauthError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: current_password });
+    if (reauthError) throw reauthError;
+    const { data, error } = await supabase.auth.updateUser({ email: nextEmail });
+    if (error) throw error;
+    if (!data?.user) throw new Error("Email update did not return a confirmed account result.");
+    return data.user;
   }, [serverProfile?.email]);
 
   // Approvals & Leave Requests State
