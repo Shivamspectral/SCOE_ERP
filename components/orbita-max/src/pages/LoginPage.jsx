@@ -379,12 +379,12 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 rounded-xl border border-dashed border-primary/35 bg-primary/5 p-3">
+          {(process.env.NEXT_PUBLIC_DEMO_MODE === "true" || !process.env.NEXT_PUBLIC_SUPABASE_URL) && (<div className="mt-5 rounded-xl border border-dashed border-primary/35 bg-primary/5 p-3">
             <div className="mb-2 flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Quick demo access</p><span className="text-[11px] text-muted-foreground">Password: Demo@1234</span></div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {demoAccounts.map((account) => <button key={account.id} type="button" disabled={isLoading} onClick={() => handleDemoAccount(account)} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border/70 bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:opacity-60"><span className="min-w-0"><span className="block text-sm font-semibold text-foreground">{account.label}</span><span className="block truncate text-xs text-muted-foreground">{account.email}</span></span><ArrowRight className="size-4 shrink-0 text-primary" /></button>)}
             </div>
-          </div>
+          </div>)}
 
           {!backendConfigured && (
             <p className="mt-4 rounded-lg bg-muted/60 p-3 text-center text-[11px] leading-relaxed text-muted-foreground">
