@@ -51,34 +51,40 @@ export function UsersManagementPage() {
     e.preventDefault();
     if (!newName.trim() || !newEmail.trim()) {
       toast({
-        title: "All Fields Required",
-        description: "Please provide valid user details.",
+        title: "All fields required",
+        description: "Please provide a name and college email address.",
         variant: "warning",
       });
       return;
     }
 
+    const department = Array.isArray(departments)
+      ? departments.find((item) => item.name === newDept)
+      : null;
     try {
-    const created = await addUser({
-      name: newName,
-      email: newEmail,
-      role: newRole,
-      dept: newDept,
-      departmentId: departments.find((department) => department.name === newDept)?.id,
-      title: newRole,
-    });
-
-    addSystemLog(`Provisioned user account for ${created.name} (${created.role})`, "Success");
-    setAddModalOpen(false);
-    setNewName("");
-    setNewEmail("");
-    toast({
-      title: "Staff invitation created",
-      description: `Invitation sent for ${created.name} with role ${created.role}. The account remains pending until activated.`,
-      variant: "success",
-    });
+      const created = await addUser({
+        name: newName.trim(),
+        email: newEmail.trim().toLowerCase(),
+        role: newRole,
+        dept: newDept,
+        departmentId: department ? department.id : undefined,
+        title: newRole,
+      });
+      addSystemLog(`Recorded staff access request for ${created?.name || newName}`, "Success");
+      setAddModalOpen(false);
+      setNewName("");
+      setNewEmail("");
+      toast({
+        title: "Staff access request recorded",
+        description: "The account must complete email confirmation and receive institutional approval before access is granted.",
+        variant: "success",
+      });
     } catch (error) {
-      toast({ title: "Provisioning Failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Could not record request",
+        description: error?.message || "Check your permissions and try again.",
+        variant: "destructive",
+      });
     }
   };
 
