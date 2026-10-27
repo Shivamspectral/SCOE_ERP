@@ -23,6 +23,10 @@ import {
 
 const PortalContext = createContext(null);
 
+// Only college staff can use the ERP. Student/parent identities are never granted portal access.
+const STAFF_ACCESS_ROLES = new Set(["Principal", "Super Admin", "Vice-Principal", "HOD", "Faculty", "Staff"]);
+const hasApprovedStaffAccess = (identity) => Boolean(identity?.profile?.status === "active" && STAFF_ACCESS_ROLES.has(identity?.role));
+
 /**
  * Presentation defaults per role.
  *
@@ -201,7 +205,17 @@ export function PortalProvider({ children }) {
         if (existing?.access_token) {
           setSession(existing);
           setIsAuthenticated(true);
-          await hydrateIdentity();
+          const identity = await hydrateIdentity();
+          if (!hasApprovedStaffAccess(identity)) {
+            await supabase.auth.signOut();
+            setSession(null);
+            setIsAuthenticated(false);
+            setIsDemoPreview(false);
+            setUserRole("Pending");
+            setCurrentRoute("/login");
+            window.history.replaceState(null, "", "/login");
+            return;
+          }
           const path = window.location.pathname;
           setCurrentRoute(!path || path === "/" || path === "/login" ? "/dashboard" : path);
         } else {
@@ -248,6 +262,14 @@ export function PortalProvider({ children }) {
     setIsAuthenticated(true);
 
     const me = await hydrateIdentity();
+    if (!hasApprovedStaffAccess(me)) {
+      await supabase.auth.signOut();
+      setSession(null);
+      setIsAuthenticated(false);
+      setIsDemoPreview(false);
+      setUserRole("Pending");
+      throw new Error("This account is not approved for staff access. Contact your college administrator.");
+    }
     if (registrationId && me?.profile?.registration_id?.toUpperCase() !== registrationId.toUpperCase()) {
       await supabase.auth.signOut();
       setSession(null);
