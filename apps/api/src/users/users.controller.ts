@@ -1,8 +1,11 @@
-import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Delete, ForbiddenException, Get, InternalServerErrorException, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, ServiceUnavailableException, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createClient } from '@supabase/supabase-js';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
 import { UpdateMemberDto } from './member.dto';
+import { InviteMemberDto } from './invite-member.dto';
 
 const roleToDisplay: Record<string, string> = { administrator: 'Super Admin', coordinator: 'Vice-Principal', hod: 'HOD', faculty: 'Faculty', staff: 'Staff' };
 
@@ -17,7 +20,7 @@ const roleToDatabase: Record<string, string> = {
 @Controller('users')
 @UseGuards(SupabaseAuthGuard)
 export class UsersController {
-  constructor(private readonly db: SupabaseRequestClient) {}
+  constructor(private readonly db: SupabaseRequestClient, private readonly config: ConfigService) {}
 
   private async readMember(client: ReturnType<SupabaseRequestClient['forRequest']>, id: string) {
     const { data: profile, error } = await client.from('profiles')
@@ -78,6 +81,72 @@ export class UsersController {
       };
     });
     return { data, count: count ?? data.length, limit, offset };
+  }
+
+  @Post()
+  async invite(@Req() request: AuthenticatedRequest, @Body() body: InviteMemberDto) {
+    const client = this.db.forRequest(request);
+    const { data: actor, error: actorError } = await client.from('profiles')
+      .select('user_id,institution_id,department_id,status')
+      .eq('user_id', request.authUser!.id).maybeSingle();
+    if (actorError) throw actorError;
+    if (!actor || actor.status !== 'active') throw new ForbiddenException('Active institutional access is required');
+
+    const { data: actorRoles, error: actorRolesError } = await client.from('role_assignments')
+      .select('role').eq('user_id', request.authUser!.id).eq('status', 'active');
+    if (actorRolesError) throw actorRolesError;
+    if (!(actorRoles ?? []).some((item) => ['principal', 'administrator'].includes(item.role))) {
+      throw new ForbiddenException('Only the Principal or an authorized administrator can invite staff accounts');
+    }
+
+    const role = roleToDatabase[body.role];
+    if (!role || !['administrator','coordinator','hod','faculty','staff'].includes(role)) {
+      throw new BadRequestException('Unsupported staff role');
+    }
+    const departmentId = body.departmentId ?? actor.department_id ?? null;
+    if (role === 'hod' && !departmentId) throw new BadRequestException('A department is required for an HOD account');
+    if (departmentId) {
+      const { data: department, error: departmentError } = await client.from('departments')
+        .select('id,institution_id,status').eq('id', departmentId).maybeSingle();
+      if (departmentError) throw departmentError;
+      if (!department || department.institution_id !== actor.institution_id || department.status !== 'active') {
+        throw new BadRequestException('Department is not active in this institution');
+      }
+    }
+
+    const serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    if (!serviceRoleKey) throw new ServiceUnavailableException('Staff invitations are not configured on this API deployment');
+    const adminClient = createClient(
+      this.config.getOrThrow<string>('SUPABASE_URL'),
+      serviceRoleKey,
+      { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+    );
+    const { data: invitation, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+      body.email.trim().toLowerCase(),
+      { data: {
+        full_name: body.name.trim(),
+        title: body.title?.trim() || null,
+        phone: body.phone?.trim() || null,
+        institution_id: actor.institution_id,
+        department_id: departmentId,
+      } },
+    );
+    if (inviteError) throw new ConflictException('The account invitation could not be created. Verify the email and Auth invitation settings.');
+    const userId = invitation.user?.id;
+    if (!userId) throw new InternalServerErrorException('Supabase did not return an invited user ID');
+
+    const { error: assignmentError } = await client.rpc('manage_member', {
+      p_user_id: userId,
+      p_status: 'pending',
+      p_role: role,
+      p_department_id: departmentId,
+      p_responsibility_id: body.responsibilityId ?? null,
+    });
+    if (assignmentError) {
+      await adminClient.auth.admin.deleteUser(userId).catch(() => undefined);
+      throw new BadRequestException('Invitation role assignment failed. The new account was not activated.');
+    }
+    return { id: userId, email: invitation.user?.email ?? body.email, name: body.name.trim(), role: body.role, status: 'pending' };
   }
 
   @Get(':id')
