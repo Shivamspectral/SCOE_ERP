@@ -60,7 +60,7 @@ export function LoginPage() {
         Coordinator: "Vice-Principal",
         "HOD (Computer Eng.)": "HOD",
         Faculty: "Faculty",
-        Staff: "Faculty",
+        Staff: "Staff",
         "New member (pending)": "Pending",
       };
       // This is an isolated UI preview only; no API session or database access is granted.
