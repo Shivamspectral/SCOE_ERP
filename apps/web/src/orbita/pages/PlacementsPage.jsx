@@ -10,6 +10,8 @@ export function PlacementsPage() {
   const { appliedCompanies, applyCompany, toast, backendConfigured, isAuthenticated, session } = usePortal();
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
+  const displayedCompanies = liveSession ? [] : companies;
+
   const handleApply = (comp) => {
     if (liveSession) {
       toast({ title: "Application unavailable", description: "Placement drives and applications are not connected to the institutional backend. No application was submitted.", variant: "info" });
@@ -37,28 +39,28 @@ export function PlacementsPage() {
         <Card className="border-l-4 border-l-success">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Highest Package</span>
-            <p className="font-display text-2xl font-bold text-success mt-1">{placementStats.highestPackage}</p>
+            <p className="font-display text-2xl font-bold text-success mt-1">{liveSession ? "—" : placementStats.highestPackage}</p>
             <span className="text-[10px] text-muted-foreground mt-1 block">Amazon AWS India</span>
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-primary">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Average Package</span>
-            <p className="font-display text-2xl font-bold text-foreground mt-1">{placementStats.averagePackage}</p>
+            <p className="font-display text-2xl font-bold text-foreground mt-1">{liveSession ? "—" : placementStats.averagePackage}</p>
             <span className="text-[10px] text-muted-foreground mt-1 block">Across Tech Streams</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Students Placed</span>
-            <p className="font-display text-2xl font-bold text-foreground mt-1">{placementStats.placedStudents}</p>
+            <p className="font-display text-2xl font-bold text-foreground mt-1">{liveSession ? "—" : placementStats.placedStudents}</p>
             <span className="text-[10px] text-success font-medium mt-1 block">65% Batch Placed</span>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Recruiting Partners</span>
-            <p className="font-display text-2xl font-bold text-foreground mt-1">{placementStats.companies}+</p>
+            <p className="font-display text-2xl font-bold text-foreground mt-1">{liveSession ? "—" : `${placementStats.companies}+`}</p>
             <span className="text-[10px] text-muted-foreground mt-1 block">MNCs & Unicorn Startups</span>
           </CardContent>
         </Card>
@@ -71,7 +73,7 @@ export function PlacementsPage() {
         </h3>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {companies.map((comp) => {
+          {displayedCompanies.map((comp) => {
             const isApplied = appliedCompanies.has(comp.id);
 
             return (
@@ -132,6 +134,7 @@ export function PlacementsPage() {
             );
           })}
         </div>
+        {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">No institutional placement records are available. Sample drives and statistics are hidden in live sessions until the placement service is connected.</p>}
       </div>
     </div>
   );
