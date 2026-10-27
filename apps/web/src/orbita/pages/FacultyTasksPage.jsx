@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { tasksApi } from "../lib/api";
 
 export function FacultyTasksPage() {
-  const { tasks, toggleTask, addTask, deleteTask, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const { tasks, toggleTask, addTask, deleteTask, toast, backendConfigured, isAuthenticated, session, departments, activeProfile } = usePortal();
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [activeTab, setActiveTab] = useState("All");
@@ -24,8 +25,56 @@ export function FacultyTasksPage() {
   const [taskPriority, setTaskPriority] = useState("High");
   const [taskDueDate, setTaskDueDate] = useState("Tomorrow");
   const [taskCategory, setTaskCategory] = useState("Academics");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const [liveTasks, setLiveTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [tasksLoaded, setTasksLoaded] = useState(false);
+  const [taskLoadFailed, setTaskLoadFailed] = useState(false);
 
-  const displayedTasks = liveSession ? [] : tasks;
+  const matchingDepartment = departments.find((department) => department.name?.toLowerCase() === activeProfile.dept?.toLowerCase());
+  const needsDepartmentSelection = liveSession && !matchingDepartment;
+
+  React.useEffect(() => {
+    if (!selectedDepartmentId && matchingDepartment?.id) setSelectedDepartmentId(matchingDepartment.id);
+  }, [selectedDepartmentId, matchingDepartment?.id]);
+
+  const mapLiveTask = (row) => ({
+    id: row.id,
+    title: row.title,
+    completed: row.status === "completed",
+    priority: ({ low: "Low", normal: "Normal", high: "High", urgent: "Urgent" })[row.priority] || "Normal",
+    dueDate: row.due_at ? new Date(row.due_at).toLocaleDateString("en-IN") : "No due date",
+    category: row.payload?.category || "Academics",
+  });
+
+  React.useEffect(() => {
+    if (!liveSession) {
+      setLiveTasks([]);
+      setTasksLoaded(false);
+      setTaskLoadFailed(false);
+      return;
+    }
+    let cancelled = false;
+    setTasksLoading(true);
+    setTasksLoaded(false);
+    setTaskLoadFailed(false);
+    tasksApi.list().then((rows) => {
+      if (!cancelled) {
+        setLiveTasks(Array.isArray(rows) ? rows.map(mapLiveTask) : []);
+        setTasksLoaded(true);
+      }
+    }).catch((error) => {
+      if (!cancelled) {
+        setLiveTasks([]);
+        setTaskLoadFailed(true);
+        setTasksLoaded(true);
+        toast({ title: "Could not load tasks", description: error?.message || "Check your access and try again.", variant: "error" });
+      }
+    }).finally(() => { if (!cancelled) setTasksLoading(false); });
+    return () => { cancelled = true; };
+  }, [liveSession, session?.access_token]);
+
+  const displayedTasks = liveSession ? liveTasks : tasks;
   const filteredTasks = displayedTasks.filter((t) => {
     if (activeTab === "Pending") return !t.completed;
     if (activeTab === "Completed") return t.completed;
@@ -36,9 +85,8 @@ export function FacultyTasksPage() {
   const completedCount = displayedTasks.filter((t) => t.completed).length;
   const pendingCount = displayedTasks.length - completedCount;
 
-  const handleCreateTask = (e) => {
+  const handleCreateTask = async (e) => {
     e.preventDefault();
-    if (liveSession) { toast({ title: "Task service unavailable", description: "Tasks are not connected to the institutional backend. No task was created.", variant: "info" }); return; }
     if (!taskTitle.trim()) {
       toast({
         title: "Task Title Required",
@@ -48,24 +96,66 @@ export function FacultyTasksPage() {
       return;
     }
 
-    addTask({
-      title: taskTitle,
-      priority: taskPriority,
-      dueDate: taskDueDate,
-      category: taskCategory,
-    });
+    if (liveSession) {
+      if (needsDepartmentSelection && !selectedDepartmentId) {
+        toast({ title: "Choose a department", description: "Select the department this task belongs to.", variant: "warning" });
+        return;
+      }
+      const dueDate = new Date();
+      if (taskDueDate === "Tomorrow") dueDate.setDate(dueDate.getDate() + 1);
+      else if (taskDueDate === "This Week") dueDate.setDate(dueDate.getDate() + 7);
+      dueDate.setHours(12, 0, 0, 0);
+      try {
+        const created = await tasksApi.create({
+          title: taskTitle.trim(),
+          priority: taskPriority.toLowerCase(),
+          dueAt: dueDate.toISOString(),
+          category: taskCategory,
+          departmentId: selectedDepartmentId || undefined,
+        });
+        setLiveTasks((previous) => [mapLiveTask(created), ...previous]);
+      } catch (error) {
+        toast({ title: "Task creation failed", description: error?.message || "The task was not saved.", variant: "error" });
+        return;
+      }
+    } else {
+      addTask({ title: taskTitle, priority: taskPriority, dueDate: taskDueDate, category: taskCategory });
+    }
 
     setTaskTitle("");
     setAddModalOpen(false);
     toast({
-      title: "Task Created",
-      description: `Added "${taskTitle}" to academic action list.`,
-      variant: "success",
+      title: liveSession ? "Task saved" : "Preview task created",
+      description: liveSession ? "Saved " + taskTitle + " to the institutional task list." : "Added " + taskTitle + " locally. This preview task is not persisted.",
+      variant: liveSession ? "success" : "info",
     });
   };
 
-  const handleDelete = (id, title) => {
-    if (liveSession) { toast({ title: "Task service unavailable", description: "Tasks are not connected to the institutional backend. No task was deleted.", variant: "info" }); return; }
+  const handleToggleTask = async (task) => {
+    if (!liveSession) {
+      toggleTask(task.id);
+      return;
+    }
+    try {
+      const updated = await tasksApi.update(task.id, { status: task.completed ? "draft" : "completed" });
+      setLiveTasks((previous) => previous.map((item) => item.id === task.id ? mapLiveTask(updated) : item));
+      toast({ title: updated.status === "completed" ? "Task completed" : "Task reopened", description: "The change was saved to the institutional task list.", variant: "success" });
+    } catch (error) {
+      toast({ title: "Task update failed", description: error?.message || "The task status was not changed.", variant: "error" });
+    }
+  };
+
+  const handleDelete = async (id, title) => {
+    if (liveSession) {
+      try {
+        await tasksApi.cancel(id);
+        setLiveTasks((previous) => previous.filter((item) => item.id !== id));
+        toast({ title: "Task cancelled", description: title + " was hidden from the active list. The institutional record was retained.", variant: "info" });
+      } catch (error) {
+        toast({ title: "Task cancellation failed", description: error?.message || "The task was not cancelled.", variant: "error" });
+      }
+      return;
+    }
     deleteTask(id);
     toast({
       title: "Task Deleted",
@@ -102,7 +192,7 @@ export function FacultyTasksPage() {
         </button>
       </div>
 
-      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>{liveSession ? "Task service unavailable." : "Demo preview only."}</strong> {liveSession ? "The task list is not loaded from the college database; live task writes are disabled." : "Tasks are local preview data and are not persisted."}</div>
+      <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground" role="status"><strong>{liveSession ? "Institutional task list." : "Demo preview only."}</strong> {liveSession ? "Tasks are stored in the institutional workspace. Cancelling a task hides it from the active list but retains its record." : "Tasks are local preview data and are not persisted."}</div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -115,19 +205,19 @@ export function FacultyTasksPage() {
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-4">
           <span className="text-xs text-warning-foreground font-medium">Pending Tasks</span>
           <span className="mt-1 block font-display text-2xl font-bold text-warning-foreground">
-            {pendingCount}
+            {liveSession && !tasksLoaded ? "—" : pendingCount}
           </span>
         </div>
         <div className="rounded-xl border border-success/30 bg-success/10 p-4">
           <span className="text-xs text-success font-medium">Completed</span>
           <span className="mt-1 block font-display text-2xl font-bold text-success">
-            {completedCount}
+            {liveSession && !tasksLoaded ? "—" : completedCount}
           </span>
         </div>
         <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
           <span className="text-xs text-primary font-medium">Completion Rate</span>
           <span className="mt-1 block font-display text-2xl font-bold text-primary">
-            {liveSession ? "—" : `${Math.round((completedCount / (tasks.length || 1)) * 100)}%`}
+            {liveSession && !tasksLoaded ? "—" : liveSession ? Math.round((completedCount / (displayedTasks.length || 1)) * 100) + "%" : Math.round((completedCount / (tasks.length || 1)) * 100) + "%"}
           </span>
         </div>
       </div>
@@ -149,9 +239,23 @@ export function FacultyTasksPage() {
         ))}
       </div>
 
+      {liveSession && needsDepartmentSelection && (
+        <label className="block max-w-md space-y-1.5 text-sm">
+          <span className="font-medium text-foreground">Task department</span>
+          <select value={selectedDepartmentId} onChange={(event) => setSelectedDepartmentId(event.target.value)} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm">
+            <option value="">Choose a department…</option>
+            {departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}
+          </select>
+        </label>
+      )}
+
       {/* Task List */}
       <div className="space-y-2.5">
-        {filteredTasks.length === 0 ? (
+        {tasksLoading ? (
+          <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Loading institutional tasks…</div>
+        ) : taskLoadFailed ? (
+          <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Tasks could not be loaded. The list is not showing sample records.</div>
+        ) : filteredTasks.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
             No tasks found in this view.
           </div>
@@ -167,7 +271,7 @@ export function FacultyTasksPage() {
             >
               <div className="flex items-center gap-3.5">
                 <button
-                  onClick={() => liveSession ? toast({ title: "Task service unavailable", description: "No task status was changed.", variant: "info" }) : toggleTask(t.id)}
+                  onClick={() => handleToggleTask(t)}
                   className="rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {t.completed ? (
