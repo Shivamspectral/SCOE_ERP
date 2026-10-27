@@ -127,6 +127,7 @@ export const authApi = {
 
 export const usersApi = {
   list: (query) => api.get("/api/users", query),
+  create: (payload) => api.post("/api/users", payload),
   get: (id) => api.get(`/api/users/${id}`),
   update: (id, payload) => api.patch(`/api/users/${id}`, payload),
   remove: (id) => api.del(`/api/users/${id}`),
