@@ -283,10 +283,7 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="login-registration-id" className="block text-sm font-medium">Registration ID</label>
-          <input id="login-registration-id" value={registrationId} onChange={(e) => setRegistrationId(e.target.value)} placeholder="Your registration ID" className="w-full rounded-lg border border-input bg-card px-3 py-2" required />
-
-          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground">
+                        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-foreground">
                 {mode === "activate" ? "Create a password" : "Password"}
               </label>
               <div className="relative">
