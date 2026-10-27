@@ -540,19 +540,33 @@ export function PortalProvider({ children }) {
 
   // User Management State (Super Admin)
   const addUser = useCallback(async (newUser) => {
-    const created = await api.post("/api/users", newUser);
+    if (realSession) {
+      throw new Error("Account invitations are not configured yet. Create the Supabase Auth account through the approved institutional process, then assign its role here.");
+    }
+    const created = { ...newUser, id: newUser.id || `DEMO-USER-${Date.now()}`, status: newUser.status || "Active" };
     setUsersList((prev) => [created, ...prev]);
     return created;
-  }, []);
+  }, [realSession]);
+
   const deleteUser = useCallback(async (id) => {
-    await usersApi.remove(id);
-    setUsersList((prev) => prev.filter((u) => u.id !== id));
-  }, []);
+    if (realSession) {
+      await usersApi.remove(id);
+    }
+    setUsersList((prev) => prev.filter((user) => user.id !== id));
+  }, [realSession]);
+
   const updateUserRole = useCallback(async (id, newRole) => {
-    const updated = await usersApi.update(id, { role: newRole });
-    setUsersList((prev) => prev.map((u) => (u.id === id ? { ...u, ...updated } : u)));
+    let updated;
+    if (realSession) {
+      updated = await usersApi.update(id, { role: newRole });
+    } else {
+      const current = usersList.find((user) => user.id === id);
+      updated = { ...current, role: newRole };
+    }
+    setUsersList((prev) => prev.map((user) => (user.id === id ? { ...user, ...updated } : user)));
     return updated;
-  }, []);
+  }, [realSession, usersList]);
+
 
   // System Logs & Audit
   const [logs, setLogs] = useState(initialSystemLogs);
