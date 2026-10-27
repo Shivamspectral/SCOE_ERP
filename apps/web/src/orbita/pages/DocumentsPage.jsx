@@ -44,8 +44,13 @@ export function DocumentsPage() {
   };
 
   useEffect(() => {
-    if (!liveMode) return;
+    if (!liveMode) {
+      setDocuments(previewDocuments);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+    setDocuments([]);
     setLoading(true);
     documentsApi.list().then((rows) => {
       if (!cancelled) setDocuments(Array.isArray(rows) ? rows : []);
