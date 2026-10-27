@@ -1,0 +1,385 @@
+import React, { useState } from "react";
+import {
+  Users,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Save,
+  RotateCcw,
+  Search,
+  Filter,
+  Download,
+  Calendar,
+  BookOpen,
+  MapPin,
+  Check,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
+import { usePortal } from "../context/PortalContext";
+import { Breadcrumb } from "../components/Breadcrumb";
+
+export function FacultyClassesPage() {
+  const {
+    facultyClassesList,
+    attendanceSheet,
+    toggleStudentAttendance,
+    markAllClassAttendance,
+    saveAttendanceSheet,
+    addSystemLog,
+    toast,
+  } = usePortal();
+
+  const [selectedClassId, setSelectedClassId] = useState("cls-1");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedDivision, setSelectedDivision] = useState("All");
+
+  const currentClass =
+    facultyClassesList.find((c) => c.id === selectedClassId) ||
+    facultyClassesList[0];
+
+  // Filter students
+  const filteredStudents = attendanceSheet.filter((student) => {
+    const matchesSearch =
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" || student.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const presentCount = attendanceSheet.filter((s) => s.status === "Present").length;
+  const absentCount = attendanceSheet.filter((s) => s.status === "Absent").length;
+  const lateCount = attendanceSheet.filter((s) => s.status === "Late").length;
+  const attendanceRate = Math.round((presentCount / attendanceSheet.length) * 100);
+
+  const handleSave = () => {
+    saveAttendanceSheet(currentClass.id);
+    addSystemLog(
+      `Marked attendance for ${currentClass.courseName} (${currentClass.division}): ${presentCount} Present, ${absentCount} Absent`,
+      "Success"
+    );
+    toast({
+      title: "Attendance Saved & Synchronized",
+      description: `Updated record for ${currentClass.courseName} (${presentCount}/${attendanceSheet.length} Present). Dispatched to SPPU ERP.`,
+      variant: "success",
+    });
+  };
+
+  const handleExportCSV = () => {
+    const headers = "Roll No,Student ID,Name,Branch,Status,Overall Attendance\n";
+    const rows = filteredStudents
+      .map(
+        (s) =>
+          `"${s.rollNo}","${s.id}","${s.name}","${s.branch}","${s.status}","${s.attendance}"`
+      )
+      .join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `Attendance_${currentClass.courseCode}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Attendance Sheet Exported",
+      description: `Downloaded attendance roll for ${currentClass.courseName}.`,
+      variant: "info",
+    });
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Breadcrumb
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "My Classes & Attendance" },
+        ]}
+      />
+
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            My Classes & Daily Attendance
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage course batches, take digital roll call, and synchronize session logs with the SPPU ERP.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+          >
+            <Download className="size-4 text-muted-foreground" />
+            <span>Export CSV</span>
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+          >
+            <Save className="size-4" />
+            <span>Save Attendance</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Class Cards Selector */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {facultyClassesList.map((cls) => {
+          const isSelected = cls.id === selectedClassId;
+          return (
+            <button
+              key={cls.id}
+              onClick={() => setSelectedClassId(cls.id)}
+              className={`flex flex-col justify-between rounded-xl border p-4 text-left transition-all ${
+                isSelected
+                  ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary"
+                  : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                    {cls.courseCode}
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {cls.division}
+                  </span>
+                </div>
+                <h3 className="mt-2.5 font-display text-sm font-bold text-foreground line-clamp-1">
+                  {cls.courseName}
+                </h3>
+                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <p className="flex items-center gap-1.5">
+                    <Clock className="size-3.5 text-muted-foreground/70" />
+                    <span>{cls.time}</span>
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <MapPin className="size-3.5 text-muted-foreground/70" />
+                    <span>{cls.room}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 border-t border-border pt-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Syllabus Progress</span>
+                  <span className="font-semibold text-foreground">{cls.syllabusCompleted}%</span>
+                </div>
+                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${cls.syllabusCompleted}%` }}
+                  />
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active Session Overview Banner */}
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Current Session
+          </span>
+          <h2 className="mt-0.5 font-display text-lg font-bold text-foreground">
+            {currentClass.courseName} ({currentClass.year} {currentClass.division})
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Scheduled: {currentClass.time} · Room: {currentClass.room} · Batch: {currentClass.batch}
+          </p>
+        </div>
+
+        {/* Live Counters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-lg border border-success/30 bg-success/10 px-3.5 py-1.5 text-center">
+            <span className="block text-[11px] font-medium text-success">Present</span>
+            <span className="font-display text-lg font-bold text-success">{presentCount}</span>
+          </div>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3.5 py-1.5 text-center">
+            <span className="block text-[11px] font-medium text-destructive">Absent</span>
+            <span className="font-display text-lg font-bold text-destructive">{absentCount}</span>
+          </div>
+          <div className="rounded-lg border border-warning/30 bg-warning/10 px-3.5 py-1.5 text-center">
+            <span className="block text-[11px] font-medium text-warning-foreground">Late</span>
+            <span className="font-display text-lg font-bold text-warning-foreground">{lateCount}</span>
+          </div>
+          <div className="rounded-lg border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-center">
+            <span className="block text-[11px] font-medium text-primary">Session Rate</span>
+            <span className="font-display text-lg font-bold text-primary">{attendanceRate}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter and Quick Action Toolbar */}
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-wrap items-center gap-2.5">
+          {/* Search */}
+          <div className="relative min-w-[220px] flex-1 sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search student or roll no…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-xs outline-none focus:border-primary"
+            />
+          </div>
+
+          {/* Status Filter Tabs */}
+          <div className="flex rounded-lg border border-border bg-muted/40 p-0.5">
+            {["All", "Present", "Absent", "Late"].map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  statusFilter === st
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bulk Action Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => markAllClassAttendance("Present")}
+            className="flex items-center gap-1.5 rounded-lg border border-success/40 bg-success/10 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/20 transition-colors"
+          >
+            <CheckCircle2 className="size-3.5" />
+            <span>Mark All Present</span>
+          </button>
+          <button
+            onClick={() => markAllClassAttendance("Absent")}
+            className="flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors"
+          >
+            <XCircle className="size-3.5" />
+            <span>Mark All Absent</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Attendance Sheet Table */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <tr>
+                <th className="px-4 py-3">Roll No</th>
+                <th className="px-4 py-3">Student Name</th>
+                <th className="px-4 py-3">PRN / ID</th>
+                <th className="px-4 py-3 text-center">Semester Record</th>
+                <th className="px-4 py-3 text-center">Session Status</th>
+                <th className="px-4 py-3 text-right">Quick Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border text-foreground">
+              {filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No students match the current filter or search criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredStudents.map((s) => (
+                  <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-foreground">
+                      {s.rollNo}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                          {s.avatar}
+                        </div>
+                        <span className="font-semibold text-foreground">{s.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {s.id}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+                        {s.attendance}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          s.status === "Present"
+                            ? "bg-success/15 text-success"
+                            : s.status === "Absent"
+                            ? "bg-destructive/15 text-destructive"
+                            : "bg-warning/15 text-warning-foreground"
+                        }`}
+                      >
+                        {s.status === "Present" && <CheckCircle2 className="size-3" />}
+                        {s.status === "Absent" && <XCircle className="size-3" />}
+                        {s.status === "Late" && <Clock className="size-3" />}
+                        <span>{s.status}</span>
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="inline-flex rounded-lg border border-border bg-card p-0.5 shadow-sm">
+                        <button
+                          onClick={() => toggleStudentAttendance(s.id, "Present")}
+                          className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+                            s.status === "Present"
+                              ? "bg-success text-white shadow-sm"
+                              : "text-muted-foreground hover:bg-muted"
+                          }`}
+                          title="Mark Present"
+                        >
+                          P
+                        </button>
+                        <button
+                          onClick={() => toggleStudentAttendance(s.id, "Absent")}
+                          className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+                            s.status === "Absent"
+                              ? "bg-destructive text-white shadow-sm"
+                              : "text-muted-foreground hover:bg-muted"
+                          }`}
+                          title="Mark Absent"
+                        >
+                          A
+                        </button>
+                        <button
+                          onClick={() => toggleStudentAttendance(s.id, "Late")}
+                          className={`rounded px-2.5 py-1 text-xs font-bold transition-colors ${
+                            s.status === "Late"
+                              ? "bg-warning text-warning-foreground shadow-sm"
+                              : "text-muted-foreground hover:bg-muted"
+                          }`}
+                          title="Mark Late"
+                        >
+                          L
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
