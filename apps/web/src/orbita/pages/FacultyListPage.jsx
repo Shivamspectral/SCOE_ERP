@@ -16,7 +16,8 @@ import { usePortal } from "../context/PortalContext";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function FacultyListPage() {
-  const { facultyList, departments, toast } = usePortal();
+  const { facultyList, departments, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState("All");
@@ -39,6 +40,7 @@ export function FacultyListPage() {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
+    if (liveSession) { toast({ title: "Messaging unavailable", description: "Faculty email or internal messaging is not connected. No message was sent.", variant: "info" }); return; }
     if (!messageSubject.trim() || !messageBody.trim()) {
       toast({
         title: "All Fields Required",
