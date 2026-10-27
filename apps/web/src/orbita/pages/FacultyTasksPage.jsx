@@ -109,7 +109,7 @@ export function FacultyTasksPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <span className="text-xs text-muted-foreground">Total Action Items</span>
           <span className="mt-1 block font-display text-2xl font-bold text-foreground">
-            {tasks.length}
+            {liveSession ? "—" : tasks.length}
           </span>
         </div>
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-4">
@@ -127,7 +127,7 @@ export function FacultyTasksPage() {
         <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
           <span className="text-xs text-primary font-medium">Completion Rate</span>
           <span className="mt-1 block font-display text-2xl font-bold text-primary">
-            {Math.round((completedCount / (tasks.length || 1)) * 100)}%
+            {liveSession ? "—" : `${Math.round((completedCount / (tasks.length || 1)) * 100)}%`}
           </span>
         </div>
       </div>
