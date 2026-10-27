@@ -75,7 +75,7 @@ export default function App() {
     const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
     const liveDataRoutes = new Set([
       "/dashboard", "/timetable", "/attendance", "/marks", "/notices", "/notifications", "/profile", "/settings",
-      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs",
+      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks",
       "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
     ]);
     if (liveSession && !liveDataRoutes.has(currentRoute)) {
