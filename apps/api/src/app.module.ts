@@ -4,6 +4,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import * as Joi from 'joi';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 @Module({
   imports: [
@@ -20,6 +23,9 @@ import { HealthModule } from './health/health.module';
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     HealthModule,
+    AuthModule,
+    DepartmentsModule,
+    WorkflowsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
