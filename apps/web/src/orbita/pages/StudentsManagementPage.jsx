@@ -263,13 +263,13 @@ export function StudentsManagementPage() {
                 <div className="rounded-lg bg-muted/40 p-2.5">
                   <span className="block text-muted-foreground">Class Standing</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    Top 5%
+                    Not calculated
                   </span>
                 </div>
                 <div className="rounded-lg bg-success/10 p-2.5">
-                  <span className="block text-success font-medium">Academic Status</span>
-                  <span className="font-display text-base font-bold text-success">
-                    Eligible
+                  <span className="block text-muted-foreground font-medium">Record Status</span>
+                  <span className="font-display text-base font-bold text-foreground">
+                    {selectedStudent.status || "Unknown"}
                   </span>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export function StudentsManagementPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Current Level:</span>
-                  <span className="font-semibold text-foreground">{selectedStudent.year} (Semester VI)</span>
+                  <span className="font-semibold text-foreground">{selectedStudent.year || "Not assigned"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">College Email:</span>
@@ -289,7 +289,7 @@ export function StudentsManagementPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Mentor:</span>
-                  <span className="font-semibold text-foreground">Prof. R. Kale (Computer)</span>
+                  <span className="font-semibold text-foreground">{selectedStudent.mentor || "Not assigned"}</span>
                 </div>
               </div>
 
@@ -301,16 +301,18 @@ export function StudentsManagementPage() {
                   Close
                 </button>
                 <button
-                  onClick={() => {
-                    toast({
-                      title: "Parent Communication Dispatched",
-                      description: `Progress card dispatched to registered guardian of ${selectedStudent.name}.`,
-                      variant: "info",
-                    });
-                  }}
-                  className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90"
+                  onClick={() => toast({
+                    title: liveSession ? "Progress card unavailable" : "Preview only",
+                    description: liveSession
+                      ? "Official progress-card generation and guardian messaging are not connected. No card was generated or message sent."
+                      : "This preview does not generate a progress card or send parent communications.",
+                    variant: "info",
+                  })}
+                  disabled={liveSession}
+                  className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  title={liveSession ? "Progress-card generation and guardian messaging are not connected" : "Preview only"}
                 >
-                  Dispatch Progress Card
+                  {liveSession ? "Progress Card Unavailable" : "Preview Progress Card"}
                 </button>
               </div>
             </div>
