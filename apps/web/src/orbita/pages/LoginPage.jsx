@@ -90,7 +90,7 @@ export function LoginPage() {
       });
       return;
     }
-    if (!registrationId.trim()) {
+    if (mode === "activate" && !registrationId.trim()) {
       toast({
         title: "Registration ID required",
         description: "Enter the institutional ID issued to you, e.g. STU-CSE-2026-00421.",
@@ -119,7 +119,7 @@ export function LoginPage() {
           variant: "success",
         });
       } else {
-        await signIn({ email: email.trim().toLowerCase(), password, registrationId: registrationId.trim().toUpperCase() });
+        await signIn({ email: email.trim().toLowerCase(), password });
         toast({
           title: "Signed in",
           description: "Welcome back to the Smart Campus portal.",
