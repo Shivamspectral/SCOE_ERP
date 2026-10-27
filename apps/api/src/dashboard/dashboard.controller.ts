@@ -37,14 +37,25 @@ export class DashboardController {
       count('attendance_records', { attendance_status: 'on_duty' }),
       count('assignment_records'),
       client.from('role_assignments').select('user_id').eq('role', 'faculty').eq('status', 'active').limit(5000),
-      client.from('marks_records').select('student_id,marks_obtained').not('marks_obtained', 'is', null).limit(10000),
+      client.from('marks_records').select('student_id,marks_obtained,max_marks').not('marks_obtained', 'is', null).in('status', ['verified', 'locked']).limit(10000),
     ]);
     if (roleRows.error) throw roleRows.error;
     if (markRows.error) throw markRows.error;
     const faculty = new Set((roleRows.data ?? []).map((row) => row.user_id)).size;
-    const marks = (markRows.data ?? []).map((row) => Number(row.marks_obtained)).filter(Number.isFinite);
-    const averageScore = marks.length ? Math.round((marks.reduce((sum, value) => sum + value, 0) / marks.length) * 10) / 10 : null;
-    const lowScoreStudents = new Set((markRows.data ?? []).filter((row) => Number(row.marks_obtained) < 40).map((row) => row.student_id)).size;
+    const scoredRows = (markRows.data ?? []).map((row) => {
+      const obtained = Number(row.marks_obtained);
+      const maximum = Number(row.max_marks);
+      return {
+        studentId: row.student_id,
+        percentage: Number.isFinite(obtained) && Number.isFinite(maximum) && maximum > 0
+          ? (obtained / maximum) * 100
+          : null,
+      };
+    }).filter((row) => row.percentage !== null);
+    const averageScore = scoredRows.length
+      ? Math.round((scoredRows.reduce((sum, row) => sum + row.percentage!, 0) / scoredRows.length) * 10) / 10
+      : null;
+    const lowScoreStudents = new Set(scoredRows.filter((row) => row.percentage! < 40).map((row) => row.studentId)).size;
     const attendanceRate = totalAttendance ? Math.round(((presentAttendance + onDutyAttendance) / totalAttendance) * 1000) / 10 : null;
 
     return {
