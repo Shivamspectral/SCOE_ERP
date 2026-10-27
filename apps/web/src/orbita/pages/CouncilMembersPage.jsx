@@ -22,7 +22,8 @@ import { councilMembers as initialMembers, college } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
 
 export function CouncilMembersPage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [selectedCommittee, setSelectedCommittee] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeMemberModal, setActiveMemberModal] = useState(null);
@@ -58,6 +59,8 @@ export function CouncilMembersPage() {
       variant: "success",
     });
   };
+
+  if (liveSession) return <div className="space-y-6"><Breadcrumb title="Student Council & Committees" subtitle="Institutional committee directory" /><p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">The institutional council directory, committee assignments and messaging service are not connected. Sample members and contact details are hidden.</p></div>;
 
   return (
     <div className="space-y-6 animate-fade-in-up">
