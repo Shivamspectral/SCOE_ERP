@@ -66,14 +66,18 @@ export function ApprovalsPage() {
   const approvedCount = approvals.filter((a) => a.status === "Approved").length;
   const rejectedCount = approvals.filter((a) => a.status === "Rejected").length;
 
-  const handleApprove = (app) => {
-    approveRequest(app.id);
-    addSystemLog(`Approved Sanction Request ${app.id} (${app.type})`, "Success");
-    toast({
-      title: "Request Sanctioned & Approved",
-      description: `Dispatched official authorization for ${app.applicant}.`,
-      variant: "success",
-    });
+  const handleApprove = async (app) => {
+    try {
+      await approveRequest(app.id);
+      addSystemLog(`Approved Sanction Request ${app.id} (${app.type})`, "Success");
+      toast({
+        title: "Request Sanctioned & Approved",
+        description: `Dispatched official authorization for ${app.applicant}.`,
+        variant: "success",
+      });
+    } catch (error) {
+      toast({ title: "Approval failed", description: error?.message || "The request could not be approved.", variant: "error" });
+    }
   };
 
   const handleOpenReject = (app) => {
@@ -82,7 +86,7 @@ export function ApprovalsPage() {
     setRejectModalOpen(true);
   };
 
-  const handleConfirmReject = (e) => {
+  const handleConfirmReject = async (e) => {
     e.preventDefault();
     if (!rejectionReason.trim()) {
       toast({
@@ -93,17 +97,21 @@ export function ApprovalsPage() {
       return;
     }
 
-    rejectRequest(activeRequest.id, rejectionReason);
-    addSystemLog(`Rejected Request ${activeRequest.id}: ${rejectionReason}`, "Warning");
-    setRejectModalOpen(false);
-    toast({
-      title: "Request Declined",
-      description: `Formal rejection logged for ${activeRequest.id}. Reason: ${rejectionReason}`,
-      variant: "warning",
-    });
+    try {
+      await rejectRequest(activeRequest.id, rejectionReason);
+      addSystemLog(`Rejected Request ${activeRequest.id}: ${rejectionReason}`, "Warning");
+      setRejectModalOpen(false);
+      toast({
+        title: "Request Declined",
+        description: `Formal rejection logged for ${activeRequest.id}. Reason: ${rejectionReason}`,
+        variant: "warning",
+      });
+    } catch (error) {
+      toast({ title: "Rejection failed", description: error?.message || "The request could not be rejected.", variant: "error" });
+    }
   };
 
-  const handleCreateRequest = (e) => {
+  const handleCreateRequest = async (e) => {
     e.preventDefault();
     if (!reqDetails.trim()) {
       toast({
@@ -114,22 +122,25 @@ export function ApprovalsPage() {
       return;
     }
 
-    const created = addApprovalRequest({
-      type: reqType,
-      details: reqDetails,
-      urgency: reqUrgency,
-      budget: reqBudget ? `₹${reqBudget}` : null,
-    });
-
-    addSystemLog(`Created new sanction requisition #${created.id} (${reqType})`, "Info");
-    setNewModalOpen(false);
-    setReqDetails("");
-    setReqBudget("");
-    toast({
-      title: "Requisition Submitted",
-      description: `Request #${created.id} submitted for institutional sanction.`,
-      variant: "success",
-    });
+    try {
+      const created = await addApprovalRequest({
+        type: reqType,
+        details: reqDetails,
+        urgency: reqUrgency,
+        budget: reqBudget ? `₹${reqBudget}` : null,
+      });
+      addSystemLog(`Created new sanction requisition #${created.id} (${reqType})`, "Info");
+      setNewModalOpen(false);
+      setReqDetails("");
+      setReqBudget("");
+      toast({
+        title: "Requisition Submitted",
+        description: `Request #${created.id} submitted for institutional sanction.`,
+        variant: "success",
+      });
+    } catch (error) {
+      toast({ title: "Submission failed", description: error?.message || "The request could not be submitted.", variant: "error" });
+    }
   };
 
   return (
