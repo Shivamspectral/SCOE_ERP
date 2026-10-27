@@ -1,0 +1,200 @@
+/**
+ * Single HTTP entry point from the client (web + Capacitor Android) to the
+ * Next.js backend.
+ *
+ * README §4 / §27: the client never talks to privileged infrastructure and never
+ * carries privileged credentials. It sends the Supabase Auth access token; the
+ * backend performs every authentication and authorization decision. Web and
+ * Android use this exact same client, so both get identical rules.
+ */
+
+import { supabase } from "./supabase";
+
+const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+export const API_BASE_URL = RAW_BASE.replace(/\/+$/, "");
+
+/** False in pure UI/demo mode (no backend deployed yet). */
+export const isBackendConfigured = Boolean(API_BASE_URL);
+
+export class ApiError extends Error {
+  constructor(message, status, code, details) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+async function accessToken() {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+function buildUrl(path, query) {
+  const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  if (!query) return url;
+  const qs = new URLSearchParams();
+  Object.entries(query).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === "") return;
+    if (Array.isArray(v)) v.forEach((item) => qs.append(k, String(item)));
+    else qs.append(k, String(v));
+  });
+  const s = qs.toString();
+  return s ? `${url}?${s}` : url;
+}
+
+async function request(method, path, { body, query, signal } = {}) {
+  if (!isBackendConfigured) {
+    throw new ApiError("Backend API is not configured (VITE_API_BASE_URL).", 0, "NO_BACKEND");
+  }
+
+  const token = await accessToken();
+  const res = await fetch(buildUrl(path, query), {
+    method,
+    signal,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  let payload = null;
+  try {
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = text;
+  }
+
+  if (!res.ok) {
+    const err = payload && typeof payload === "object" ? payload.error || payload : {};
+    throw new ApiError(
+      err.message || `Request failed (${res.status})`,
+      res.status,
+      err.code || String(res.status),
+      err.details
+    );
+  }
+
+  return payload && typeof payload === "object" && "data" in payload ? payload.data : payload;
+}
+
+export const api = {
+  get: (path, query, opts) => request("GET", path, { query, ...opts }),
+  post: (path, body, opts) => request("POST", path, { body, ...opts }),
+  patch: (path, body, opts) => request("PATCH", path, { body, ...opts }),
+  put: (path, body, opts) => request("PUT", path, { body, ...opts }),
+  del: (path, opts) => request("DELETE", path, opts),
+};
+
+/**
+ * Best-effort read: returns `fallback` when the backend is absent or the call
+ * fails, so the portal stays usable against seed data while modules are wired up.
+ * Authorization failures (401/403) are never swallowed silently in logs.
+ */
+export async function safeGet(path, query, fallback = null) {
+  if (!isBackendConfigured) return fallback;
+  try {
+    return await api.get(path, query);
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+      console.warn(`[api] ${path} denied by backend authorization:`, error.message);
+    } else {
+      console.warn(`[api] ${path} unavailable, using local data:`, error.message);
+    }
+    return fallback;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Endpoint helpers — mirror of README §21
+ * ------------------------------------------------------------------ */
+
+export const authApi = {
+  me: () => api.get("/api/auth/me"),
+  verifyRegistrationId: (registrationId) =>
+    api.post("/api/auth/verify-registration-id", { registration_id: registrationId }),
+  register: (payload) => api.post("/api/auth/register", payload),
+  logout: () => api.post("/api/auth/logout", {}),
+  changePassword: (payload) => api.post("/api/auth/change-password", payload),
+  changeEmail: (payload) => api.post("/api/auth/change-email", payload),
+};
+
+export const usersApi = {
+  list: (query) => api.get("/api/users", query),
+  get: (id) => api.get(`/api/users/${id}`),
+  update: (id, payload) => api.patch(`/api/users/${id}`, payload),
+  remove: (id) => api.del(`/api/users/${id}`),
+};
+
+export const registrationIdsApi = {
+  list: (query) => api.get("/api/registration-ids", query),
+  generate: (payload) => api.post("/api/registration-ids", payload),
+  disable: (id) => api.post(`/api/registration-ids/${id}/disable`, {}),
+};
+
+export const studentsApi = {
+  list: (query) => api.get("/api/students", query),
+  get: (id) => api.get(`/api/students/${id}`),
+  create: (payload) => api.post("/api/students", payload),
+  update: (id, payload) => api.patch(`/api/students/${id}`, payload),
+};
+
+export const facultyApi = {
+  list: (query) => api.get("/api/faculty", query),
+  get: (id) => api.get(`/api/faculty/${id}`),
+  create: (payload) => api.post("/api/faculty", payload),
+  update: (id, payload) => api.patch(`/api/faculty/${id}`, payload),
+};
+
+export const attendanceApi = {
+  createSession: (payload) => api.post("/api/attendance/sessions", payload),
+  markRecords: (sessionId, records) =>
+    api.post(`/api/attendance/sessions/${sessionId}/records`, { records }),
+  updateRecord: (recordId, payload) => api.patch(`/api/attendance/records/${recordId}`, payload),
+  byStudent: (studentId, query) => api.get(`/api/attendance/student/${studentId}`, query),
+  byClass: (classId, query) => api.get(`/api/attendance/class/${classId}`, query),
+};
+
+export const marksApi = {
+  get: (id) => api.get(`/api/marks/${id}`),
+  upsert: (payload) => api.post("/api/marks", payload),
+  update: (payload) => api.patch("/api/marks", payload),
+  lock: (id, reason) => api.post(`/api/marks/${id}/lock`, { reason }),
+  unlock: (id, reason) => api.post(`/api/marks/${id}/unlock`, { reason }),
+};
+
+export const noticesApi = {
+  list: (query) => api.get("/api/notices", query),
+  create: (payload) => api.post("/api/notices", payload),
+  publish: (id) => api.post(`/api/notices/${id}/publish`, {}),
+};
+
+export const grievancesApi = {
+  list: (query) => api.get("/api/grievances", query),
+  create: (payload) => api.post("/api/grievances", payload),
+  assign: (id, assignedTo, remarks) =>
+    api.post(`/api/grievances/${id}/assign`, { assigned_to: assignedTo, remarks }),
+  resolve: (id, remarks) => api.post(`/api/grievances/${id}/resolve`, { remarks }),
+};
+
+export const reportsApi = {
+  generate: (kind, filters) => api.get(`/api/reports/${kind}`, filters),
+  download: (token) => api.get(`/api/reports/download/${token}`),
+};
+
+export const notificationsApi = {
+  list: (query) => api.get("/api/notifications", query),
+  markRead: (id) => api.patch(`/api/notifications/${id}`, { is_read: true }),
+  registerDevice: (payload) => api.post("/api/notifications/devices", payload),
+};
+
+export const auditLogsApi = {
+  list: (query) => api.get("/api/audit-logs", query),
+};
