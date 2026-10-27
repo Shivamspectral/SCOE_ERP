@@ -540,14 +540,19 @@ export function PortalProvider({ children }) {
 
   // User Management State (Super Admin)
   const [usersList, setUsersList] = useState(initialAdminUsers);
+  const [usersLoaded, setUsersLoaded] = useState(false);
   useEffect(() => {
-    if (!isBackendConfigured || !isAuthenticated) return;
+    if (!realSession) return;
     let cancelled = false;
+    setUsersLoaded(false);
     usersApi.list({ limit: 100 }).then((rows) => {
-      if (!cancelled && Array.isArray(rows)) setUsersList(rows);
-    }).catch((error) => console.warn("[users] unable to load directory", error));
+      if (!cancelled) { setUsersList(Array.isArray(rows) ? rows : []); setUsersLoaded(true); }
+    }).catch((error) => {
+      console.warn("[users] unable to load directory", error);
+      if (!cancelled) { setUsersList([]); setUsersLoaded(true); }
+    });
     return () => { cancelled = true; };
-  }, [isAuthenticated]);
+  }, [realSession]);
   const addUser = useCallback(async (newUser) => {
     const created = await api.post("/api/users", newUser);
     setUsersList((prev) => [created, ...prev]);
@@ -695,7 +700,6 @@ export function PortalProvider({ children }) {
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
   }, [isBackendConfigured, session?.access_token, notifications]);
 
-  const realSession = Boolean(isBackendConfigured && isAuthenticated && session?.access_token);
   const visibleNotifications = realSession ? (notificationsLoaded ? notifications : []) : notifications;
   const unreadCount = visibleNotifications.filter((n) => n.unread).length;
 
@@ -747,7 +751,7 @@ export function PortalProvider({ children }) {
     };
   }, [scope?.college_wide, userRole, activeProfile.dept, activeProfile.branch]);
 
-  const [departmentsList, setDepartmentsList] = useState(initialDepartments);
+  const [departmentsList, setDepartmentsList] = useState(null);
   useEffect(() => {
     if (!isBackendConfigured || !isAuthenticated || !session?.access_token) return;
     let cancelled = false;
@@ -758,7 +762,7 @@ export function PortalProvider({ children }) {
         description: row.description || "", status: row.status,
         hod_user_id: row.hod_user_id || null,
       })));
-    }).catch((error) => console.warn("[departments] unable to load directory", error));
+    }).catch((error) => { console.warn("[departments] unable to load directory", error); if (!cancelled) setDepartmentsList([]); });
     return () => { cancelled = true; };
   }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
@@ -796,17 +800,21 @@ export function PortalProvider({ children }) {
     return () => { cancelled = true; };
   }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
+  const realSession = Boolean(isBackendConfigured && isAuthenticated && session?.access_token);
+
   // Seed-data filtering mirrors the server scope when the portal is running
   // without a backend. With a backend configured, API authorization remains
   // authoritative and these lists are only UI fallbacks.
   const scopedDepartments = useMemo(() => {
-    if (scopeMeta.level === "college") return departmentsList;
+    if (realSession) return departmentsList ?? [];
+    if (scopeMeta.level === "college") return departmentsList ?? initialDepartments;
     const dept = activeProfile.dept?.toLowerCase();
-    if (!dept) return departmentsList;
-    return departmentsList.filter((item) => item.name?.toLowerCase() === dept);
-  }, [scopeMeta.level, activeProfile.dept, departmentsList]);
+    if (!dept) return departmentsList ?? initialDepartments;
+    return (departmentsList ?? initialDepartments).filter((item) => item.name?.toLowerCase() === dept);
+  }, [scopeMeta.level, activeProfile.dept, departmentsList, realSession]);
 
   const scopedFaculty = useMemo(() => {
+    if (realSession) return (usersList ?? []).filter((item) => ["Faculty", "faculty"].includes(item.role) || item.roles?.some((role) => role.role === "faculty")).map((item) => ({ id: item.id, name: item.name, email: item.email || "", dept: item.department?.name || "", designation: item.title || "Faculty", role: "Faculty" }));
     if (scopeMeta.level === "college") return initialFaculty;
     const dept = activeProfile.dept?.toLowerCase();
     if (userRole === "Faculty") {
@@ -816,10 +824,10 @@ export function PortalProvider({ children }) {
     }
     if (!dept) return initialFaculty;
     return initialFaculty.filter((item) => item.dept?.toLowerCase() === dept);
-  }, [scopeMeta.level, activeProfile.dept, activeProfile.id, activeProfile.email, userRole]);
+  }, [scopeMeta.level, activeProfile.dept, activeProfile.id, activeProfile.email, userRole, realSession, usersList]);
 
   const scopedStudents = useMemo(() => {
-    if (isBackendConfigured && isAuthenticated && session?.access_token) {
+    if (realSession) {
       return institutionStudents ?? [];
     }
     if (scopeMeta.level === "college") return initialStudents;
@@ -834,7 +842,7 @@ export function PortalProvider({ children }) {
     return initialStudents.filter((item) =>
       `${item.branch || ""}`.toLowerCase().includes(dept.replace(" engineering", ""))
     );
-  }, [scopeMeta.level, userRole, activeProfile.dept, isBackendConfigured, isAuthenticated, session?.access_token, institutionStudents]);
+  }, [scopeMeta.level, userRole, activeProfile.dept, realSession, institutionStudents]);
 
   const scopedFacultyClasses = useMemo(() => {
     if (scopeMeta.level === "college") return facultyClassesList;
@@ -907,7 +915,7 @@ export function PortalProvider({ children }) {
     toggleTask,
     addTask,
     deleteTask,
-    usersList,
+    usersList: realSession ? (usersLoaded ? usersList : []) : usersList,
     addUser,
     deleteUser,
     updateUserRole,
