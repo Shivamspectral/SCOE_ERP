@@ -253,7 +253,7 @@ export function PortalProvider({ children }) {
    * Sign in with Supabase Auth (README §9 — the app never stores or verifies
    * passwords itself), then load role + scope from the backend.
    */
-  const signIn = useCallback(async ({ email, password, registrationId }) => {
+  const signIn = useCallback(async ({ email, password }) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
@@ -270,12 +270,6 @@ export function PortalProvider({ children }) {
       setUserRole("Pending");
       throw new Error("This account is not approved for staff access. Contact your college administrator.");
     }
-    if (registrationId && me?.profile?.registration_id?.toUpperCase() !== registrationId.toUpperCase()) {
-      await supabase.auth.signOut();
-      setSession(null);
-      setIsAuthenticated(false);
-      throw new Error("Registration ID does not match this account");
-    }
     setCurrentRoute("/dashboard");
     if (window.history && window.history.pushState) {
       window.history.pushState(null, "", "/dashboard");
@@ -284,8 +278,8 @@ export function PortalProvider({ children }) {
   }, [hydrateIdentity]);
 
   /**
-   * Activate an account against an institutional registration ID (README §8).
-   * The backend verifies the ID and its status; the client only relays it.
+   * Create a staff access request. Email confirmation and institutional approval
+   * are required before the account may enter the staff workspace.
    */
   const activateAccount = useCallback(async ({ email, password, name }) => {
     const { data, error } = await supabase.auth.signUp({
