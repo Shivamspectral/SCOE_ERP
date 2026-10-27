@@ -24,7 +24,7 @@ export function DepartmentsPage() {
   const filteredDepts = departments.filter((d) =>
     d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.hod.toLowerCase().includes(searchQuery.toLowerCase())
+    String(d.hod || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -54,6 +54,8 @@ export function DepartmentsPage() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status">Department records show only fields currently supplied by the backend. HOD names and establishment years may be unavailable until those fields are maintained in the institutional database.</div>
+
       {/* Search Bar */}
       <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
         <div className="relative w-full max-w-sm">
@@ -81,7 +83,7 @@ export function DepartmentsPage() {
                   {d.code}
                 </span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                  Est. {d.established}
+                  {d.established ? `Est. ${d.established}` : "Establishment year unavailable"}
                 </span>
               </div>
 
@@ -89,7 +91,7 @@ export function DepartmentsPage() {
                 {d.name}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Head of Department: <span className="font-semibold text-foreground">{d.hod}</span>
+                Head of Department: <span className="font-semibold text-foreground">{d.hod || "Not assigned / unavailable"}</span>
               </p>
 
               <p className="mt-3 text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed">
