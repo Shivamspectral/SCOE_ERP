@@ -82,7 +82,7 @@ $$;
 
 drop trigger if exists attendance_session_transition_guard on public.attendance_sessions;
 create trigger attendance_session_transition_guard
-before update of status on public.attendance_sessions
+before update on public.attendance_sessions
 for each row execute function app_private.enforce_attendance_session_transition();
 
 revoke all on function app_private.enforce_attendance_session_transition() from public, anon, authenticated;
