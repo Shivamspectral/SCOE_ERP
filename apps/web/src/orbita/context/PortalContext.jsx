@@ -351,7 +351,7 @@ export function PortalProvider({ children }) {
       id: serverProfile.registration_id || serverProfile.id || prev.id,
       name: serverProfile.name || prev.name,
       email: serverProfile.email || prev.email,
-      role: roleLabel(serverProfile.role || roleEnum(userRole)),
+      role: userRole,
       ...(serverProfile.profile_data || {}),
     }));
   }, [activeProfile, isAuthenticated, serverProfile, userRole]);
