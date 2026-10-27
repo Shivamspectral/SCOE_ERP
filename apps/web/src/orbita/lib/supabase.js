@@ -147,6 +147,19 @@ export const supabase = {
       return { data: { session: current }, error: null };
     },
 
+    async updateUser(attributes) {
+      const token = restore()?.access_token;
+      if (!token) throw new Error("You must be signed in to update account details.");
+      if (!attributes || typeof attributes !== "object" || Object.keys(attributes).length === 0) {
+        throw new Error("Provide at least one account field to update.");
+      }
+      const user = await request("/auth/v1/user", {
+        method: "PUT",
+        body: JSON.stringify(attributes),
+      }, token);
+      return { data: { user }, error: null };
+    },
+
     getUser() {
       const token = restore()?.access_token;
       if (!token) return Promise.resolve({ data: { user: null }, error: null });
