@@ -381,12 +381,12 @@ export function PortalProvider({ children }) {
 
     setStudent({
       ...activeProfile,
+      ...(serverProfile.profile_data || {}),
       id: serverProfile.registration_id || serverProfile.id || "—",
       name: serverProfile.name || "Staff member",
       email: serverProfile.email || "",
       phone: serverProfile.phone || "",
       role: userRole,
-      ...(serverProfile.profile_data || {}),
     });
   }, [activeProfile, isAuthenticated, serverProfile, userRole]);
 
