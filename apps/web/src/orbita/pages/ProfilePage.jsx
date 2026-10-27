@@ -123,7 +123,8 @@ export function ProfilePage() {
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={handleDownloadIDCard}\n              disabled={liveSession}
+              onClick={handleDownloadIDCard}
+              disabled={liveSession}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
             >
               <Download className="size-3.5" />
