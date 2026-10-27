@@ -25,15 +25,16 @@ export function FacultyTasksPage() {
   const [taskDueDate, setTaskDueDate] = useState("Tomorrow");
   const [taskCategory, setTaskCategory] = useState("Academics");
 
-  const filteredTasks = tasks.filter((t) => {
+  const displayedTasks = liveSession ? [] : tasks;
+  const filteredTasks = displayedTasks.filter((t) => {
     if (activeTab === "Pending") return !t.completed;
     if (activeTab === "Completed") return t.completed;
     if (activeTab === "High") return t.priority === "High";
     return true;
   });
 
-  const completedCount = tasks.filter((t) => t.completed).length;
-  const pendingCount = tasks.length - completedCount;
+  const completedCount = displayedTasks.filter((t) => t.completed).length;
+  const pendingCount = displayedTasks.length - completedCount;
 
   const handleCreateTask = (e) => {
     e.preventDefault();
