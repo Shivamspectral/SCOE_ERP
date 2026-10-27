@@ -6,7 +6,7 @@ A college staff ERP for principals, administrators, coordinators, HODs, faculty 
 
 - **Frontend:** React 19 + Vite 8, Orbita Max React/JSX screens, Tailwind CSS, Lucide, TanStack Query.
 - **API:** NestJS 11 + TypeScript, versioned REST endpoints, DTO validation, Helmet, CORS allow-list, rate limiting and OpenAPI docs.
-- **Auth/data:** Supabase Auth + PostgreSQL, institution-scoped tables and Row Level Security (RLS). The API verifies Supabase access tokens and forwards the caller's JWT to database queries; it does not need a service-role key.
+- **Auth/data:** Supabase Auth + PostgreSQL, institution-scoped tables and Row Level Security (RLS). The API verifies Supabase access tokens and forwards the caller's JWT to normal data queries. A server-only service-role key is optional and used only for administrator-authorized staff invitation emails.
 - **Hosting target:** Vercel for the static frontend, Render (or another Node host) for the API, Supabase for auth and PostgreSQL.
 
 ## Implemented foundation
@@ -16,10 +16,11 @@ A college staff ERP for principals, administrators, coordinators, HODs, faculty 
 - Staff directory with role/status/department updates through the database's `manage_member` function.
 - Workflow request queue and approval decisions through `submit_workflow` and `decide_workflow`.
 - Circular list, draft creation and role-checked publishing.
-- Attendance session creation and class/student validation for attendance records.
+- Attendance session creation, complete-roster submission, scoped HOD/leadership review, correction feedback, and database-enforced status transitions.
+- Privacy-conscious audit triggers for staff, department, student, attendance, marks, workflow, circular and document changes, with a role-scoped audit-log API.
 - Per-user notifications and mark-read actions.
 - Core schema and RLS migrations plus academic workspace tables.
-- CI build checks for the Vite frontend and NestJS API.
+- CI build/typecheck checks, API DTO regression tests, and database migration validation.
 
 **Production readiness note:** this is an actively developed ERP foundation, not yet a verified production-ready ₹3 lakh delivery. Some Orbita Max screens still use synthetic local data or UI-only actions; several modules still need dedicated API endpoints, automated integration/security tests, and end-to-end validation against a real Supabase project before real college records are used. Demo data must never be represented as institutional data.
 
@@ -78,6 +79,7 @@ Never edit an already-applied migration; add a new migration instead.
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `WEB_ORIGIN` — exact deployed Vercel origin, with no path. Multiple comma-separated origins are supported.
+- Optional `SUPABASE_SERVICE_ROLE_KEY` — required only if staff invitations should send Supabase Auth invite emails. Keep it server-side, never in frontend/Vercel `VITE_*` variables.
 
 The API must use the same Supabase project as the frontend. Keep service-role keys, database passwords and other secrets out of Git and out of `VITE_*` variables.
 
