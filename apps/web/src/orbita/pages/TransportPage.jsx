@@ -72,7 +72,7 @@ export function TransportPage() {
     },
   ];
 
-  const filteredRoutes = routes.filter((r) =>
+  const filteredRoutes = (liveSession ? [] : routes).filter((r) =>
     r.path.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.no.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.driver.toLowerCase().includes(searchQuery.toLowerCase())
@@ -80,6 +80,7 @@ export function TransportPage() {
 
   const handleApplyPass = (e) => {
     e.preventDefault();
+    if (liveSession) { toast({ title: "Transport service unavailable", description: "Routes and vehicle details are sample data; the transport service is not connected. No pass request was submitted.", variant: "info" }); return; }
     addApprovalRequest({
       type: "College Bus Pass Subscription",
       details: `Application for ${selectedRouteNo} from boarding stop: ${boardingStop}. Fee: ₹14,000 / semester.`,
@@ -110,7 +111,7 @@ export function TransportPage() {
         }
       />
 
-      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Transport preview data only.</strong> Routes, drivers, vehicle numbers, timings and stop status are sample values, not live GPS or verified fleet information. A bus-pass form submits an approval request only.</div>
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Transport preview data only.</strong> Routes, drivers, vehicle numbers, timings and stop status are sample values, not live GPS or verified fleet information. Live pass requests and tracking are disabled.</div>
 
       {/* Search Bar */}
       <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
@@ -126,7 +127,7 @@ export function TransportPage() {
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      {liveSession && <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">No verified institutional routes are available. Sample routes are hidden in live sessions until the transport service is connected.</p>}\n      <div className="grid gap-5 md:grid-cols-2">
         {filteredRoutes.map((r) => (
           <Card key={r.no} className="hover:border-primary/40 transition-colors flex flex-col justify-between">
             <CardHeader className="pb-3">
