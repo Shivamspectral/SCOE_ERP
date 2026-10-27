@@ -170,6 +170,7 @@ export const marksApi = {
   list: (query) => api.get("/api/marks", query),
   get: (id) => api.get(`/api/marks/${id}`),
   submit: (id) => api.post(`/api/marks/${id}/submit`, {}),
+  returnForCorrection: (id, reason) => api.post(`/api/marks/${id}/return`, { reason }),
   upsert: (payload) => api.post("/api/marks", payload),
   update: (payload) => api.patch("/api/marks", payload),
   lock: (id, reason) => api.post(`/api/marks/${id}/lock`, { reason }),
