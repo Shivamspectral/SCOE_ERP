@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Bell,
   Search,
@@ -17,9 +17,30 @@ import { Card, CardHeader, CardTitle, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { notices as initialNotices, noticeCategoryColor, college } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
+import { noticesApi } from "../lib/api";
 
 export function NoticesPage() {
-  const { toast } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const [notices, setNotices] = useState(initialNotices);
+
+  useEffect(() => {
+    if (!backendConfigured || !isAuthenticated || !session?.access_token) return;
+    let cancelled = false;
+    noticesApi.list({ status: "published" }).then((rows) => {
+      if (cancelled || !Array.isArray(rows)) return;
+      setNotices(rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        description: row.content || "",
+        category: row.category === "event" ? "Events" : row.category === "operations" ? "Council" : "Academics",
+        issuedBy: "Institutional Administration",
+        date: row.publish_at || row.created_at ? new Date(row.publish_at || row.created_at).toLocaleDateString("en-IN") : "",
+        pinned: row.category === "urgent",
+        attachment: null,
+      })));
+    }).catch((error) => console.warn("[circulars] unable to load published notices", error));
+    return () => { cancelled = true; };
+  }, [backendConfigured, isAuthenticated, session?.access_token]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [pinnedOnly, setPinnedOnly] = useState(false);
@@ -27,7 +48,7 @@ export function NoticesPage() {
 
   const categories = ["All", "Academics", "Council", "Events", "Accounts", "Placements", "Library"];
 
-  const filteredNotices = initialNotices.filter((n) => {
+  const filteredNotices = notices.filter((n) => {
     const matchCategory = selectedCategory === "All" || n.category === selectedCategory;
     const matchPinned = !pinnedOnly || n.pinned;
     const matchSearch =
@@ -37,7 +58,7 @@ export function NoticesPage() {
     return matchCategory && matchPinned && matchSearch;
   });
 
-  const pinnedNotices = initialNotices.filter((n) => n.pinned);
+  const pinnedNotices = notices.filter((n) => n.pinned);
 
   const handleDownloadAttachment = (notice) => {
     toast({
