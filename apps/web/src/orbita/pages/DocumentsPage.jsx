@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FileBadge, Plus, Search, Calendar, Building2, Archive, Save, X } from "lucide-react";
+import { FileBadge, Plus, Search, Calendar, Building2, Archive, Save, X, Upload, Download } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Card, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
@@ -27,6 +27,8 @@ export function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingDocumentId, setUploadingDocumentId] = useState(null);
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState(null);
   const [form, setForm] = useState({ title: "", category: "general", departmentId: "" });
 
   const loadDocuments = async () => {
@@ -81,7 +83,7 @@ export function DocumentsPage() {
           departmentId: form.departmentId || undefined,
         });
         await loadDocuments();
-        toast({ title: "Document registered", description: "The document metadata has been saved. File upload is not enabled yet.", variant: "success" });
+        toast({ title: "Document registered", description: "The document metadata was saved. You can attach a file to this register entry.", variant: "success" });
       } else {
         setDocuments((prev) => [{
           id: `preview-doc-${Date.now()}`, title: form.title.trim(), category: form.category,
@@ -96,6 +98,41 @@ export function DocumentsPage() {
       toast({ title: "Could not register document", description: error?.message || "Check your role and try again.", variant: "error" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const uploadDocumentFile = async (doc, file) => {
+    if (!file || !liveMode) return;
+    setUploadingDocumentId(doc.id);
+    try {
+      const updated = await documentsApi.uploadFile(doc.id, file);
+      setDocuments((previous) => previous.map((item) => item.id === doc.id ? { ...item, ...updated } : item));
+      await loadDocuments();
+      toast({ title: "Document file saved", description: file.name + " was stored in the private institutional document bucket.", variant: "success" });
+    } catch (error) {
+      toast({ title: "File upload failed", description: error?.message || "The file was not attached.", variant: "error" });
+    } finally {
+      setUploadingDocumentId(null);
+    }
+  };
+
+  const downloadDocumentFile = async (doc) => {
+    if (!liveMode || !doc.file_name) return;
+    setDownloadingDocumentId(doc.id);
+    try {
+      const result = await documentsApi.fileUrl(doc.id);
+      const link = document.createElement("a");
+      link.href = result.url;
+      link.download = result.fileName || doc.file_name;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast({ title: "Secure download started", description: "The file link expires in about one minute.", variant: "success" });
+    } catch (error) {
+      toast({ title: "Download unavailable", description: error?.message || "A secure file link could not be created.", variant: "error" });
+    } finally {
+      setDownloadingDocumentId(null);
     }
   };
 
@@ -181,11 +218,23 @@ export function DocumentsPage() {
                     <span className="inline-flex items-center gap-1"><Building2 className="size-3.5" />{doc.departments?.name || doc.department?.name || "Institution-wide"}</span>
                     <span className="inline-flex items-center gap-1"><Calendar className="size-3.5" />Updated {doc.updated_at ? new Date(doc.updated_at).toLocaleDateString("en-IN") : "recently"}</span>
                     <span>Version {doc.version || 1}</span>
+                    {doc.file_name && <span className="font-medium text-foreground">File: {doc.file_name} ({Math.max(1, Math.round((doc.file_size || 0) / 1024))} KB)</span>}
                   </div>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <Badge variant={doc.status === "active" ? "success" : doc.status === "archived" ? "outline" : "warning"}>{doc.status}</Badge>
+                {liveMode && doc.file_name && (
+                  <button onClick={() => downloadDocumentFile(doc)} disabled={downloadingDocumentId === doc.id} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-60">
+                    <Download className="size-3.5" />{downloadingDocumentId === doc.id ? "Preparing…" : "Download"}
+                  </button>
+                )}
+                {liveMode && doc.status !== "archived" && (
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60">
+                    <Upload className="size-3.5" />{uploadingDocumentId === doc.id ? "Uploading…" : doc.file_name ? "Replace file" : "Upload file"}
+                    <input type="file" className="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg" disabled={uploadingDocumentId === doc.id} onChange={(event) => { const file = event.target.files?.[0]; if (file) uploadDocumentFile(doc, file); event.target.value = ""; }} />
+                  </label>
+                )}
                 <button onClick={() => archiveDocument(doc)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"><Archive className="size-3.5" />{doc.status === "archived" ? "Restore" : "Archive"}</button>
               </div>
             </CardContent>
