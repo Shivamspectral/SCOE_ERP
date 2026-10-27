@@ -105,7 +105,7 @@ export class UsersController {
       throw new BadRequestException('Unsupported staff role');
     }
     const departmentId = body.departmentId ?? actor.department_id ?? null;
-    if (role === 'hod' && !departmentId) throw new BadRequestException('A department is required for an HOD account');
+    if (['hod', 'faculty'].includes(role) && !departmentId) throw new BadRequestException('A department is required for HOD and faculty accounts');
     if (departmentId) {
       const { data: department, error: departmentError } = await client.from('departments')
         .select('id,institution_id,status').eq('id', departmentId).maybeSingle();
