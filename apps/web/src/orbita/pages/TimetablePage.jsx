@@ -77,8 +77,8 @@ export function TimetablePage() {
     }
     const columns = ["day", "time", "subject", "type", "room", "faculty", "cohort"];
     const escapeCell = (value) => `"${String(value).replace(/"/g, '""')}"`;
-    const csv = [columns.join(","), ...rows.map((row) => columns.map((key) => escapeCell(row[key])).join(","))].join("\\r\\n");
-    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const csv = [columns.join(","), ...rows.map((row) => columns.map((key) => escapeCell(row[key])).join(","))].join("\r\n");
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
