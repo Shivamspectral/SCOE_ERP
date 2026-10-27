@@ -28,9 +28,9 @@ export function FacultyListPage() {
 
   const filteredFaculty = facultyList.filter((f) => {
     const matchesSearch =
-      f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.email.toLowerCase().includes(searchQuery.toLowerCase());
+      String(f.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(f.subject || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(f.email || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDept =
       selectedDept === "All" || f.dept === selectedDept;
@@ -52,8 +52,8 @@ export function FacultyListPage() {
 
     setMessageModalOpen(false);
     toast({
-      title: "Circular Dispatched",
-      description: `Official memo sent to ${selectedFaculty.name} (${selectedFaculty.email}).`,
+      title: "Preview only",
+      description: "Messaging is not connected in preview mode. No memo was sent.",
       variant: "success",
     });
   };
@@ -73,7 +73,7 @@ export function FacultyListPage() {
             Faculty Directory & Academic Workload
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Teaching staff profiles, subjects handled, research specializations, and departmental cabins.
+            Staff directory and available profile fields. Workload, research and cabin details appear only when recorded in the institutional system.
           </p>
         </div>
 
@@ -106,10 +106,7 @@ export function FacultyListPage() {
             className="h-9 rounded-lg border border-input bg-card px-2.5 text-xs outline-none focus:border-primary"
           >
             <option value="All">All Departments</option>
-            <option value="Computer Engineering">Computer Engineering</option>
-            <option value="Information Technology">Information Technology</option>
-            <option value="ENTC">ENTC</option>
-            <option value="Mechanical Engineering">Mechanical Engineering</option>
+            {departments.map((department) => <option key={department.id || department.code} value={department.name}>{department.name}</option>)}
           </select>
         </div>
       </div>
@@ -138,14 +135,14 @@ export function FacultyListPage() {
                 </div>
 
                 <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                  {f.dept.split(" ")[0]}
+                  {String(f.dept || "Unassigned").split(" ")[0]}
                 </span>
               </div>
 
               <div className="mt-4 space-y-2 text-xs text-muted-foreground">
                 <p className="flex items-center gap-2">
                   <BookOpen className="size-3.5 text-primary shrink-0" />
-                  <span className="font-medium text-foreground">{f.subject}</span>
+                  <span className="font-medium text-foreground">{f.subject || "Not recorded"}</span>
                 </p>
                 <p className="flex items-center gap-2">
                   <Mail className="size-3.5 text-muted-foreground/70 shrink-0" />
@@ -153,7 +150,7 @@ export function FacultyListPage() {
                 </p>
                 <p className="flex items-center gap-2">
                   <MapPin className="size-3.5 text-muted-foreground/70 shrink-0" />
-                  <span>{f.cabin}</span>
+                  <span>{f.cabin || "Not recorded"}</span>
                 </p>
               </div>
             </div>
@@ -168,14 +165,16 @@ export function FacultyListPage() {
               <button
                 onClick={() => {
                   setSelectedFaculty(f);
-                  setMessageSubject(`Academic Notice: ${f.subject}`);
+                  setMessageSubject(`Academic Notice: ${f.subject || "Not recorded"}`);
                   setMessageBody("");
                   setMessageModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+                disabled={liveSession}
+                title={liveSession ? "Messaging integration is not connected" : "Preview only"}
+                className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send className="size-3.5" />
-                <span>Message</span>
+                <span>{liveSession ? "Messaging unavailable" : "Message"}</span>
               </button>
             </div>
           </div>
@@ -208,19 +207,19 @@ export function FacultyListPage() {
                 <div className="rounded-lg bg-muted/40 p-2.5">
                   <span className="block text-muted-foreground">Theory Load</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    8 hrs / wk
+                    {liveSession ? "—" : "8 hrs / wk"}
                   </span>
                 </div>
                 <div className="rounded-lg bg-muted/40 p-2.5">
                   <span className="block text-muted-foreground">Lab Load</span>
                   <span className="font-display text-base font-bold text-foreground">
-                    12 hrs / wk
+                    {liveSession ? "—" : "12 hrs / wk"}
                   </span>
                 </div>
                 <div className="rounded-lg bg-primary/10 p-2.5">
                   <span className="block text-primary font-medium">Total Workload</span>
                   <span className="font-display text-base font-bold text-primary">
-                    20 hrs / wk
+                    {liveSession ? "—" : "20 hrs / wk"}
                   </span>
                 </div>
               </div>
@@ -228,11 +227,11 @@ export function FacultyListPage() {
               <div className="rounded-lg border border-border p-3 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Assigned Courses:</span>
-                  <span className="font-semibold text-foreground">{selectedFaculty.subject}</span>
+                  <span className="font-semibold text-foreground">{selectedFaculty.subject || "Not recorded"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Faculty Cabin:</span>
-                  <span className="font-semibold text-foreground">{selectedFaculty.cabin}</span>
+                  <span className="font-semibold text-foreground">{selectedFaculty.cabin || "Not recorded"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Official Email:</span>
@@ -240,7 +239,7 @@ export function FacultyListPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Research Publications:</span>
-                  <span className="font-semibold text-foreground">4 Scopus / IEEE Papers</span>
+                  <span className="font-semibold text-foreground">{liveSession ? "Not recorded" : "4 Scopus / IEEE Papers (sample)"}</span>
                 </div>
               </div>
 
@@ -253,13 +252,14 @@ export function FacultyListPage() {
                 </button>
                 <button
                   onClick={() => {
-                    setMessageSubject(`Academic Notice: ${selectedFaculty.subject}`);
+                    setMessageSubject(`Academic Notice: ${selectedFaculty.subject || "Not recorded"}`);
                     setMessageBody("");
                     setMessageModalOpen(true);
                   }}
-                  className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90"
+                  disabled={liveSession}
+                className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Send Official Circular
+                  {liveSession ? "Messaging unavailable" : "Preview Message"}
                 </button>
               </div>
             </div>
