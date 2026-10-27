@@ -324,7 +324,7 @@ export function FacultyTasksPage() {
                 <button
                   onClick={() => handleDelete(t.id, t.title)}
                   className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                  title="Delete task"
+                  title={liveSession ? "Cancel task" : "Delete task"}
                 >
                   <Trash2 className="size-4" />
                 </button>
