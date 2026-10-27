@@ -1,8 +1,8 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
-import { CreateAttendanceSessionDto, SaveAttendanceRecordsDto } from './attendance.dto';
+import { CreateAttendanceSessionDto, SaveAttendanceRecordsDto, UpdateAttendanceRecordDto } from './attendance.dto';
 
 @Controller('attendance')
 @UseGuards(SupabaseAuthGuard)
@@ -20,6 +20,51 @@ export class AttendanceController {
     const { data, error } = await query;
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
+  }
+
+  @Get('class/:classId')
+  async byClass(@Req() request: AuthenticatedRequest, @Param('classId', new ParseUUIDPipe()) classId: string) {
+    const client = this.db.forRequest(request);
+    const { data, error } = await client.from('attendance_sessions')
+      .select('id,class_id,subject_id,faculty_user_id,session_date,session_label,status,submitted_at,verified_by,verified_at,created_at')
+      .eq('class_id', classId).order('session_date', { ascending: false }).limit(200);
+    if (error) throw error;
+    return { data: data ?? [], count: data?.length ?? 0 };
+  }
+
+  @Get('student/:studentId')
+  async byStudent(@Req() request: AuthenticatedRequest, @Param('studentId', new ParseUUIDPipe()) studentId: string) {
+    const client = this.db.forRequest(request);
+    const { data, error } = await client.from('attendance_records')
+      .select('id,session_id,student_id,attendance_status,note,recorded_by,created_at,attendance_sessions(session_date,session_label,subject,status)')
+      .eq('student_id', studentId).order('created_at', { ascending: false }).limit(200);
+    if (error) throw error;
+    return { data: data ?? [], count: data?.length ?? 0 };
+  }
+
+  @Get('sessions/:id/records')
+  async getRecords(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
+    const client = this.db.forRequest(request);
+    const { data, error } = await client.from('attendance_records')
+      .select('id,session_id,student_id,attendance_status,note,recorded_by,created_at,academic_students(roll_number,registration_number,full_name)')
+      .eq('session_id', id).order('created_at', { ascending: true }).limit(500);
+    if (error) throw error;
+    return { data: data ?? [], count: data?.length ?? 0 };
+  }
+
+  @Patch('records/:id')
+  async updateRecord(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: UpdateAttendanceRecordDto) {
+    const client = this.db.forRequest(request);
+    const patch: Record<string, unknown> = {};
+    if (body.status !== undefined) patch.attendance_status = body.status;
+    if (body.note !== undefined) patch.note = body.note.trim() || null;
+    if (!Object.keys(patch).length) throw new BadRequestException('No supported attendance fields were provided');
+    const { data, error } = await client.from('attendance_records').update(patch)
+      .eq('id', id).eq('recorded_by', request.authUser!.id)
+      .select('id,session_id,student_id,attendance_status,note,recorded_by,created_at').maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Attendance record not found or correction is not permitted');
+    return data;
   }
 
   @Post('sessions')
