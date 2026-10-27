@@ -38,7 +38,6 @@ import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { UsersManagementPage } from "./pages/UsersManagementPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
-import { RegistrationIdsPage } from "./pages/RegistrationIdsPage";
 
 import { college } from "./data/portalData";
 
@@ -163,8 +162,6 @@ export default function App() {
         return <UsersManagementPage />;
       case "/logs":
         return <SystemLogsPage />;
-      case "/registration-ids":
-        return <RegistrationIdsPage />;
 
       default:
         return <DashboardPage />;
