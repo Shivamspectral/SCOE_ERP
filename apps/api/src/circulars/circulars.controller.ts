@@ -12,7 +12,7 @@ export class CircularsController {
   async list(@Req() request: AuthenticatedRequest, @Query('status') status?: string) {
     const client = this.db.forRequest(request);
     let query = client.from('circulars')
-      .select('id,institution_id,title,body,department_id,status,published_at,created_by,created_at,updated_at')
+      .select('id,institution_id,title,content,category,audience,status,publish_at,acknowledge_by,author_id,created_at,updated_at')
       .order('created_at', { ascending: false }).limit(100);
     if (status && ['draft','published','archived'].includes(status)) query = query.eq('status', status);
     const { data, error } = await query;
