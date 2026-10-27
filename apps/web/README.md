@@ -1,11 +1,17 @@
-# Astra+ Campus web
+# Astra+ Campus Vite frontend
 
-React + Vite + TypeScript app. The first slice includes an Orbita-inspired staff workspace and local-only demo account switcher. Demo data is illustrative and does not represent real college records.
+This app uses React + Vite + TypeScript and imports the existing Orbita Max portal components, pages, layout, and Tailwind design system under src/orbita. The role-specific sample data is still illustrative until each screen is connected to the new API.
 
-Run from repository root after installing workspace dependencies:
+## Local run
 ```sh
+cd apps/web
 pnpm install
-pnpm --filter @astra-campus/web dev
+pnpm dev
 ```
 
-Demo sign-in controls are rendered only when Vite runs in development mode. They are a UI-preview mechanism, not server authentication, and grant no access to live data. Production identity must be verified by the NestJS API and roles/scopes loaded from persisted institutional records.
+Copy .env.example to .env.local when configuring the API and Supabase Auth. VITE_API_BASE_URL is the API origin (for example http://localhost:4000); the client maps existing /api routes to /api/v1.
+
+## Demo testing
+The quick demo login panel appears only in Vite development mode. Accounts can preview the Principal, Administrator, Coordinator, HOD, Faculty, Staff, and pending-member UI states. Shared demo password: Demo@1234. This is a client-only preview with sample data; it does not authenticate to the API or grant access to institutional records.
+
+Do not enable demo preview in production, and do not treat frontend role state as authorization.
