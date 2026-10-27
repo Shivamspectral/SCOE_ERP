@@ -49,7 +49,7 @@ export class DashboardController {
 
     return {
       students, faculty, departments, classes, subjects, assignments: assignmentCount,
-      mentees: 0, pendingApprovals, pendingTasks, notices, attendanceSessions: submittedSessions,
+      mentees: null, pendingApprovals, pendingTasks, notices, attendanceSessions: submittedSessions,
       attendanceRate, averageScore, lowScoreStudents,
       averageCgpa: null, backlogStudents: null, averageBacklogs: null,
     };
