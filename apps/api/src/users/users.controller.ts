@@ -49,7 +49,7 @@ export class UsersController {
 
   private async readMember(client: ReturnType<SupabaseRequestClient['forRequest']>, id: string) {
     const { data: profile, error } = await client.from('profiles')
-      .select('user_id,institution_id,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)')
+      .select('user_id,institution_id,email,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)')
       .eq('user_id', id).maybeSingle();
     if (error) throw error;
     if (!profile) throw new NotFoundException('Staff member not found');
@@ -59,7 +59,7 @@ export class UsersController {
     if (rolesError) throw rolesError;
     return {
       id: profile.user_id,
-      email: '',
+      email: profile.email ?? '',
       institution_id: profile.institution_id,
       name: profile.full_name,
       title: profile.title,
@@ -81,7 +81,7 @@ export class UsersController {
     const limit = Math.min(100, Math.max(1, Number.parseInt(rawLimit ?? '50', 10) || 50));
     const offset = Math.max(0, Number.parseInt(rawOffset ?? '0', 10) || 0);
     let query = client.from('profiles')
-      .select('user_id,institution_id,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)', { count: 'exact' })
+      .select('user_id,institution_id,email,full_name,title,phone,department_id,status,created_at,updated_at,departments(name,code)', { count: 'exact' })
       .eq('institution_id', actor.institution_id)
       .order('full_name', { ascending: true }).range(offset, offset + limit - 1);
     if (status && ['pending','active','suspended'].includes(status)) query = query.eq('status', status);
@@ -101,7 +101,7 @@ export class UsersController {
     const data = (profiles ?? []).map((profile) => {
       const memberRoles = roles.filter((role) => role.user_id === profile.user_id);
       return {
-        id: profile.user_id, email: '', institution_id: profile.institution_id,
+        id: profile.user_id, email: profile.email ?? '', institution_id: profile.institution_id,
         name: profile.full_name, title: profile.title, phone: profile.phone,
         department_id: profile.department_id, department: profile.departments,
         status: profile.status, roles: memberRoles, role: roleToDisplay[memberRoles[0]?.role ?? ''] ?? memberRoles[0]?.role ?? null,
