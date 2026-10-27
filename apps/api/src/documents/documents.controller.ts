@@ -120,7 +120,7 @@ export class DocumentsController {
     if (document.status === 'archived') throw new BadRequestException('Archived documents cannot receive new files');
     await this.assertFileManager(request, document);
 
-    const safeName = originalName.replace(/[^\\w.\\-() ]/g, '_').slice(0, 180) || ('document' + extension);
+    const safeName = originalName.replace(/[^\w.\-() ]/g, '_').slice(0, 180) || ('document' + extension);
     const storagePath = document.institution_id + '/' + document.id + '/' + randomUUID() + extension;
     const storage = this.storageAdmin();
     const { error: uploadError } = await storage.storage.from('institution-documents').upload(storagePath, file.buffer, {
