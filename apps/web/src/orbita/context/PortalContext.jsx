@@ -563,7 +563,14 @@ export function PortalProvider({ children }) {
   // User Management State (Super Admin)
   const addUser = useCallback(async (newUser) => {
     if (realSession) {
-      throw new Error("Account invitations are not configured yet. Create the Supabase Auth account through the approved institutional process, then assign its role here.");
+      const created = await usersApi.create(newUser);
+      const row = {
+        id: created.id, name: created.name || newUser.name,
+        email: created.email || newUser.email, role: created.role || newUser.role,
+        dept: newUser.dept || "", status: created.status || "pending",
+      };
+      setUsersList((prev) => [row, ...prev]);
+      return row;
     }
     const created = { ...newUser, id: newUser.id || `DEMO-USER-${Date.now()}`, status: newUser.status || "Active" };
     setUsersList((prev) => [created, ...prev]);
