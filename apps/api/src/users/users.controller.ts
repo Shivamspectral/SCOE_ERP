@@ -189,6 +189,17 @@ export class UsersController {
     if (request.authUser!.id === id && hasAccessChange) {
       throw new ForbiddenException('You cannot change your own role, status, department, or responsibility');
     }
+    if (body.role !== undefined && roleToDatabase[body.role] === 'administrator' && !isPrincipal) {
+      throw new ForbiddenException('Only the Principal can assign the administrator role');
+    }
+    if (body.departmentId !== undefined) {
+      const { data: department, error: departmentError } = await client.from('departments')
+        .select('id,institution_id,status').eq('id', body.departmentId).maybeSingle();
+      if (departmentError) throw departmentError;
+      if (!department || department.institution_id !== actor.institution_id || department.status !== 'active') {
+        throw new BadRequestException('Department is not active in this institution');
+      }
+    }
 
     if (body.name !== undefined || body.title !== undefined || body.phone !== undefined) {
       const patch: Record<string, unknown> = {};
