@@ -7,7 +7,8 @@ import { books as initialBooks, college } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
 
 export function LibraryPage() {
-  const { reservedBooks, reserveBook, toast } = usePortal();
+  const { reservedBooks, reserveBook, toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
@@ -23,6 +24,10 @@ export function LibraryPage() {
   });
 
   const handleReserve = (book) => {
+    if (liveSession) {
+      toast({ title: "Reservation unavailable", description: "The library catalogue and reservation service are not connected to the institutional backend. No book was reserved.", variant: "info" });
+      return;
+    }
     reserveBook(book.id);
     toast({
       title: `Book Reserved: ${book.title}`,
@@ -37,6 +42,8 @@ export function LibraryPage() {
         title="SCOE Central Library & E-Resources"
         subtitle="Access 45,000+ technical volumes, national journals, IEEE Xplore digital library and DELNET consortium"
       />
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> Catalogue entries, borrower details, loan counts and due dates are sample values. Live reservations are disabled until the library service is connected.</div>
 
       {/* Library Pass Info */}
       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
