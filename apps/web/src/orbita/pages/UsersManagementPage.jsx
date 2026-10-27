@@ -22,6 +22,7 @@ export function UsersManagementPage() {
     updateUserRole,
     addSystemLog,
     toast,
+    departments,
   } = usePortal();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,10 +32,8 @@ export function UsersManagementPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newRole, setNewRole] = useState("Student");
+  const [newRole, setNewRole] = useState("Faculty");
   const [newDept, setNewDept] = useState("Computer Engineering");
-  const [newId, setNewId] = useState("");
-  const [newPassword, setNewPassword] = useState("");
 
   const filteredUsers = usersList.filter((u) => {
     const matchesSearch =
@@ -50,7 +49,7 @@ export function UsersManagementPage() {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
-    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
+    if (!newName.trim() || !newEmail.trim()) {
       toast({
         title: "All Fields Required",
         description: "Please provide valid user details.",
@@ -65,20 +64,18 @@ export function UsersManagementPage() {
       email: newEmail,
       role: newRole,
       dept: newDept,
-      id: newId || `SCOE-${Date.now().toString().slice(-4)}`,
-      registration_id: newId || `SCOE-${Date.now().toString().slice(-4)}`,
-      password: newPassword,
+      departmentId: departments.find((department) => department.name === newDept)?.id,
+      title: newRole,
+    });
     });
 
     addSystemLog(`Provisioned user account for ${created.name} (${created.role})`, "Success");
     setAddModalOpen(false);
     setNewName("");
     setNewEmail("");
-    setNewId("");
-    setNewPassword("");
     toast({
-      title: "User Account Provisioned",
-      description: `Created portal identity for ${created.name} with role ${created.role}.`,
+      title: "Staff invitation created",
+      description: `Invitation sent for ${created.name} with role ${created.role}. The account remains pending until activated.`,
       variant: "success",
     });
     } catch (error) {
@@ -155,7 +152,7 @@ export function UsersManagementPage() {
             className="h-9 rounded-lg border border-input bg-card px-2.5 text-xs outline-none focus:border-primary"
           >
             <option value="All">All Roles</option>
-            <option value="Student">Student</option>
+            <option value="Staff">Staff</option>
             <option value="Faculty">Faculty</option>
             <option value="HOD">HOD</option>
             <option value="Vice-Principal">Vice-Principal</option>
@@ -202,7 +199,9 @@ export function UsersManagementPage() {
                       <option value="Faculty">Faculty</option>
                       <option value="HOD">HOD</option>
                       <option value="Vice-Principal">Vice-Principal</option>
-                      <option value="Principal">Principal</option>
+                      <option value="Coordinator">Coordinator</option>
+                      <option value="Staff">Staff</option>
+                      <option value="Principal" disabled>Principal (system-controlled)</option>
                       <option value="Super Admin">Super Admin</option>
                     </select>
                   </td>
@@ -275,11 +274,6 @@ export function UsersManagementPage() {
                   className="w-full h-9 rounded-lg border border-input bg-card px-2.5 outline-none focus:border-primary text-xs"
                   required
                 />
-              </div>
-
-              <div>
-                <label className="block font-medium text-foreground mb-1">Initial Password</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimum 8 characters" className="w-full h-9 rounded-lg border border-input bg-card px-2.5 outline-none focus:border-primary text-xs" required />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
