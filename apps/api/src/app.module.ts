@@ -10,6 +10,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CircularsModule } from './circulars/circulars.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     NotificationsModule,
     CircularsModule,
     AttendanceModule,
+    UsersModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
