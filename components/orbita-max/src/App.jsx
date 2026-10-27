@@ -43,7 +43,7 @@ import { RegistrationIdsPage } from "./pages/RegistrationIdsPage";
 import { college } from "./data/portalData";
 
 export default function App() {
-  const { isAuthenticated, currentRoute } = usePortal();
+  const { isAuthenticated, currentRoute, userRole, logout } = usePortal();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -54,6 +54,20 @@ export default function App() {
         <LoginPage />
         <Toaster />
       </>
+    );
+  }
+
+  if (isAuthenticated && userRole === "Pending") {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center p-6">
+        <section className="w-full max-w-lg rounded-2xl border border-border bg-card p-8 shadow-sm">
+          <div className="mb-5 inline-flex rounded-full bg-warning/15 px-3 py-1 text-xs font-semibold text-warning-foreground">ACCESS REVIEW</div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Your account is awaiting approval</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">An institutional administrator must activate your staff profile and assign the appropriate role before you can access college records.</p>
+          <button className="mt-6 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground" onClick={() => void logout()}>Sign out</button>
+        </section>
+        <Toaster />
+      </main>
     );
   }
 
