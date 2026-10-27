@@ -7,11 +7,13 @@ export function summarizeVerifiedMarks(
   rows: Array<{ student_id: string | null; marks_obtained: number | string | null; max_marks: number | string | null }>,
 ) {
   const scoredRows = rows.map((row) => {
+    const hasMarks = row.marks_obtained !== null && row.marks_obtained !== undefined && row.marks_obtained !== "";
+    const hasMaximum = row.max_marks !== null && row.max_marks !== undefined && row.max_marks !== "";
     const obtained = Number(row.marks_obtained);
     const maximum = Number(row.max_marks);
     return {
       studentId: row.student_id,
-      percentage: Number.isFinite(obtained) && Number.isFinite(maximum) && maximum > 0
+      percentage: hasMarks && hasMaximum && Number.isFinite(obtained) && Number.isFinite(maximum) && maximum > 0
         ? (obtained / maximum) * 100
         : null,
     };
