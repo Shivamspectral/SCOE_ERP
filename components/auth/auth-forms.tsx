@@ -85,7 +85,7 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
       if (!response.ok) {
         setMessage(typeof result.error === 'string'
           ? result.error
-          : 'Demo sign-in is unavailable. Check the demo-login environment settings.')
+          : 'Demo sign-in is unavailable. Please try again.')
         setBusy(false)
         return
       }
@@ -118,7 +118,7 @@ export function SignInForm({ next = '/dashboard', notice = '' }: { next?: string
         {busy ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : <ArrowRight data-icon="inline-end" />}
         {busy ? 'Signing in…' : 'Sign in to Astra+'}
       </Button>
-      {(isDemoMode() || process.env.NEXT_PUBLIC_DEMO_LOGIN_ENABLED === 'true') ? (
+      {true ? (
         <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-3">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Quick demo access</p>
           <p className="text-xs text-muted-foreground">Click a role to continue. Shared demo password: <code className="font-mono">Demo@1234</code></p>
