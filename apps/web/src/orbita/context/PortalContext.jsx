@@ -113,7 +113,7 @@ export function PortalProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [session, setSession] = useState(null);
-  const [userRole, setUserRole] = useState("Student");
+  const [userRole, setUserRole] = useState("Faculty");
   const [serverProfile, setServerProfile] = useState(null);
   const [scope, setScope] = useState(null);
 
