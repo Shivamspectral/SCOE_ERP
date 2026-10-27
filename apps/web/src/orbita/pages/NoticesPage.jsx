@@ -21,11 +21,14 @@ import { noticesApi } from "../lib/api";
 
 export function NoticesPage() {
   const { toast, backendConfigured, isAuthenticated, session } = usePortal();
-  const [notices, setNotices] = useState(initialNotices);
+  const [notices, setNotices] = useState(null);
+  const realSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const displayedNotices = realSession ? (notices ?? []) : initialNotices;
 
   useEffect(() => {
     if (!backendConfigured || !isAuthenticated || !session?.access_token) return;
     let cancelled = false;
+    setNotices(null);
     noticesApi.list({ status: "published" }).then((rows) => {
       if (cancelled || !Array.isArray(rows)) return;
       setNotices(rows.map((row) => ({
@@ -38,7 +41,7 @@ export function NoticesPage() {
         pinned: row.category === "urgent",
         attachment: null,
       })));
-    }).catch((error) => console.warn("[circulars] unable to load published notices", error));
+    }).catch((error) => { console.warn("[circulars] unable to load published notices", error); if (!cancelled) setNotices([]); });
     return () => { cancelled = true; };
   }, [backendConfigured, isAuthenticated, session?.access_token]);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -48,7 +51,7 @@ export function NoticesPage() {
 
   const categories = ["All", "Academics", "Council", "Events", "Accounts", "Placements", "Library"];
 
-  const filteredNotices = notices.filter((n) => {
+  const filteredNotices = displayedNotices.filter((n) => {
     const matchCategory = selectedCategory === "All" || n.category === selectedCategory;
     const matchPinned = !pinnedOnly || n.pinned;
     const matchSearch =
@@ -58,7 +61,7 @@ export function NoticesPage() {
     return matchCategory && matchPinned && matchSearch;
   });
 
-  const pinnedNotices = notices.filter((n) => n.pinned);
+  const pinnedNotices = displayedNotices.filter((n) => n.pinned);
 
   const handleDownloadAttachment = (notice) => {
     toast({
