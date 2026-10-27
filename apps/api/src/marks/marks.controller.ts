@@ -68,7 +68,7 @@ export class MarksController {
     const { data: existing, error: readError } = await client.from('marks_records').select('id,max_marks,status').eq('id', body.id).maybeSingle();
     if (readError) throw readError;
     if (!existing) throw new NotFoundException('Marks record not found or not accessible');
-    if (['locked','verified'].includes(existing.status)) throw new BadRequestException('Verified or locked marks cannot be edited');
+    if (['submitted','locked','verified'].includes(existing.status)) throw new BadRequestException('Submitted, verified or locked marks cannot be edited; an approver must return them first');
     if (body.marksObtained !== undefined && body.marksObtained > Number(existing.max_marks)) throw new BadRequestException('Marks obtained cannot exceed maximum marks');
     const patch: Record<string, unknown> = {};
     if (body.marksObtained !== undefined) patch.marks_obtained = body.marksObtained;
@@ -104,6 +104,23 @@ export class MarksController {
     return data;
   }
 
+  @Post(':id/return')
+  async returnForCorrection(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: MarkLockDto) {
+    if (!body.reason?.trim()) throw new BadRequestException('A correction reason is required');
+    const client = this.db.forRequest(request);
+    const { data: record, error: readError } = await client.from('marks_records')
+      .select('id,department_id,status').eq('id', id).maybeSingle();
+    if (readError) throw readError;
+    if (!record) throw new NotFoundException('Marks record not found');
+    await this.assertAcademicApprover(request, record.department_id);
+    if (record.status !== 'submitted') throw new BadRequestException('Only submitted marks can be returned for correction');
+    const { data, error } = await client.from('marks_records').update({ status: 'returned', feedback: body.reason.trim() })
+      .eq('id', id).select('id,status,feedback,updated_at').maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Marks record could not be returned');
+    return data;
+  }
+
   @Post(':id/lock')
   async lock(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: MarkLockDto) {
     const client = this.db.forRequest(request);
@@ -111,7 +128,7 @@ export class MarksController {
     if (readError) throw readError;
     if (!record) throw new NotFoundException('Marks record not found');
     await this.assertAcademicApprover(request, record.department_id);
-    if (record.status === 'locked') throw new BadRequestException('Marks are already locked');
+    if (record.status !== 'submitted') throw new BadRequestException('Only marks submitted for review can be locked');
     const { data, error } = await client.from('marks_records').update({ status: 'locked', feedback: body.reason?.trim() || null }).eq('id', id).select('id,status,updated_at').maybeSingle();
     if (error) throw error;
     if (!data) throw new NotFoundException('Marks record could not be locked');
