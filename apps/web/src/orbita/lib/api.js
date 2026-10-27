@@ -153,6 +153,8 @@ export const attendanceApi = {
   createSession: (payload) => api.post("/api/attendance/sessions", payload),
   markRecords: (sessionId, records) =>
     api.post(`/api/attendance/sessions/${sessionId}/records`, { records }),
+  submit: (sessionId) => api.post(`/api/attendance/sessions/${sessionId}/submit`, {}),
+  review: (sessionId, decision, reason) => api.post(`/api/attendance/sessions/${sessionId}/review`, { decision, reason }),
   updateRecord: (recordId, payload) => api.patch(`/api/attendance/records/${recordId}`, payload),
   byStudent: (studentId, query) => api.get(`/api/attendance/student/${studentId}`, query),
   byClass: (classId, query) => api.get(`/api/attendance/class/${classId}`, query),
