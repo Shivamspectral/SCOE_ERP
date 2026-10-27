@@ -121,7 +121,7 @@ export function DashboardPage() {
     safeGet("/api/dashboard/summary", undefined, null).then((data) => {
       if (cancelled) return;
       if (data) setSummary({ ...emptySummary, ...data });
-      else { setSummary(emptySummary); setSummaryError(true); }
+      else { setSummary({ ...emptySummary, students: null, faculty: null, departments: null, classes: null, subjects: null, assignments: null, mentees: null, pendingApprovals: null, pendingTasks: null, notices: null, attendanceSessions: null }); setSummaryError(true); }
     }).finally(() => { if (!cancelled) setSummaryLoading(false); });
     return () => { cancelled = true; };
   }, [realSession, userRole, session?.access_token]);
@@ -148,9 +148,9 @@ export function DashboardPage() {
 
   const dashboardNotices = realSession ? liveNotices : notices;
 
-  const pendingApprovalsCount = realSession ? summary.pendingApprovals : (summary.pendingApprovals || approvals.filter((a) => a.status === "Pending").length);
-  const pendingTasksCount = realSession ? summary.pendingTasks : (summary.pendingTasks || tasks.filter((t) => !t.completed).length);
-  const activeNoticesCount = realSession ? summary.notices : (summary.notices || notices.length);
+  const pendingApprovalsCount = realSession ? (summary.pendingApprovals ?? "—") : (summary.pendingApprovals || approvals.filter((a) => a.status === "Pending").length);
+  const pendingTasksCount = realSession ? (summary.pendingTasks ?? "—") : (summary.pendingTasks || tasks.filter((t) => !t.completed).length);
+  const activeNoticesCount = realSession ? (summary.notices ?? "—") : (summary.notices || notices.length);
   const fallbackAverageCgpa = !realSession && mentees.length
     ? Number((mentees.reduce((sum, item) => sum + Number(item.cgpa || 0), 0) / mentees.length).toFixed(2))
     : null;
