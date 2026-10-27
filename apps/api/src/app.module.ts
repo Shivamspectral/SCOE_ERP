@@ -15,6 +15,7 @@ import { StudentsModule } from './students/students.module';
 import { AcademicModule } from './academic/academic.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MarksModule } from './marks/marks.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { MarksModule } from './marks/marks.module';
     AcademicModule,
     DashboardModule,
     MarksModule,
+    DocumentsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
