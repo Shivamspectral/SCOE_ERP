@@ -199,7 +199,7 @@ export function FacultyTasksPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <span className="text-xs text-muted-foreground">Total Action Items</span>
           <span className="mt-1 block font-display text-2xl font-bold text-foreground">
-            {liveSession ? "—" : tasks.length}
+            {liveSession && !tasksLoaded ? "—" : liveSession ? displayedTasks.length : tasks.length}
           </span>
         </div>
         <div className="rounded-xl border border-warning/30 bg-warning/10 p-4">
