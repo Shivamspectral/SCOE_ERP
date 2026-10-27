@@ -16,7 +16,7 @@ const previewSessions = [
 export function AttendancePage() {
   const { toast, backendConfigured, isAuthenticated, session, userRole } = usePortal();
   const liveMode = Boolean(backendConfigured && isAuthenticated && session?.access_token);
-  const [reviewSessions, setReviewSessions] = useState(previewSessions);
+  const [reviewSessions, setReviewSessions] = useState(liveMode ? [] : previewSessions);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [returningSessionId, setReturningSessionId] = useState(null);
   const [reviewReason, setReviewReason] = useState("");
@@ -25,6 +25,7 @@ export function AttendancePage() {
   useEffect(() => {
     if (!liveMode) return;
     let cancelled = false;
+    setReviewSessions([]);
     setReviewLoading(true);
     attendanceApi.sessions().then((rows) => {
       if (!cancelled) setReviewSessions(Array.isArray(rows) ? rows : []);
