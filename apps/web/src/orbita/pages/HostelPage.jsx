@@ -78,21 +78,21 @@ export function HostelPage() {
         actions={
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setMenuModalOpen(true)}
+              onClick={() => setMenuModalOpen(true)} disabled={liveSession}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted"
             >
               <Utensils className="size-3.5 text-primary" />
               <span>Weekly Mess Menu</span>
             </button>
             <button
-              onClick={() => setPassModalOpen(true)}
+              onClick={() => setPassModalOpen(true)} disabled={liveSession}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground hover:bg-muted"
             >
               <Clock className="size-3.5 text-warning-foreground" />
               <span>Request Night Pass</span>
             </button>
             <button
-              onClick={() => setApplyModalOpen(true)}
+              onClick={() => setApplyModalOpen(true)} disabled={liveSession}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="size-3.5" />
@@ -104,6 +104,7 @@ export function HostelPage() {
 
       {liveSession && <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and pass status are sample values. Live hostel applications and gate passes are unavailable.</div>}
 
+      {!liveSession && <>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Hostel preview data only.</strong> Room availability, capacities, contacts, menus and live pass status are sample values. The form can submit an approval request, but it does not reserve a room or issue a gate pass.</div>
 
@@ -188,7 +189,7 @@ export function HostelPage() {
                 onClick={() =>
                   toast({
                     title: "Connecting to Warden Office",
-                    description: "Dialing +91 98231 66778…",
+                    description: "This preview does not initiate a phone call. Verify the official hostel contact before calling.",
                     variant: "info",
                   })
                 }
@@ -233,6 +234,7 @@ export function HostelPage() {
         </Card>
       </div>
 
+      </>}
       {/* Menu Modal */}
       {menuModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
