@@ -9,10 +9,11 @@ import { usePortal } from "../context/PortalContext";
 export function ClubsPage() {
   const { joinedClubs, toggleClub, toast, backendConfigured, isAuthenticated, session } = usePortal();
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
-  const filteredClubs = initialClubs.filter((c) => {
+  const filteredClubs = (liveSession ? [] : initialClubs).filter((c) => {
     const matchCategory = categoryFilter === "All" || c.category === categoryFilter;
     const matchSearch =
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -60,7 +61,7 @@ export function ClubsPage() {
 
       <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>Preview data only.</strong> Club listings and membership counts are sample content. Live membership and club charter submissions are not connected.</div>
 
-      {/* Filter and Search Bar */}
+      {liveSession ? <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">The institutional club directory and membership service are not connected. Sample clubs are hidden in live sessions.</p> : <>\n      {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           {["All", "Technical", "Cultural", "Sports", "Business"].map((cat) => (
