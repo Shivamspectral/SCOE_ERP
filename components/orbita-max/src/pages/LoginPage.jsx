@@ -84,7 +84,7 @@ export function LoginPage() {
       });
       return;
     }
-    if (!registrationId.trim()) {
+    if (mode === "activate" && !registrationId.trim()) {
       toast({
         title: "Registration ID required",
         description: "Enter the institutional ID issued to you, e.g. STU-CSE-2026-00421.",
@@ -96,14 +96,7 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       if (!backendConfigured) {
-        // UI preview only — no backend deployed. Grants no server access.
-        previewSignIn("Student");
-        toast({
-          title: "Preview mode",
-          description:
-            "No backend is configured, so the portal is showing sample data. Set VITE_API_BASE_URL to connect.",
-          variant: "info",
-        });
+        toast({ title: "Choose a demo account", description: "Use one of the development test accounts below to preview a staff role.", variant: "info" });
         return;
       }
 
@@ -120,7 +113,7 @@ export function LoginPage() {
           variant: "success",
         });
       } else {
-        await signIn({ email: email.trim().toLowerCase(), password, registrationId: registrationId.trim().toUpperCase() });
+        await signIn({ email: email.trim().toLowerCase(), password });
         toast({
           title: "Signed in",
           description: "Welcome back to the Smart Campus portal.",
