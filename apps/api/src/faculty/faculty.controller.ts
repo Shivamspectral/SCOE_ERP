@@ -32,6 +32,7 @@ export class FacultyController {
 
     const rows = (profiles ?? []).map((profile) => {
       const assignment = facultyAssignments.find((row) => row.user_id === profile.user_id);
+      const department = profile.departments?.[0] ?? null;
       return {
         id: profile.user_id,
         email: profile.email ?? '',
@@ -40,8 +41,8 @@ export class FacultyController {
         designation: profile.title || 'Faculty',
         phone: profile.phone,
         department_id: profile.department_id,
-        department: profile.departments,
-        dept: profile.departments?.name || '',
+        department,
+        dept: department?.name || '',
         role: 'Faculty',
         roleAssignmentDepartmentId: assignment?.department_id ?? null,
       };
