@@ -1,6 +1,6 @@
 /**
  * Single HTTP entry point from the client (web + Capacitor Android) to the
- * Next.js backend.
+ * NestJS API.
  *
  * README §4 / §27: the client never talks to privileged infrastructure and never
  * carries privileged credentials. It sends the Supabase Auth access token; the
@@ -120,9 +120,6 @@ export async function safeGet(path, query, fallback = null) {
 
 export const authApi = {
   me: () => api.get("/api/auth/me"),
-  logout: () => api.post("/api/auth/logout", {}),
-  changePassword: (payload) => api.post("/api/auth/change-password", payload),
-  changeEmail: (payload) => api.post("/api/auth/change-email", payload),
 };
 
 export const usersApi = {
