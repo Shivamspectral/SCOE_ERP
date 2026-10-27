@@ -24,8 +24,8 @@ import { demoAccounts } from "../lib/demoAccounts";
  *    identity; letting the client choose one would be meaningless and misleading.
  *  - No credentials are pre-filled or bundled.
  *  - Passwords are handled by Supabase Auth; the app never stores or checks them.
- *  - Account activation goes through an institutional registration ID, verified
- *    server-side before any account is created.
+ *  - Staff sign-up uses Supabase email confirmation; new accounts remain pending
+ *    until an institutional administrator approves and assigns a role.
  */
 export function LoginPage() {
   const { signIn, activateAccount, requestPasswordReset, previewSignIn, backendConfigured, toast } =
@@ -246,26 +246,6 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             {mode === "activate" && (
               <>
-                <div>
-                  <label
-                    htmlFor="registration-id"
-                    className="mb-1.5 block text-sm font-medium text-foreground"
-                  >
-                    Registration ID
-                  </label>
-                  <input
-                    id="registration-id"
-                    type="text"
-                    value={registrationId}
-                    onChange={(e) => setRegistrationId(e.target.value)}
-                    placeholder="STU-CSE-2026-00421"
-                    autoComplete="off"
-                    spellCheck={false}
-                    className="h-11 w-full rounded-lg border border-input bg-card px-3 text-sm uppercase outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground"
-                    required
-                  />
-                </div>
-
                 <div>
                   <label
                     htmlFor="full-name"
