@@ -161,7 +161,8 @@ export function SystemLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-foreground">
-              {loading && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading audit events…</td></tr>}\n              {!loading && filteredLogs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No audit events match these filters.</td></tr>}\n              {filteredLogs.map((l) => (
+              {loading && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">Loading audit events…</td></tr>}\n              {!loading && filteredLogs.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No audit events match these filters.</td></tr>}
+              {filteredLogs.map((l) => (
                 <tr key={l.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                     {l.timestamp}
@@ -173,7 +174,7 @@ export function SystemLogsPage() {
                     {l.action}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                    {l.ip}
+                    {l.entity || l.ip || "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span
