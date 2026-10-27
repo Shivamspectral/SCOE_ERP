@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { college } from "../data/portalData";
-import { demoAccounts } from "../../../../lib/demo/accounts";
+import { demoAccounts } from "../lib/demoAccounts";
 
 /**
  * Authentication screen.
@@ -51,14 +51,20 @@ export function LoginPage() {
   const describeError = (error) => error?.message || "Please check your details and try again.";
 
   const handleDemoAccount = async (account) => {
+    if (!import.meta.env.DEV) return;
     setIsLoading(true);
     try {
-      const response = await fetch("/api/demo-login", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ email: account.email, password: account.password }) });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Demo sign-in failed.");
-      // The server has set an HttpOnly demo cookie. Reload so PortalContext
-      // restores that cookie; do not call previewSignIn when a backend exists.
-      window.location.assign("/dashboard");
+      const roleMap = {
+        Principal: "Principal",
+        Administrator: "Super Admin",
+        Coordinator: "Vice-Principal",
+        "HOD (Computer Eng.)": "HOD",
+        Faculty: "Faculty",
+        Staff: "Faculty",
+        "New member (pending)": "Pending",
+      };
+      // This is an isolated UI preview only; no API session or database access is granted.
+      previewSignIn(roleMap[account.label] || "Pending");
     } catch (error) {
       toast({ title: "Demo sign-in failed", description: error?.message || "Please try again.", variant: "error" });
       setIsLoading(false);
@@ -96,14 +102,7 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       if (!backendConfigured) {
-        // UI preview only — no backend deployed. Grants no server access.
-        previewSignIn("Student");
-        toast({
-          title: "Preview mode",
-          description:
-            "No backend is configured, so the portal is showing sample data. Set VITE_API_BASE_URL to connect.",
-          variant: "info",
-        });
+        toast({ title: "Choose a demo account", description: "Use one of the development test accounts below to preview role-specific screens.", variant: "info" });
         return;
       }
 
@@ -379,12 +378,12 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 rounded-xl border border-dashed border-primary/35 bg-primary/5 p-3">
+          {import.meta.env.DEV && (<div className="mt-5 rounded-xl border border-dashed border-primary/35 bg-primary/5 p-3">
             <div className="mb-2 flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Quick demo access</p><span className="text-[11px] text-muted-foreground">Password: Demo@1234</span></div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {demoAccounts.map((account) => <button key={account.id} type="button" disabled={isLoading} onClick={() => handleDemoAccount(account)} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border/70 bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:opacity-60"><span className="min-w-0"><span className="block text-sm font-semibold text-foreground">{account.label}</span><span className="block truncate text-xs text-muted-foreground">{account.email}</span></span><ArrowRight className="size-4 shrink-0 text-primary" /></button>)}
             </div>
-          </div>
+          </div>)}
 
           {!backendConfigured && (
             <p className="mt-4 rounded-lg bg-muted/60 p-3 text-center text-[11px] leading-relaxed text-muted-foreground">
