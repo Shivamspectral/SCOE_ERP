@@ -37,6 +37,7 @@ export function FacultyTasksPage() {
 
   const handleCreateTask = (e) => {
     e.preventDefault();
+    if (liveSession) { toast({ title: "Task service unavailable", description: "Tasks are not connected to the institutional backend. No task was created.", variant: "info" }); return; }
     if (!taskTitle.trim()) {
       toast({
         title: "Task Title Required",
@@ -62,7 +63,8 @@ export function FacultyTasksPage() {
     });
   };
 
-  const handleDelete = (id, title) => {\n    if (liveSession) { toast({ title: "Task service unavailable", description: "Tasks are not connected to the institutional backend. No task was deleted.", variant: "info" }); return; }
+  const handleDelete = (id, title) => {
+    if (liveSession) { toast({ title: "Task service unavailable", description: "Tasks are not connected to the institutional backend. No task was deleted.", variant: "info" }); return; }
     deleteTask(id);
     toast({
       title: "Task Deleted",
@@ -98,6 +100,8 @@ export function FacultyTasksPage() {
           <span>Add New Task</span>
         </button>
       </div>
+
+      <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground" role="status"><strong>{liveSession ? "Task service unavailable." : "Demo preview only."}</strong> {liveSession ? "The task list is not loaded from the college database; live task writes are disabled." : "Tasks are local preview data and are not persisted."}</div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
