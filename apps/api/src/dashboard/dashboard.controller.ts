@@ -3,6 +3,26 @@ import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
 
+export function summarizeVerifiedMarks(
+  rows: Array<{ student_id: string | null; marks_obtained: number | string | null; max_marks: number | string | null }>,
+) {
+  const scoredRows = rows.map((row) => {
+    const obtained = Number(row.marks_obtained);
+    const maximum = Number(row.max_marks);
+    return {
+      studentId: row.student_id,
+      percentage: Number.isFinite(obtained) && Number.isFinite(maximum) && maximum > 0
+        ? (obtained / maximum) * 100
+        : null,
+    };
+  }).filter((row) => row.percentage !== null);
+  const averageScore = scoredRows.length
+    ? Math.round((scoredRows.reduce((sum, row) => sum + row.percentage!, 0) / scoredRows.length) * 10) / 10
+    : null;
+  const lowScoreStudents = new Set(scoredRows.filter((row) => row.percentage! < 40 && row.studentId).map((row) => row.studentId)).size;
+  return { averageScore, lowScoreStudents };
+}
+
 @Controller('dashboard')
 @UseGuards(SupabaseAuthGuard)
 export class DashboardController {
@@ -42,20 +62,7 @@ export class DashboardController {
     if (roleRows.error) throw roleRows.error;
     if (markRows.error) throw markRows.error;
     const faculty = new Set((roleRows.data ?? []).map((row) => row.user_id)).size;
-    const scoredRows = (markRows.data ?? []).map((row) => {
-      const obtained = Number(row.marks_obtained);
-      const maximum = Number(row.max_marks);
-      return {
-        studentId: row.student_id,
-        percentage: Number.isFinite(obtained) && Number.isFinite(maximum) && maximum > 0
-          ? (obtained / maximum) * 100
-          : null,
-      };
-    }).filter((row) => row.percentage !== null);
-    const averageScore = scoredRows.length
-      ? Math.round((scoredRows.reduce((sum, row) => sum + row.percentage!, 0) / scoredRows.length) * 10) / 10
-      : null;
-    const lowScoreStudents = new Set(scoredRows.filter((row) => row.percentage! < 40).map((row) => row.studentId)).size;
+    const { averageScore, lowScoreStudents } = summarizeVerifiedMarks(markRows.data ?? []);
     const attendanceRate = totalAttendance ? Math.round(((presentAttendance + onDutyAttendance) / totalAttendance) * 1000) / 10 : null;
 
     return {
