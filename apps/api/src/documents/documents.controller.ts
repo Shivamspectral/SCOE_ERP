@@ -60,7 +60,7 @@ export class DocumentsController {
   async list(@Req() request: AuthenticatedRequest, @Query('departmentId') departmentId?: string, @Query('status') status?: string, @Query('category') category?: string, @Query('search') search?: string) {
     const client = this.db.forRequest(request);
     let query = client.from('documents')
-      .select('id,institution_id,owner_id,department_id,title,category,status,version,expires_at,storage_path,file_name,mime_type,file_size,uploaded_by,created_at,updated_at,departments(name,code)')
+      .select('id,institution_id,owner_id,department_id,title,category,status,version,expires_at,file_name,mime_type,file_size,uploaded_by,created_at,updated_at,departments(name,code)')
       .order('updated_at', { ascending: false }).limit(300);
     if (departmentId) query = query.eq('department_id', departmentId);
     if (status && ['draft','active','archived'].includes(status)) query = query.eq('status', status);
@@ -90,7 +90,7 @@ export class DocumentsController {
       institution_id: profile.institution_id, owner_id: request.authUser!.id,
       department_id: body.departmentId ?? null, title: body.title.trim(),
       category: body.category, status: 'draft', expires_at: body.expiresAt ?? null,
-    }).select('id,institution_id,owner_id,department_id,title,category,status,version,expires_at,storage_path,file_name,mime_type,file_size,uploaded_by,created_at,updated_at').single();
+    }).select('id,institution_id,owner_id,department_id,title,category,status,version,expires_at,file_name,mime_type,file_size,uploaded_by,created_at,updated_at').single();
     if (error) throw error;
     return data;
   }
@@ -138,7 +138,7 @@ export class DocumentsController {
       uploaded_by: request.authUser!.id,
       version: nextVersion,
     }).eq('id', id)
-      .select('id,title,status,version,storage_path,file_name,mime_type,file_size,uploaded_by,updated_at')
+      .select('id,title,status,version,file_name,mime_type,file_size,uploaded_by,updated_at')
       .maybeSingle();
     if (updateError || !data) {
       await storage.storage.from('institution-documents').remove([storagePath]).catch(() => undefined);
@@ -189,7 +189,7 @@ export class DocumentsController {
       if (!allowed) throw new BadRequestException('Only an authorised institutional role can activate a document');
     }
     const { data, error } = await client.from('documents').update(patch).eq('id', id)
-      .select('id,institution_id,owner_id,department_id,title,category,status,version,expires_at,storage_path,file_name,mime_type,file_size,uploaded_by,created_at,updated_at').maybeSingle();
+      .select('id,institution_id,owner_id,department_id,title,category,status,version,expires_at,file_name,mime_type,file_size,uploaded_by,created_at,updated_at').maybeSingle();
     if (error) throw error;
     if (!data) throw new NotFoundException('Document not found or update is not permitted');
     return data;
