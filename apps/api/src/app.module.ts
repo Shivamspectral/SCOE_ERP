@@ -7,6 +7,9 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { WorkflowsModule } from './workflows/workflows.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { CircularsModule } from './circulars/circulars.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { WorkflowsModule } from './workflows/workflows.module';
     AuthModule,
     DepartmentsModule,
     WorkflowsModule,
+    NotificationsModule,
+    CircularsModule,
+    AttendanceModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
