@@ -20,7 +20,7 @@ import {
 import { usePortal } from "../context/PortalContext";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
-import { safeGet } from "../lib/api";
+import { safeGet, noticesApi } from "../lib/api";
 import {
   college,
   attendanceTrend,
@@ -98,6 +98,8 @@ export function DashboardPage() {
   const [summary, setSummary] = useState(emptySummary);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState(false);
+  const [liveNotices, setLiveNotices] = useState([]);
+  const [noticesLoading, setNoticesLoading] = useState(false);
   const realSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
 
   useEffect(() => {
@@ -123,6 +125,28 @@ export function DashboardPage() {
     }).finally(() => { if (!cancelled) setSummaryLoading(false); });
     return () => { cancelled = true; };
   }, [realSession, userRole, session?.access_token]);
+
+  useEffect(() => {
+    if (!realSession) { setLiveNotices([]); setNoticesLoading(false); return; }
+    let cancelled = false;
+    setLiveNotices([]);
+    setNoticesLoading(true);
+    noticesApi.list({ status: "published" }).then((rows) => {
+      if (cancelled) return;
+      setLiveNotices((Array.isArray(rows) ? rows : []).map((row) => ({
+        id: row.id,
+        title: row.title || "Untitled circular",
+        category: row.category || "Circular",
+        date: row.published_at ? new Date(row.published_at).toLocaleDateString("en-IN") : (row.created_at ? new Date(row.created_at).toLocaleDateString("en-IN") : "—"),
+      })));
+    }).catch((error) => {
+      console.warn("[dashboard] unable to load published circulars", error);
+      if (!cancelled) setLiveNotices([]);
+    }).finally(() => { if (!cancelled) setNoticesLoading(false); });
+    return () => { cancelled = true; };
+  }, [realSession, session?.access_token]);
+
+  const dashboardNotices = realSession ? liveNotices : notices;
 
   const pendingApprovalsCount = realSession ? summary.pendingApprovals : (summary.pendingApprovals || approvals.filter((a) => a.status === "Pending").length);
   const pendingTasksCount = realSession ? summary.pendingTasks : (summary.pendingTasks || tasks.filter((t) => !t.completed).length);
@@ -368,7 +392,7 @@ export function DashboardPage() {
 
           <Card>
             <CardHeader className="flex-row items-center justify-between pb-3"><div><CardTitle>Recent Notices</CardTitle><p className="text-xs text-muted-foreground">Official circulars & alerts</p></div><button onClick={() => navigate("/notices")} className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">View all <ArrowRight className="size-3.5" /></button></CardHeader>
-            <CardContent className="space-y-3">{notices.slice(0, 5).map((notice) => <button key={notice.id} onClick={() => navigate("/notices")} className="block w-full border-b border-border pb-2.5 text-left last:border-0 last:pb-0"><div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className={`font-semibold ${noticeCategoryColor[notice.category]}`}>{notice.category}</span><span className="text-muted-foreground">{notice.date}</span></div><p className="mt-1 line-clamp-2 text-xs font-medium text-foreground">{notice.title}</p></button>)}</CardContent>
+            <CardContent className="space-y-3">{dashboardNotices.slice(0, 5).map((notice) => <button key={notice.id} onClick={() => navigate("/notices")} className="block w-full border-b border-border pb-2.5 text-left last:border-0 last:pb-0"><div className="flex flex-wrap items-center justify-between gap-2 text-xs"><span className={`font-semibold ${noticeCategoryColor[notice.category]}`}>{notice.category}</span><span className="text-muted-foreground">{notice.date}</span></div><p className="mt-1 line-clamp-2 text-xs font-medium text-foreground">{notice.title}</p></button>)}{realSession && dashboardNotices.length === 0 && <p className="py-3 text-xs text-muted-foreground">{noticesLoading ? "Loading published circulars…" : "No published circulars are available."}</p>}</CardContent>
           </Card>
         </section>
       ) : (
