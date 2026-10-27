@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { supabase, supabaseResetPassword } from "../lib/supabase";
-import { usersApi, isBackendConfigured, safeGet, api } from "../lib/api";
+import { usersApi, facultyApi, isBackendConfigured, safeGet, api } from "../lib/api";
 import { roleLabel, roleEnum, ROLES } from "../lib/roles";
 import {
   student as initialStudent,
@@ -904,8 +904,33 @@ export function PortalProvider({ children }) {
     });
     return () => { cancelled = true; };
   }, [realSession]);
+  const [facultyDirectory, setFacultyDirectory] = useState([]);
+  useEffect(() => {
+    if (!realSession) {
+      setFacultyDirectory([]);
+      return;
+    }
+    let cancelled = false;
+    facultyApi.list().then((rows) => {
+      if (cancelled) return;
+      setFacultyDirectory((Array.isArray(rows) ? rows : []).map((row) => ({
+        id: row.id,
+        name: row.name || "Faculty member",
+        email: row.email || "",
+        phone: row.phone || "",
+        dept: row.department?.name || row.dept || "",
+        designation: row.title || row.designation || "Faculty",
+        role: "Faculty",
+      })));
+    }).catch((error) => {
+      console.warn("[faculty] unable to load directory", error);
+      if (!cancelled) setFacultyDirectory([]);
+    });
+    return () => { cancelled = true; };
+  }, [realSession]);
+
   const scopedFaculty = useMemo(() => {
-    if (realSession) return (usersLoaded ? (usersList ?? []) : []).filter((item) => ["Faculty", "faculty"].includes(item.role) || item.roles?.some((role) => role.role === "faculty")).map((item) => ({ id: item.id, name: item.name, email: item.email || "", dept: item.department?.name || "", designation: item.title || "Faculty", role: "Faculty" }));
+    if (realSession) return facultyDirectory;
     if (scopeMeta.level === "college") return initialFaculty;
     const dept = activeProfile.dept?.toLowerCase();
     if (userRole === "Faculty") {
@@ -915,7 +940,7 @@ export function PortalProvider({ children }) {
     }
     if (!dept) return initialFaculty;
     return initialFaculty.filter((item) => item.dept?.toLowerCase() === dept);
-  }, [scopeMeta.level, activeProfile.dept, activeProfile.id, activeProfile.email, userRole, realSession, usersList]);
+  }, [scopeMeta.level, activeProfile.dept, activeProfile.id, activeProfile.email, userRole, realSession, usersList, facultyDirectory]);
 
   const scopedStudents = useMemo(() => {
     if (realSession) {
