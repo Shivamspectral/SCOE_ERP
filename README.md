@@ -1,96 +1,94 @@
-# Astra+ Campus
+# Astra+ Campus ERP
 
-Workflow-first college management system built around the real hierarchy of a college:
-Principal → Coordinators → HODs → Faculty. Next.js 16 (App Router) + Supabase (Postgres, Auth, RLS).
+A college staff ERP for principals, administrators, coordinators, HODs, faculty and non-teaching staff. Students and parents do not sign in. The Orbita Max React interface is the visual foundation; the application is moving to a Vite SPA and a separately deployed NestJS API.
 
-The product spec is in `docs/ASTRA_PLUS_CAMPUS_SPEC.docx`.
+## Architecture
 
-## What's in the box
+- **Frontend:** React 19 + Vite 8, Orbita Max React/JSX screens, Tailwind CSS, Lucide, TanStack Query.
+- **API:** NestJS 11 + TypeScript, versioned REST endpoints, DTO validation, Helmet, CORS allow-list, rate limiting and OpenAPI docs.
+- **Auth/data:** Supabase Auth + PostgreSQL, institution-scoped tables and Row Level Security (RLS). The API verifies Supabase access tokens and forwards the caller's JWT to database queries; it does not need a service-role key.
+- **Hosting target:** Vercel for the static frontend, Render (or another Node host) for the API, Supabase for auth and PostgreSQL.
 
-| Area | Status |
-| --- | --- |
-| Auth (email + password, email confirmation, admin approval of new members) | done |
-| Departments, people & role management | done |
-| Requests / approvals (sequential approval chain, notifications, audit trail) | done |
-| Circulars with acknowledgements | done |
-| Timetable (room and cohort clash prevention in the database) | done |
-| Syllabus progress | done |
-| Document register (metadata only, no file storage yet) | done |
-| Attendance, examination modules | workflow category only, no dedicated screens yet |
+## Implemented foundation
+
+- Supabase bearer-token verification and identity/role lookup.
+- Department directory.
+- Staff directory with role/status/department updates through the database's `manage_member` function.
+- Workflow request queue and approval decisions through `submit_workflow` and `decide_workflow`.
+- Circular list, draft creation and role-checked publishing.
+- Attendance session creation and class/student validation for attendance records.
+- Per-user notifications and mark-read actions.
+- Core schema and RLS migrations plus academic workspace tables.
+- CI build checks for the Vite frontend and NestJS API.
+
+**Production readiness note:** this is an actively developed ERP foundation, not yet a verified production-ready ₹3 lakh delivery. Some Orbita Max screens still use synthetic local data or UI-only actions; several modules still need dedicated API endpoints, automated integration/security tests, and end-to-end validation against a real Supabase project before real college records are used. Demo data must never be represented as institutional data.
 
 ## Local development
 
-Requirements: Node 20.9+, pnpm 12, Docker (for the local Supabase stack), Supabase CLI.
+Requirements: Node.js 22.12+ and pnpm 12.3.4.
+
+1. Install workspace dependencies:
+   ```bash
+   pnpm install
+   ```
+2. Create environment files:
+   ```bash
+   cp apps/web/.env.example apps/web/.env.local
+   cp apps/api/.env.example apps/api/.env
+   ```
+3. Set real Supabase project values in both files. In `apps/api/.env`, set `WEB_ORIGIN=http://localhost:5173`. The frontend needs the same Supabase project URL and publishable/anon key.
+4. Run in separate terminals:
+   ```bash
+   pnpm dev:api
+   pnpm dev
+   ```
+5. API health: `http://localhost:4000/api/v1/health`. OpenAPI docs: `http://localhost:4000/api/v1/docs`.
+
+## Demo previews
+
+The login page includes synthetic role previews for Principal, Administrator, Coordinator, HOD, Faculty, Staff and a pending account. They only switch the local UI into sample-data mode; they do **not** create a Supabase session, grant API access, or authenticate as a real employee. Set `VITE_ENABLE_DEMO_ACCOUNTS=false` to hide them. Never add real credentials to the demo list.
+
+## Database
+
+The SQL migrations in `supabase/migrations` define the schema, role helpers, workflow functions, auth bootstrap, RLS and academic workspace tables. Use a dedicated non-production Supabase project for development and validate migrations before applying them to the college's production database.
 
 ```bash
-pnpm install
-supabase start            # starts Postgres/Auth/Studio and applies supabase/migrations
-cp .env.example .env.local   # fill in the URL and publishable key printed by `supabase start`
-pnpm dev
+supabase start
+supabase db reset
+supabase db push
 ```
 
-Local confirmation emails land in Inbucket at http://localhost:54324.
+Never edit an already-applied migration; add a new migration instead.
 
-Useful commands: `pnpm typecheck`, `pnpm build`, `supabase db reset` (rebuild the DB from migrations),
-`supabase migration new <name>` (add a migration).
+## Deployment
 
-## Production setup
+### Frontend (Vercel)
 
-1. **Create a Supabase project**, then link and push the schema:
-   ```bash
-   supabase link --project-ref <ref>
-   supabase db push
-   ```
-2. **Auth settings** (Dashboard → Authentication):
-   - Providers → Email: enable, keep *Confirm email* ON (the first-user bootstrap only runs after confirmation).
-   - URL Configuration: Site URL = your app origin; add `<origin>/auth/callback` to Redirect URLs.
-   - Password policy: minimum 8 characters (the UI enforces 8; raise it here if you want stricter rules).
-   - Configure a real SMTP provider. The built-in mailer is rate-limited and meant for testing.
-3. **Environment variables** (see `.env.example`): `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL`. No service-role key is used or needed.
-4. **Deploy** to Vercel (zero config) or build the Docker image:
-   ```bash
-   docker build \
-     --build-arg NEXT_PUBLIC_SUPABASE_URL=... \
-     --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=... \
-     --build-arg NEXT_PUBLIC_SITE_URL=https://campus.example.edu \
-     -t astra-campus .
-   docker run -p 3000:3000 astra-campus
-   ```
-   Health check: `GET /api/health`.
-5. **Bootstrap**: the first person to sign up *and confirm their email* creates the institution and becomes
-   its principal. Do this yourself immediately after the first deploy. Everyone after that joins as `pending`
-   and appears on the People page for an administrator to activate and assign a role.
+`vercel.json` configures a static Vite deployment. Configure these build environment variables in Vercel:
 
-## How access works
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY` (or `VITE_SUPABASE_ANON_KEY`)
+- `VITE_API_BASE_URL` — deployed NestJS API origin, e.g. `https://your-api-host.example`
+- Optional: `VITE_ENABLE_DEMO_ACCOUNTS=false` to hide sample previews.
 
-- Roles: `principal`, `administrator`, `coordinator`, `hod`, `faculty`, `staff`. A role may be campus-wide
-  (no department) or scoped to a department.
-- Every table has row level security. The browser only gets the columns/operations granted in
-  `supabase/migrations/*_rls_and_grants.sql`. Workflow, role, audit and notification writes happen only
-  through `SECURITY DEFINER` functions (`submit_workflow`, `decide_workflow`, `manage_member`).
-- Approval routing (`submit_workflow`): department head first, then principal (or an administrator).
-  Routine work (task, leave, syllabus, timetable, attendance) stops at the department head when one exists.
-  The principal's own requests are auto-approved. Only people who manage others can pick explicit approvers.
-- Only the principal can create or change administrators; the principal's own access can't be changed in-app.
-- `audit_logs` is append-only, enforced by a trigger.
+### API (Render)
 
-## Migrations
+`render.yaml` describes the NestJS service. Supply these private environment variables in Render:
 
-| File | Purpose |
-| --- | --- |
-| `…01_core_schema.sql` | tables, constraints, indexes, timetable clash constraints |
-| `…02_security_helpers.sql` | role helpers, audit + notification plumbing, circular publish triggers |
-| `…03_workflow_functions.sql` | `submit_workflow`, `decide_workflow`, `manage_member` |
-| `…04_auth_bootstrap.sql` | profile creation on email confirmation, first-user bootstrap |
-| `…05_rls_and_grants.sql` | RLS policies and explicit grants |
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `WEB_ORIGIN` — exact deployed Vercel origin, with no path. Multiple comma-separated origins are supported.
 
-Never edit an applied migration; add a new one.
+The API must use the same Supabase project as the frontend. Keep service-role keys, database passwords and other secrets out of Git and out of `VITE_*` variables.
 
-## Known limitations
+## Production checklist
 
-- A request that an approver *returns* ends in status `returned`; there is no resubmit screen yet.
-- Documents are metadata only. File upload (Supabase Storage) is not implemented.
-- The CSP allows inline scripts (`'unsafe-inline'`), which Next.js needs unless every page is nonce-rendered.
-- Single institution per deployment (the schema carries `institution_id` everywhere to make multi-tenancy
-  possible later, but the bootstrap logic assumes one).
+- Confirm the Supabase project and migrate its schema in a staging environment.
+- Test every role with real staff accounts and prove cross-department/cross-institution access is denied.
+- Add missing feature APIs and replace UI-only actions with persisted workflows.
+- Add audit-log verification, storage policies, email delivery, backups/restore tests, monitoring and incident response.
+- Run automated API, RLS, accessibility, mobile and end-to-end tests.
+- Configure a real domain, SMTP, environment secrets and recovery procedures.
+- Have the college approve data ownership, retention, support, security and handover terms.
+
+The previous Next.js application remains in the repository as migration/reference code. The active Vercel configuration targets the Vite frontend.
