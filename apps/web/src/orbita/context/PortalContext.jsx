@@ -838,7 +838,7 @@ export function PortalProvider({ children }) {
     return () => { cancelled = true; };
   }, [realSession]);
   const scopedFaculty = useMemo(() => {
-    if (realSession) return (usersList ?? []).filter((item) => ["Faculty", "faculty"].includes(item.role) || item.roles?.some((role) => role.role === "faculty")).map((item) => ({ id: item.id, name: item.name, email: item.email || "", dept: item.department?.name || "", designation: item.title || "Faculty", role: "Faculty" }));
+    if (realSession) return (usersLoaded ? (usersList ?? []) : []).filter((item) => ["Faculty", "faculty"].includes(item.role) || item.roles?.some((role) => role.role === "faculty")).map((item) => ({ id: item.id, name: item.name, email: item.email || "", dept: item.department?.name || "", designation: item.title || "Faculty", role: "Faculty" }));
     if (scopeMeta.level === "college") return initialFaculty;
     const dept = activeProfile.dept?.toLowerCase();
     if (userRole === "Faculty") {
