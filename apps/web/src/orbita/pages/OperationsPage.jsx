@@ -31,6 +31,7 @@ export function OperationsPage({ route }) {
   const [search,setSearch] = useState("");
   const [status,setStatus] = useState("");
   const [modal,setModal] = useState(false);
+  const [editingRecord,setEditingRecord] = useState(null);
   const [saving,setSaving] = useState(false);
   const [form,setForm] = useState({});
   const [notice,setNotice] = useState("");
@@ -75,10 +76,32 @@ export function OperationsPage({ route }) {
       else payload[key] = value;
     }
     try {
-      await operationsApi.create(config.key,payload);
-      setModal(false); setForm({}); setNotice("Record created successfully."); await load();
+      if (editingRecord) {
+        await operationsApi.update(config.key, editingRecord.id, payload);
+        setNotice("Record updated successfully.");
+      } else {
+        await operationsApi.create(config.key,payload);
+        setNotice("Record created successfully.");
+      }
+      setModal(false); setEditingRecord(null); setForm({}); await load();
     } catch(e) { setError(e instanceof Error ? e.message : "Could not create record."); }
     finally { setSaving(false); }
+  };
+
+  const openEdit = (record) => {
+    const values = {};
+    for (const [key,,type] of config.fields) {
+      const value = record[key];
+      if (value === undefined || value === null) continue;
+      if (Array.isArray(value)) values[key] = value.join(", ");
+      else if (type === "datetime-local" && typeof value === "string") values[key] = value.slice(0,16);
+      else values[key] = String(value);
+    }
+    setEditingRecord(record);
+    setForm(values);
+    setError("");
+    setNotice("");
+    setModal(true);
   };
 
   const remove = async (record) => {
@@ -107,7 +130,7 @@ export function OperationsPage({ route }) {
         <div className="rounded-xl border border-border bg-card p-3 text-primary"><Icon className="size-6"/></div>
         <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Campus operations</p><h1 className="mt-1 font-display text-2xl font-bold text-foreground">{config.title}</h1><p className="mt-1 max-w-2xl text-sm text-muted-foreground">{config.description}</p></div>
       </div>
-      <button onClick={()=>{setForm({});setModal(true);setError("");}} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"><Plus className="size-4"/> New record</button>
+      <button onClick={()=>{setEditingRecord(null);setForm({});setModal(true);setError("");setNotice("");}} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"><Plus className="size-4"/> New record</button>
     </div>
     {(isDemoPreview || !isBackendConfigured) && <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm"><AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-600"/><div><p className="font-semibold">Preview mode</p><p className="mt-1 text-muted-foreground">This module is ready to connect to institutional records. Live data and saving require the authenticated API and database migration to be deployed. Demo mode never writes real records.</p></div></div>}
     {notice && <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">{notice}</div>}
@@ -122,14 +145,14 @@ export function OperationsPage({ route }) {
         <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground"><tr>{columns.map((c)=><th key={c} className="whitespace-nowrap px-4 py-3 font-semibold">{humanize(c)}</th>)}<th className="px-4 py-3 font-semibold">Update status</th><th className="px-4 py-3 font-semibold">Actions</th></tr></thead>
         <tbody className="divide-y divide-border">
           {loading ? <tr><td colSpan={columns.length+2} className="px-4 py-12 text-center text-muted-foreground"><RefreshCw className="mx-auto mb-2 size-5 animate-spin"/>Loading records…</td></tr> :
-          records.length ? records.map((record)=><tr key={record.id} className="hover:bg-muted/30">{columns.map((c)=><td key={c} className="max-w-64 px-4 py-3 text-foreground"><span className="block truncate" title={displayValue(record[c])}>{displayValue(record[c])}</span></td>)}<td className="px-4 py-3">{config.fields.some((f)=>f[0]==="status") ? <select aria-label={"Update status for "+(record.title||record.full_name||record.name||record.id)} value={record.status||""} onChange={(e)=>void update(record,"status",e.target.value)} disabled={isDemoPreview || !isBackendConfigured} className="max-w-44 rounded-md border border-input bg-background px-2 py-1.5 text-xs disabled:opacity-50">{config.fields.find((f)=>f[0]==="status")?.[4]?.map((s)=><option key={s} value={s}>{humanize(s)}</option>)}</select> : <span className="text-muted-foreground">—</span>}</td><td className="px-4 py-3"><button onClick={()=>void remove(record)} disabled={isDemoPreview || !isBackendConfigured} className="inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-40" title="Delete record"><Trash2 className="size-3.5"/> Delete</button></td></tr>) :
+          records.length ? records.map((record)=><tr key={record.id} className="hover:bg-muted/30">{columns.map((c)=><td key={c} className="max-w-64 px-4 py-3 text-foreground"><span className="block truncate" title={displayValue(record[c])}>{displayValue(record[c])}</span></td>)}<td className="px-4 py-3">{config.fields.some((f)=>f[0]==="status") ? <select aria-label={"Update status for "+(record.title||record.full_name||record.name||record.id)} value={record.status||""} onChange={(e)=>void update(record,"status",e.target.value)} disabled={isDemoPreview || !isBackendConfigured} className="max-w-44 rounded-md border border-input bg-background px-2 py-1.5 text-xs disabled:opacity-50">{config.fields.find((f)=>f[0]==="status")?.[4]?.map((s)=><option key={s} value={s}>{humanize(s)}</option>)}</select> : <span className="text-muted-foreground">—</span>}</td><td className="px-4 py-3"><div className="flex items-center gap-2"><button onClick={()=>openEdit(record)} disabled={isDemoPreview || !isBackendConfigured} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-40" title="Edit record">Edit</button><button onClick={()=>void remove(record)} disabled={isDemoPreview || !isBackendConfigured} className="inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-40" title="Delete record"><Trash2 className="size-3.5"/> Delete</button></div></td></tr>) :
           <tr><td colSpan={columns.length+2} className="px-4 py-14 text-center"><div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-muted"><Icon className="size-5 text-muted-foreground"/></div><p className="font-semibold text-foreground">{isDemoPreview || !isBackendConfigured ? "Ready for institutional data" : "No records found"}</p><p className="mt-1 text-sm text-muted-foreground">{isDemoPreview || !isBackendConfigured ? "Connect the backend to load and manage records." : "Create a record or adjust your search."}</p></td></tr>}
         </tbody></table>
       </div>
       <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground"><span>{records.length} record{records.length===1?"":"s"} shown (up to 250)</span><span>Institution-scoped workspace</span></div>
     </section>
-    {modal && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onMouseDown={(e)=>{if(e.target===e.currentTarget)setModal(false);}}><section role="dialog" aria-modal="true" aria-labelledby="operation-form-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl"><div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-5 py-4"><div><h2 id="operation-form-title" className="font-display text-lg font-bold">Create {config.title.toLowerCase()} record</h2><p className="mt-1 text-xs text-muted-foreground">Required fields are marked with an asterisk.</p></div><button onClick={()=>setModal(false)} className="rounded-lg p-2 hover:bg-muted" aria-label="Close form"><X className="size-5"/></button></div>
+    {modal && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onMouseDown={(e)=>{if(e.target===e.currentTarget)setModal(false);}}><section role="dialog" aria-modal="true" aria-labelledby="operation-form-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl"><div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-5 py-4"><div><h2 id="operation-form-title" className="font-display text-lg font-bold">{editingRecord ? "Edit" : "Create"} {config.title.toLowerCase()} record</h2><p className="mt-1 text-xs text-muted-foreground">Required fields are marked with an asterisk.</p></div><button onClick={()=>setModal(false)} className="rounded-lg p-2 hover:bg-muted" aria-label="Close form"><X className="size-5"/></button></div>
       <form onSubmit={submit} className="space-y-5 p-5"><div className="grid gap-4 sm:grid-cols-2">{config.fields.map(([key,label,type,required,options])=><label key={key} className={"block space-y-1.5 "+(type==="textarea"?"sm:col-span-2":"")}><span className="text-sm font-medium text-foreground">{label}{required&&<span className="text-destructive"> *</span>}</span>{type==="select"?<select required={Boolean(required)} value={form[key]||""} onChange={(e)=>setForm((p)=>({...p,[key]:e.target.value}))} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"><option value="">Select…</option>{(options||[]).map((o)=><option key={o} value={o}>{humanize(o)}</option>)}</select>:type==="textarea"?<textarea rows={3} value={form[key]||""} onChange={(e)=>setForm((p)=>({...p,[key]:e.target.value}))} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder={"Enter "+label.toLowerCase()}/>:<input required={Boolean(required)} type={type==="number"?"number":type} min={type==="number"?0:undefined} step={type==="number"?"any":undefined} value={form[key]||""} onChange={(e)=>setForm((p)=>({...p,[key]:e.target.value}))} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder={type==="number"?"0": "Enter "+label.toLowerCase()}/>}</label>)}</div>
-      {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2 border-t border-border pt-4"><button type="button" onClick={()=>setModal(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancel</button><button disabled={saving} type="submit" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Save className="size-4"/>{saving?"Saving…":"Create record"}</button></div></form></section></div>}
+      {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2 border-t border-border pt-4"><button type="button" onClick={()=>{setModal(false);setEditingRecord(null);}} className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancel</button><button disabled={saving} type="submit" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Save className="size-4"/>{saving?"Saving…":editingRecord?"Save changes":"Create record"}</button></div></form></section></div>}
   </div>;
 }
