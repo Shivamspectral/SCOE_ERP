@@ -101,9 +101,11 @@ returns trigger language plpgsql security definer set search_path = ''
 as $$
 declare parent_institution uuid;
 begin
-  if tg_table_name = 'examination_sessions' and new.term_id is not null then
-    select institution_id into parent_institution from public.academic_terms where id = new.term_id;
-    if parent_institution is distinct from new.institution_id then raise exception 'Academic term must belong to this institution' using errcode = '23514'; end if;
+  if tg_table_name = 'examination_sessions' then
+    if new.term_id is not null then
+      select institution_id into parent_institution from public.academic_terms where id = new.term_id;
+      if parent_institution is distinct from new.institution_id then raise exception 'Academic term must belong to this institution' using errcode = '23514'; end if;
+    end if;
   elsif tg_table_name = 'examination_timetable' then
     select institution_id into parent_institution from public.examination_sessions where id = new.session_id;
     if parent_institution is distinct from new.institution_id then raise exception 'Examination session must belong to this institution' using errcode = '23514'; end if;
@@ -118,3 +120,8 @@ for each row execute function app_private.guard_examination_tenant();
 create trigger examination_timetable_tenant_guard before insert or update on public.examination_timetable
 for each row execute function app_private.guard_examination_tenant();
 revoke all on function app_private.guard_examination_tenant() from public, anon, authenticated;
+
+
+create trigger examination_sessions_department_scope_guard
+before insert or update on public.examination_sessions
+for each row execute function app_private.guard_department_scope('department_id');
