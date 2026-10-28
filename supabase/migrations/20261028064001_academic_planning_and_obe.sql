@@ -164,7 +164,10 @@ returns trigger language plpgsql security definer set search_path = ''
 as $$
 declare parent_institution uuid;
 begin
-  if tg_table_name = 'curriculum_courses' then
+  if tg_table_name = 'academic_programmes' then
+    select institution_id into parent_institution from public.departments where id = new.department_id;
+    if parent_institution is distinct from new.institution_id then raise exception 'Department must belong to this institution' using errcode = '23514'; end if;
+  elsif tg_table_name = 'curriculum_courses' then
     select institution_id into parent_institution from public.academic_programmes where id = new.programme_id;
     if parent_institution is distinct from new.institution_id then raise exception 'Programme must belong to this institution' using errcode = '23514'; end if;
     select institution_id into parent_institution from public.academic_subjects where id = new.subject_id;
@@ -205,6 +208,7 @@ begin
 end;
 $$;
 
+create trigger academic_programmes_institution_guard before insert or update on public.academic_programmes for each row execute function app_private.guard_academic_planning_institution();
 create trigger curriculum_courses_institution_guard before insert or update on public.curriculum_courses for each row execute function app_private.guard_academic_planning_institution();
 create trigger course_outcomes_institution_guard before insert or update on public.course_outcomes for each row execute function app_private.guard_academic_planning_institution();
 create trigger program_outcomes_institution_guard before insert or update on public.program_outcomes for each row execute function app_private.guard_academic_planning_institution();
@@ -213,3 +217,25 @@ create trigger course_program_outcome_mappings_institution_guard before insert o
 create trigger outcome_attainment_results_institution_guard before insert or update on public.outcome_attainment_results for each row execute function app_private.guard_academic_planning_institution();
 
 revoke all on function app_private.guard_academic_planning_institution() from public, anon, authenticated;
+
+
+-- Setting a new current term automatically clears the prior current term.
+create or replace function app_private.ensure_single_current_academic_term()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+begin
+  if new.is_current then
+    update public.academic_terms
+      set is_current = false
+      where institution_id = new.institution_id
+        and id is distinct from new.id
+        and is_current = true;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists academic_terms_current_guard on public.academic_terms;
+create trigger academic_terms_current_guard
+before insert or update of is_current, institution_id on public.academic_terms
+for each row execute function app_private.ensure_single_current_academic_term();
+revoke all on function app_private.ensure_single_current_academic_term() from public, anon, authenticated;
