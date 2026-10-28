@@ -7,7 +7,7 @@ A college staff ERP for principals, administrators, coordinators, HODs, faculty 
 - **Frontend:** React 19 + Vite 8, Orbita Max React/JSX screens, Tailwind CSS, Lucide, TanStack Query.
 - **API:** NestJS 11 + TypeScript, versioned REST endpoints, DTO validation, Helmet, CORS allow-list, rate limiting and OpenAPI docs.
 - **Auth/data:** Supabase Auth + PostgreSQL, institution-scoped tables and Row Level Security (RLS). The API verifies Supabase access tokens and forwards the caller's JWT to normal data queries. A server-only service-role key is optional and used only for administrator-authorized staff invitation emails.
-- **Hosting target:** Vercel for the static frontend, Render (or another Node host) for the API, Supabase for auth and PostgreSQL.
+- **Hosting:** Vercel frontend, Vercel serverless NestJS API, and Supabase Auth/PostgreSQL/Storage. Render remains an alternative API host via `render.yaml`.
 
 ## Implemented foundation
 
@@ -30,7 +30,7 @@ Authenticated sessions are restricted to routes backed by institutional API call
 
 The following remain unavailable until their API, persistence, permissions, and acceptance tests are implemented: official exam schedules, result cards and hall tickets; report generation/file delivery; grievance tickets; event registrations; placement applications; library reservations; hostel and transport operations; club/sports/alumni services; mentoring records; notification subscriptions/delivery. These routes are blocked or show an explicit unavailable state for authenticated sessions. A successful workflow request means only that the request was recorded for review; it does not imply that an external action (SMS, email, gate pass, official PDF or university upload) occurred.
 
-Document files now use a private `institution-documents` Supabase Storage bucket. Upload/download endpoints require `SUPABASE_SERVICE_ROLE_KEY` on the API deployment, accept only PDF/Word/Excel/CSV/TXT/PNG/JPEG files up to 10 MB, and issue 60-second signed download links. The bucket is private; object paths are not exposed by the document register API.
+Document files use a private `institution-documents` Supabase Storage bucket. Upload, signed download, and cleanup requests use the caller's JWT and explicit Storage RLS policies scoped to the document owner or authorized institutional leadership; ordinary file access does not require a service-role key. The API accepts only PDF/Word/Excel/CSV/TXT/PNG/JPEG files up to 10 MB and issues 60-second signed download links. The bucket is private; object paths are not exposed by the document register API.
 
 ## Local development
 
@@ -80,14 +80,14 @@ Never edit an already-applied migration; add a new migration instead.
 - `VITE_API_BASE_URL` — deployed NestJS API origin, e.g. `https://your-api-host.example`
 - Optional: `VITE_ENABLE_DEMO_ACCOUNTS=true` only if you intentionally want production sample previews; unset/false keeps them hidden.
 
-### API (Render)
+### API (Vercel or Render)
 
-`render.yaml` describes the NestJS service. Supply these private environment variables in Render:
+The current API is configured as a Vercel project rooted at `apps/api`. `render.yaml` remains an alternative NestJS service blueprint. Supply these private environment variables in the selected API host:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `WEB_ORIGIN` — exact deployed Vercel origin, with no path. Multiple comma-separated origins are supported.
-- Optional `SUPABASE_SERVICE_ROLE_KEY` — required only if staff invitations should send Supabase Auth invite emails. Keep it server-side, never in frontend/Vercel `VITE_*` variables.
+- Optional `SUPABASE_SERVICE_ROLE_KEY` — required only if staff invitations should send Supabase Auth invite emails. Ordinary API data access and private document file operations use the caller JWT and RLS. Keep any service-role key server-side, never in frontend/Vercel `VITE_*` variables.
 
 The API must use the same Supabase project as the frontend. Keep service-role keys, database passwords and other secrets out of Git and out of `VITE_*` variables.
 
