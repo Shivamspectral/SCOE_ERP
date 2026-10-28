@@ -337,6 +337,9 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         { label: "Attainment Cycles", href: "/attainment-cycles", icon: ClipboardCheck, tooltip: "Outcome attainment review cycles" },
         { label: "Attainment Results", href: "/attainment-results", icon: FileSpreadsheet, tooltip: "Attainment metrics and evidence" },
         { label: "Institution Configuration", href: "/institution-settings", icon: Settings, tooltip: "Academic year, locale, contact and module settings" },
+        { label: "Budget & Allocation", href: "/budgets", icon: Wallet, tooltip: "Annual budgets and approvals" },
+        { label: "Vendor Registry", href: "/vendors", icon: Briefcase, tooltip: "Supplier master and review status" },
+        { label: "Staff Expense Claims", href: "/expense-claims", icon: Wallet, tooltip: "Reimbursements and payment status" },
       ],
     }] : []),
   ];
