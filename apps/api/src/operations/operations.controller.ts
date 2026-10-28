@@ -62,6 +62,12 @@ const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> =
   budgets: { draft: ['submitted'], submitted: ['approved', 'draft'], approved: ['locked'], locked: ['closed'], closed: [] },
   vendors: { pending_review: ['approved', 'suspended', 'blacklisted'], approved: ['suspended', 'blacklisted'], suspended: ['approved', 'blacklisted'], blacklisted: [] },
   expenseClaims: { draft: ['submitted', 'cancelled'], submitted: ['approved', 'rejected', 'cancelled'], approved: ['paid'], rejected: ['draft', 'cancelled'], paid: [], cancelled: [] },
+  catalogue: { active: ['processing', 'withdrawn'], processing: ['active', 'withdrawn'], withdrawn: [] },
+  assets: { active: ['under_maintenance', 'lost', 'disposed'], under_maintenance: ['active', 'disposed'], lost: ['active', 'disposed'], disposed: [] },
+  hostelRooms: { available: ['full', 'maintenance', 'inactive'], full: ['available', 'maintenance', 'inactive'], maintenance: ['available', 'inactive'], inactive: ['available'] },
+  vehicles: { active: ['maintenance', 'retired'], maintenance: ['active', 'retired'], retired: [] },
+  drives: { planned: ['open', 'cancelled'], open: ['in_progress', 'cancelled'], in_progress: ['completed', 'cancelled'], completed: [], cancelled: [] },
+  research: { proposed: ['submitted', 'rejected'], submitted: ['active', 'rejected', 'on_hold'], active: ['on_hold', 'completed'], on_hold: ['active', 'completed'], completed: [], rejected: [] },
 };
 
 @Controller('operations')
