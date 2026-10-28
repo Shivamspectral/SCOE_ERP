@@ -18,5 +18,8 @@
   "description": "Astra+ Campus - workflow-first college management system",
   "engines": {
     "node": ">=22.12.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": ["@scarf/scarf"]
   }
 }
