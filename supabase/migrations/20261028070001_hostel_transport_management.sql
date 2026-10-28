@@ -14,6 +14,14 @@ create table if not exists public.hostel_allocations (
   updated_at timestamptz not null default now(),
   check (ends_on is null or ends_on >= starts_on)
 );
+-- Preserve pre-existing occupancy counts that do not have individual allocation records yet.
+alter table public.hostel_rooms
+  add column if not exists untracked_occupied_beds integer not null default 0
+  check (untracked_occupied_beds >= 0);
+update public.hostel_rooms
+set untracked_occupied_beds = occupied_beds
+where occupied_beds > 0 and untracked_occupied_beds = 0;
+
 create unique index if not exists hostel_allocations_active_bed_key
   on public.hostel_allocations(institution_id, room_id, bed_label) where status = 'active';
 create index if not exists hostel_allocations_student_idx on public.hostel_allocations(institution_id, student_id, status);
@@ -133,9 +141,11 @@ declare room_capacity integer; active_allocations integer;
 begin
   if new.status = 'active' then
     select capacity into room_capacity from public.hostel_rooms where id = new.room_id and institution_id = new.institution_id;
-    select count(*) into active_allocations from public.hostel_allocations
+    select coalesce(untracked_occupied_beds, 0) into active_allocations
+      from public.hostel_rooms where id = new.room_id and institution_id = new.institution_id;
+    active_allocations := active_allocations + (select count(*) from public.hostel_allocations
       where room_id = new.room_id and institution_id = new.institution_id
-        and status = 'active' and id is distinct from new.id;
+        and status = 'active' and id is distinct from new.id);
     if room_capacity is null or active_allocations >= room_capacity then
       raise exception 'Hostel room has no available beds' using errcode = '23514';
     end if;
@@ -160,13 +170,14 @@ begin
   end if;
   if tg_op = 'UPDATE' and old.room_id is distinct from new.room_id then
     update public.hostel_rooms
-      set occupied_beds = (select count(*) from public.hostel_allocations where room_id = old.room_id and institution_id = old.institution_id and status = 'active')
+      set occupied_beds = untracked_occupied_beds + (select count(*) from public.hostel_allocations where room_id = old.room_id and institution_id = old.institution_id and status = 'active')
       where id = old.room_id and institution_id = old.institution_id;
   end if;
   select capacity, status into capacity_value, room_status from public.hostel_rooms
     where id = room_to_sync and institution_id = room_institution;
-  select count(*) into occupied from public.hostel_allocations
-    where room_id = room_to_sync and institution_id = room_institution and status = 'active';
+  select untracked_occupied_beds + (select count(*) from public.hostel_allocations
+    where room_id = room_to_sync and institution_id = room_institution and status = 'active')
+    into occupied from public.hostel_rooms where id = room_to_sync and institution_id = room_institution;
   update public.hostel_rooms
     set occupied_beds = occupied,
         status = case
