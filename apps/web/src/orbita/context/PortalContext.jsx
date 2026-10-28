@@ -171,6 +171,14 @@ export function PortalProvider({ children }) {
       hod: "HOD",
       faculty: "Faculty",
       staff: "Staff",
+      exam_cell: "Exam Cell",
+      admission_officer: "Admissions Officer",
+      librarian: "Librarian",
+      placement_officer: "Placement Officer",
+      iqac_coordinator: "IQAC Coordinator",
+      hr: "HR",
+      finance: "Finance",
+      registrar: "Registrar",
     };
     const rawRole = me.primaryRole || me.roles?.[0]?.role || null;
     const normalizedRole = rawRole
