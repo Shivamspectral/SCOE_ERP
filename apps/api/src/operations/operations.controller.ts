@@ -202,6 +202,10 @@ export class OperationsController {
           patch.approved_at = null;
         }
       }
+      if (currentStatus !== nextStatus && module === 'evidence' && ['approved','needs_revision'].includes(nextStatus)) {
+        patch.reviewed_by = req.authUser!.id;
+        patch.reviewed_at = new Date().toISOString();
+      }
       if (currentStatus !== nextStatus && module === 'budgets' && nextStatus === 'approved') {
         patch.approved_by = req.authUser!.id;
         patch.approved_at = new Date().toISOString();
