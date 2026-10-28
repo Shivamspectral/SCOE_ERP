@@ -255,9 +255,23 @@ export function PortalProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
-    setSession(data || null);
+    setSession(data.session || null);
     setIsDemoPreview(false);
     setIsAuthenticated(true);
+
+    // One-time bootstrap for the designated first Principal. The server-side
+    // function verifies the authenticated email and refuses if another leader exists.
+    if ((data.user?.email || email).trim().toLowerCase() === "scoeprinciple@gmail.com") {
+      const { data: bootstrapData, error: bootstrapError } = await supabase.functions.invoke("bootstrap-first-principal");
+      if (bootstrapError || !bootstrapData?.success) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setIsAuthenticated(false);
+        setIsDemoPreview(false);
+        setUserRole("Pending");
+        throw new Error(bootstrapData?.error || bootstrapError?.message || "Could not initialize the first Principal account.");
+      }
+    }
 
     const me = await hydrateIdentity();
     if (!hasApprovedStaffAccess(me)) {
