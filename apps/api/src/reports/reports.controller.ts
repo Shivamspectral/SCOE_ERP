@@ -34,7 +34,7 @@ export class ReportsController {
 
     const count = async (table: string, filters: Record<string, string> = {}) => {
       let query: any = client.from(table).select('id', { count: 'exact', head: true });
-      if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','academic_programmes','finance_budgets','hr_employees','research_projects'].includes(table)) query = query.eq('department_id', departmentId);
+      if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','assignment_records','academic_programmes','finance_budgets','hr_employees','research_projects'].includes(table)) query = query.eq('department_id', departmentId);
       if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
       if (parsedTo) {
         const upperBound = /^\d{4}-\d{2}-\d{2}$/.test(to || '') ? new Date(parsedTo.getTime() + 24 * 60 * 60 * 1000 - 1) : parsedTo;
@@ -58,6 +58,9 @@ export class ReportsController {
         ['activeSubjects','academic_subjects',{status:'active'}], ['verifiedMarks','marks_records',{status:'verified'}],
         ['lockedMarks','marks_records',{status:'locked'}], ['courseOutcomes','course_outcomes',{status:'active'}],
         ['programOutcomes','program_outcomes',{status:'active'}],
+        ['assignmentsPublished','assignment_records',{status:'published'}],
+        ['assignmentsDraft','assignment_records',{status:'draft'}],
+        ['assignmentsClosed','assignment_records',{status:'closed'}],
       ],
       attendance: [
         ['sessionsDraft','attendance_sessions',{status:'draft'}], ['sessionsSubmitted','attendance_sessions',{status:'submitted'}],
