@@ -40,9 +40,15 @@ function emit() {
 }
 
 function persist(next) {
-  session = next;
+  // The raw Supabase Auth REST response commonly includes expires_in but omits
+  // expires_at (the official SDK normally derives it). Persist an absolute
+  // expiry so getSession() can refresh tokens before they expire.
+  const normalized = next?.access_token && !next.expires_at && Number.isFinite(Number(next.expires_in))
+    ? { ...next, expires_at: Math.floor(Date.now() / 1000) + Number(next.expires_in) }
+    : next;
+  session = normalized;
   try {
-    if (next) localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    if (normalized) localStorage.setItem(SESSION_KEY, JSON.stringify(normalized));
     else localStorage.removeItem(SESSION_KEY);
   } catch {
     /* storage unavailable (private mode / WebView) */
