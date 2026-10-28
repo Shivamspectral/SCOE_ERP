@@ -111,6 +111,7 @@ export function getNavigationForRole(role) {
           { label: "Student Directory", href: "/students", icon: Users, tooltip: "Department student strength" },
           { label: "Department Attendance", href: "/attendance", icon: ClipboardCheck, tooltip: "Attendance & defaulters list" },
           { label: "Assignments & Evaluation", href: "/assignments", icon: FileText, tooltip: "Department assignments and assessment progress" },
+          { label: "Mentor–Mentee Oversight", href: "/mentoring", icon: Users, tooltip: "Department mentor assignments and counselling follow-ups" },
         ],
       },
       {
@@ -156,6 +157,7 @@ export function getNavigationForRole(role) {
           { label: "Student Management", href: "/students", icon: Users, tooltip: "Campus-wide student registry" },
           { label: "Institutional Attendance", href: "/attendance", icon: ClipboardCheck, tooltip: "Campus-wide attendance & defaulters" },
           { label: "Academic Assessments", href: "/assignments", icon: FileText, tooltip: "Institution-wide assignment and evaluation oversight" },
+          { label: "Mentor–Mentee Oversight", href: "/mentoring", icon: Users, tooltip: "Institution-wide mentoring assignments and follow-ups" },
         ],
       },
       {
