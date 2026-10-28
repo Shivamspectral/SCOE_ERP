@@ -39,6 +39,9 @@ const emptySummary = {
   classes: 0,
   subjects: 0,
   assignments: 0,
+  examSessionsPublished: 0,
+  applicationsUnderReview: 0,
+  openAdmissionCampaigns: 0,
   mentees: 0,
   pendingApprovals: 0,
   pendingTasks: 0,
@@ -282,7 +285,10 @@ export function DashboardPage() {
       [ClipboardCheck, "Pending approvals", summary.pendingApprovals, "Workflow queue", "/approvals", "warning"],
       [CalendarHeart, "Attendance rate", summary.attendanceRate == null ? "—" : `${summary.attendanceRate}%`, "Recorded attendance entries", "/classes", "success"],
       [FileText, "Published circulars", summary.notices, "Official notices", "/notices", "accent"],
-      [CheckSquare, "Assignments", summary.assignments, "Assignment records", "/academics", "primary"],
+      [CheckSquare, "Assignments", summary.assignments, "Assignment records", "/assignments", "primary"],
+      [GraduationCap, "Published exam sessions", summary.examSessionsPublished, "Examination calendar", "/examinations", "success"],
+      [ClipboardCheck, "Applications under review", summary.applicationsUnderReview, "Admissions review queue", "/admission-applications", "warning"],
+      [CalendarHeart, "Open admission campaigns", summary.openAdmissionCampaigns, "Application cycles", "/admissions-campaigns", "accent"],
     ];
     return (
       <div className="space-y-5 overflow-x-hidden pb-2 animate-fade-in-up sm:space-y-6">
