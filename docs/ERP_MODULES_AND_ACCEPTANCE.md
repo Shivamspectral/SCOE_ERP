@@ -37,3 +37,7 @@ Role-scoped dashboards and filtered CSV/XLSX/PDF exports. Scheduled reports only
 
 ## Import safety
 Dry-run preview, row-level validation, duplicate detection, downloadable error report and authorized sign-off. Never import raw passwords. Prefer stable institutional identifiers over email as permanent IDs. Log actor/time/job without dumping sensitive row data.
+
+## Full product scope
+
+See [`MASTER_ERP_MODULE_ROADMAP.md`](./MASTER_ERP_MODULE_ROADMAP.md) for the full 57-area staff-only college ERP inventory, implementation phases, production acceptance gate and decisions required before sensitive modules go live. This catalogue is a target roadmap, not a claim that all modules are already implemented.
