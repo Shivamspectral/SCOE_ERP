@@ -1,3 +1,6 @@
 packages:
   - "apps/web"
   - "apps/api"
+
+onlyBuiltDependencies:
+  - "@scarf/scarf"
