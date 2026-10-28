@@ -56,4 +56,10 @@ using (
     or (select app_private.has_role(array['principal','administrator','coordinator','hr','hod']))
   )
 )
-with check (institution_id = (select app_private.current_institution()));
+with check (
+  institution_id = (select app_private.current_institution())
+  and (
+    (created_by = (select auth.uid()) and status in ('pending','cancelled'))
+    or (select app_private.has_role(array['principal','administrator','coordinator','hr','hod']))
+  )
+);
