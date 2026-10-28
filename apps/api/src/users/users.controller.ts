@@ -155,6 +155,24 @@ export class UsersController {
     const userId = invitation.user?.id;
     if (!userId) throw new InternalServerErrorException('Supabase did not return an invited user ID');
 
+    // Supabase invite users do not get a profile until email confirmation. Seed a
+    // pending profile first so manage_member can validate and assign the intended role
+    // in the same controlled invitation flow. A pending profile cannot access the ERP.
+    const { error: profileError } = await adminClient.from('profiles').insert({
+      user_id: userId,
+      institution_id: actor.institution_id,
+      email: (invitation.user?.email ?? body.email).trim().toLowerCase(),
+      full_name: body.name.trim(),
+      title: body.title?.trim() || null,
+      phone: body.phone?.trim() || null,
+      department_id: departmentId,
+      status: 'pending',
+    });
+    if (profileError) {
+      await adminClient.auth.admin.deleteUser(userId).catch(() => undefined);
+      throw new BadRequestException('Invitation profile setup failed. No access was granted.');
+    }
+
     const { error: assignmentError } = await client.rpc('manage_member', {
       p_user_id: userId,
       p_status: 'pending',
@@ -163,6 +181,7 @@ export class UsersController {
       p_responsibility_id: body.responsibilityId ?? null,
     });
     if (assignmentError) {
+      await adminClient.from('profiles').delete().eq('user_id', userId);
       await adminClient.auth.admin.deleteUser(userId).catch(() => undefined);
       throw new BadRequestException('Invitation role assignment failed. The new account was not activated.');
     }
