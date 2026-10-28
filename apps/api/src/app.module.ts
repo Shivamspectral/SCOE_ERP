@@ -20,6 +20,7 @@ import { AuditModule } from './audit/audit.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FacultyModule } from './faculty/faculty.module';
 import { LibraryModule } from './library/library.module';
+import { FinanceModule } from './finance/finance.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { LibraryModule } from './library/library.module';
     TasksModule,
     FacultyModule,
     LibraryModule,
+    FinanceModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
