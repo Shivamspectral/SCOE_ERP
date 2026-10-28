@@ -26,7 +26,7 @@ on conflict (institution_id, key) do nothing;
 create or replace function app_private.seed_responsibilities(p_institution uuid)
 returns void
 language sql security definer set search_path = ''
-as $
+as $$
   insert into public.responsibilities (institution_id, key, name)
   select p_institution, v.key, v.name
   from (values
@@ -60,7 +60,7 @@ as $
     ('quality_assurance', 'Quality Assurance')
   ) as v(key, name)
   on conflict (institution_id, key) do nothing
-$;
+$$;
 
 create or replace function app_private.has_role(p_roles text[])
 returns boolean
