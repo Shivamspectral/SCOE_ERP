@@ -204,6 +204,14 @@ export const attendanceApi = {
   byClass: (classId, query) => api.get(`/api/attendance/class/${classId}`, query),
 };
 
+export const mentoringApi = {
+  assignments: (query) => api.get("/api/mentoring/assignments", query),
+  createAssignment: (payload) => api.post("/api/mentoring/assignments", payload),
+  meetings: (assignmentId) => api.get(`/api/mentoring/assignments/${assignmentId}/meetings`),
+  createMeeting: (assignmentId, payload) => api.post(`/api/mentoring/assignments/${assignmentId}/meetings`, payload),
+  updateMeeting: (id, payload) => api.patch(`/api/mentoring/meetings/${id}`, payload),
+};
+
 export const assignmentsApi = {
   list: (query) => api.get("/api/assignments", query),
   create: (payload) => api.post("/api/assignments", payload),
