@@ -3,8 +3,12 @@
 -- HODs can read/review within their assigned department; Principals/Admins can read/review institution-wide.
 drop policy if exists attendance_sessions_read on public.attendance_sessions;
 drop policy if exists attendance_sessions_write on public.attendance_sessions;
+drop policy if exists attendance_sessions_insert on public.attendance_sessions;
+drop policy if exists attendance_sessions_update on public.attendance_sessions;
 drop policy if exists attendance_records_read on public.attendance_records;
 drop policy if exists attendance_records_write on public.attendance_records;
+drop policy if exists attendance_records_insert on public.attendance_records;
+drop policy if exists attendance_records_update on public.attendance_records;
 
 create policy attendance_sessions_read
 on public.attendance_sessions for select to authenticated
