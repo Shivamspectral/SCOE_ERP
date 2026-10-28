@@ -8,6 +8,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { TimetablePage } from "./pages/TimetablePage";
 import { AttendancePage } from "./pages/AttendancePage";
+import { AssignmentsPage } from "./pages/AssignmentsPage";
 import { EventsPage } from "./pages/EventsPage";
 import { NoticesPage } from "./pages/NoticesPage";
 import { CouncilMembersPage } from "./pages/CouncilMembersPage";
@@ -73,7 +74,7 @@ export default function App() {
   const renderCurrentPage = () => {
     const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
     const liveDataRoutes = new Set([
-      "/dashboard", "/timetable", "/attendance", "/marks", "/notices", "/notifications", "/profile", "/settings",
+      "/dashboard", "/timetable", "/attendance", "/assignments", "/marks", "/notices", "/notifications", "/profile", "/settings",
       "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results", "/reports",
       "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
       ...OPERATION_ROUTES,
@@ -86,6 +87,7 @@ export default function App() {
       case "/dashboard": return <DashboardPage />;
       case "/timetable": return <TimetablePage />;
       case "/attendance": return <AttendancePage />;
+      case "/assignments": return <AssignmentsPage />;
       case "/events": return <EventsPage />;
       case "/notices": return <NoticesPage />;
       case "/student-council": case "/members": case "/council": return <CouncilMembersPage />;
