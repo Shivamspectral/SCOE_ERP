@@ -168,7 +168,7 @@ begin
     execute format('create policy %I on public.%I for select to authenticated using (institution_id = (select app_private.current_institution()))', t || '_institution_select', t);
     execute format('create policy %I on public.%I for insert to authenticated with check (institution_id = (select app_private.current_institution()) and (select app_private.has_role(array[''principal'',''administrator'',''coordinator'',''hod'',''faculty'',''staff'',''librarian'',''finance'',''hr'',''placement_officer'',''exam_cell'',''iqac_coordinator''])))', t || '_institution_insert', t);
     execute format('create policy %I on public.%I for update to authenticated using (institution_id = (select app_private.current_institution()) and (select app_private.has_role(array[''principal'',''administrator'',''coordinator'',''hod'',''faculty'',''staff'',''librarian'',''finance'',''hr'',''placement_officer'',''exam_cell'',''iqac_coordinator'']))) with check (institution_id = (select app_private.current_institution()))', t || '_institution_update', t);
-    execute format('create policy %I on public.%I for delete to authenticated using (institution_id = (select app_private.is_admin()))', t || '_institution_delete', t);
+    execute format('create policy %I on public.%I for delete to authenticated using (institution_id = (select app_private.current_institution()) and (select app_private.is_admin()))', t || '_institution_delete', t);
     execute format('drop trigger if exists %I_audit on public.%I', t, t);
     execute format('create trigger %I_audit after insert or update on public.%I for each row execute function app_private.audit_row_change(%L)', t, t, t);
   end loop;
