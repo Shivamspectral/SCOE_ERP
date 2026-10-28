@@ -59,7 +59,7 @@ export function AssignmentsPage() {
   }, [liveMode, session?.access_token, statusFilter]);
 
   const selectedAssignment = assignments.find((item) => item.id === selectedId) || null;
-  const canManage = ["Faculty", "HOD", "Principal", "Vice-Principal", "Coordinator", "Super Admin", "Administrator"].includes(userRole);
+  const canManage = ["Faculty", "HOD", "Principal", "Coordinator", "Administrator"].includes(userRole);
 
   useEffect(() => {
     if (!selectedAssignment) {
