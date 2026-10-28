@@ -307,7 +307,7 @@ export function getNavigationForRole(role) {
 export function Sidebar({ collapsed, mobileOpen, onClose }) {
   const { currentRoute, navigate, userRole } = usePortal();
 
-  const staffOperationsRoles = ["Faculty", "Staff", "HOD", "Principal", "Vice-Principal", "Super Admin", "Coordinator", "Administrator", "HR", "Librarian", "Finance", "Placement Officer", "IQAC Coordinator"];
+  const staffOperationsRoles = ["Faculty", "Staff", "HOD", "Principal", "Vice-Principal", "Super Admin", "Coordinator", "Administrator", "HR", "Librarian", "Finance", "Placement Officer", "IQAC Coordinator", "Admissions Officer", "Exam Cell"];
   const navigationGroups = [
     ...getNavigationForRole(userRole),
     ...(staffOperationsRoles.includes(userRole) ? [{
