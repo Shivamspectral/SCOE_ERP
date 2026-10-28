@@ -173,3 +173,42 @@ begin
     execute format('create trigger %I_audit after insert or update on public.%I for each row execute function app_private.audit_row_change(%L)', t, t, t);
   end loop;
 end $$;
+
+
+-- Enforce institution consistency for committee rosters.
+create or replace function app_private.guard_committee_member_institution()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare committee_institution uuid;
+begin
+  select c.institution_id into committee_institution
+  from public.institution_committees c where c.id = new.committee_id;
+  if committee_institution is null or committee_institution <> new.institution_id then
+    raise exception 'Committee member and committee must belong to the same institution' using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists committee_member_institution_guard on public.institution_committee_members;
+create trigger committee_member_institution_guard
+before insert or update on public.institution_committee_members
+for each row execute function app_private.guard_committee_member_institution();
+
+-- Visitor records are limited to institutional leadership, coordinators and office staff.
+drop policy if exists visitor_register_institution_select on public.visitor_register;
+drop policy if exists visitor_register_institution_insert on public.visitor_register;
+drop policy if exists visitor_register_institution_update on public.visitor_register;
+create policy visitor_register_institution_select on public.visitor_register
+for select to authenticated
+using (institution_id = (select app_private.current_institution())
+  and (select app_private.has_role(array['principal','administrator','coordinator','staff'])));
+create policy visitor_register_institution_insert on public.visitor_register
+for insert to authenticated
+with check (institution_id = (select app_private.current_institution())
+  and (select app_private.has_role(array['principal','administrator','coordinator','staff'])));
+create policy visitor_register_institution_update on public.visitor_register
+for update to authenticated
+using (institution_id = (select app_private.current_institution())
+  and (select app_private.has_role(array['principal','administrator','coordinator','staff'])))
+with check (institution_id = (select app_private.current_institution())
+  and (select app_private.has_role(array['principal','administrator','coordinator','staff'])));
