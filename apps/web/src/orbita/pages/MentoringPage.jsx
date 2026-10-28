@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, MessageSquare, Plus, RefreshCw, Search, ShieldCheck, UserRound } from "lucide-react";
+import { AlertCircle, CalendarClock, CheckCircle2, MessageSquare, Plus, RefreshCw, Search, ShieldCheck, UserRound } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { usePortal } from "../context/PortalContext";
 import { facultyApi, isBackendConfigured, mentoringApi, studentsApi } from "../lib/api";
