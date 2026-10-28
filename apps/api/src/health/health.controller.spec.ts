@@ -26,7 +26,7 @@ describe('HealthController', () => {
   it('reports degraded readiness when provider configuration is missing', async () => {
     await expect(subject.getReadiness()).resolves.toMatchObject({
       status: 'degraded',
-      checks: { api: 'ok', database: 'not-configured' },
+      checks: { api: 'ok', supabaseAuth: 'not-configured' },
     });
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -38,7 +38,7 @@ describe('HealthController', () => {
 
     await expect(subject.getReadiness()).resolves.toMatchObject({
       status: 'ok',
-      checks: { api: 'ok', database: 'reachable' },
+      checks: { api: 'ok', supabaseAuth: 'reachable' },
     });
     expect(global.fetch).toHaveBeenCalledWith(
       'https://example.supabase.co/auth/v1/health',
@@ -56,7 +56,7 @@ describe('HealthController', () => {
 
     await expect(subject.getReadiness()).resolves.toMatchObject({
       status: 'degraded',
-      checks: { api: 'ok', database: 'unreachable' },
+      checks: { api: 'ok', supabaseAuth: 'unreachable' },
     });
   });
 });
