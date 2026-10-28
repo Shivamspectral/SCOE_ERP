@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowDownUp, Plus, RefreshCw, Search, X, Save, BriefcaseBusiness, BookOpen, Building2, CalendarDays, ClipboardList, GraduationCap, LibraryBig, Truck, Users, Wrench } from "lucide-react";
-import { api, ApiError, isBackendConfigured } from "../lib/api";
+import { AlertCircle, Plus, RefreshCw, Search, X, Save, BriefcaseBusiness, BookOpen, Building2, CalendarDays, ClipboardList, GraduationCap, LibraryBig, Truck, Users, Wrench } from "lucide-react";
+import { operationsApi, isBackendConfigured } from "../lib/api";
 import { usePortal } from "../context/PortalContext";
 
 const MODULES = {
@@ -43,7 +43,7 @@ export function OperationsPage({ route }) {
       return;
     }
     try {
-      const result = await api.get("/api/operations/" + config.key, {search: search || undefined, status: status || undefined});
+      const result = await operationsApi.list(config.key, {search: search || undefined, status: status || undefined});
       setRecords(Array.isArray(result) ? result : result?.data || []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load records.");
@@ -75,7 +75,7 @@ export function OperationsPage({ route }) {
       else payload[key] = value;
     }
     try {
-      await api.post("/api/operations/" + config.key,payload);
+      await operationsApi.create(config.key,payload);
       setModal(false); setForm({}); setNotice("Record created successfully."); await load();
     } catch(e) { setError(e instanceof Error ? e.message : "Could not create record."); }
     finally { setSaving(false); }
@@ -83,7 +83,7 @@ export function OperationsPage({ route }) {
 
   const update = async (record, key, value) => {
     if (isDemoPreview || !isBackendConfigured) return;
-    try { await api.patch("/api/operations/" + config.key + "/" + record.id, {[key]:value}); setNotice("Record updated."); await load(); }
+    try { await operationsApi.update(config.key,record.id,{[key]:value}); setNotice("Record updated."); await load(); }
     catch(e) { setError(e instanceof Error ? e.message : "Update failed."); }
   };
 
