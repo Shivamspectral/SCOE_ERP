@@ -603,6 +603,8 @@ export function PortalProvider({ children }) {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const realSession = Boolean(isBackendConfigured && isAuthenticated && session?.access_token);
+
   // User Management State (Super Admin)
   const addUser = useCallback(async (newUser) => {
     if (realSession) {
@@ -877,7 +879,6 @@ export function PortalProvider({ children }) {
     return () => { cancelled = true; };
   }, [isBackendConfigured, isAuthenticated, session?.access_token]);
 
-  const realSession = Boolean(isBackendConfigured && isAuthenticated && session?.access_token);
 
   // Seed-data filtering mirrors the server scope when the portal is running
   // without a backend. With a backend configured, API authorization remains
