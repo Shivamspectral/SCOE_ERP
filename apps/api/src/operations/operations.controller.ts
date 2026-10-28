@@ -19,7 +19,7 @@ const MODULES = {
   events: { table: 'institution_events', select: 'id,title,event_type,description,venue,starts_at,ends_at,organizer_department_id,coordinator_id,capacity,status,metadata,created_at,updated_at', fields: ['title','event_type','description','venue','starts_at','ends_at','organizer_department_id','coordinator_id','capacity','status','metadata'] },
   committees: { table: 'institution_committees', select: 'id,committee_code,name,committee_type,purpose,chairperson_id,department_id,starts_on,ends_on,status,meeting_frequency,metadata,created_at,updated_at', fields: ['committee_code','name','committee_type','purpose','chairperson_id','department_id','starts_on','ends_on','status','meeting_frequency','metadata'] },
   committeeMembers: { table: 'institution_committee_members', select: 'id,committee_id,user_id,member_name,designation,member_role,appointed_on,ends_on,status,created_at,updated_at', fields: ['committee_id','user_id','member_name','designation','member_role','appointed_on','ends_on','status'] },
-  clubsAdmin: { table: 'institution_clubs', select: 'id,club_code,name,category,description,faculty_coordinator_id,annual_budget,founded_on,status,metadata,created_at,updated_at', fields: ['club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','budget_code','claim_number','legal_name','vendor_code','name','category','description','faculty_coordinator_id','annual_budget','founded_on','status','metadata'] },
+  clubsAdmin: { table: 'institution_clubs', select: 'id,club_code,name,category,description,faculty_coordinator_id,annual_budget,founded_on,status,metadata,created_at,updated_at', fields: ['club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','budget_code','claim_number','legal_name','vendor_code','application_number','applicant_name','campaign_code','name','category','description','faculty_coordinator_id','annual_budget','founded_on','status','metadata'] },
   alumniRecords: { table: 'alumni_records', select: 'id,alumni_code,full_name,graduation_year,programme,department_id,current_employer,current_designation,work_email,contact_phone,linkedin_url,mentorship_available,donation_total,notes,status,created_at,updated_at', fields: ['alumni_code','full_name','graduation_year','programme','department_id','current_employer','current_designation','work_email','contact_phone','linkedin_url','mentorship_available','donation_total','notes','status'] },
   labInventory: { table: 'lab_inventory', select: 'id,asset_tag,name,department_id,laboratory,category,quantity,condition,calibration_due_on,last_service_on,assigned_to,purchase_cost,status,notes,created_at,updated_at', fields: ['asset_tag','name','department_id','laboratory','category','quantity','condition','calibration_due_on','last_service_on','assigned_to','purchase_cost','status','notes'] },
   sportsFacilities: { table: 'sports_facilities', select: 'id,facility_code,name,facility_type,location,capacity,opening_time,closing_time,supervisor_id,status,notes,created_at,updated_at', fields: ['facility_code','name','facility_type','location','capacity','opening_time','closing_time','supervisor_id','status','notes'] },
@@ -36,6 +36,8 @@ const MODULES = {
   budgets: { table: 'finance_budgets', select: 'id,fiscal_year,budget_code,title,department_id,allocated_amount,currency,status,approved_by,approved_at,notes,created_by,created_at,updated_at', fields: ['fiscal_year','budget_code','title','department_id','allocated_amount','currency','status','notes'] },
   vendors: { table: 'vendor_registry', select: 'id,vendor_code,legal_name,gstin,vendor_type,contact_name,contact_email,contact_phone,address,payment_terms,status,reviewed_by,reviewed_at,notes,created_by,created_at,updated_at', fields: ['vendor_code','legal_name','gstin','vendor_type','contact_name','contact_email','contact_phone','payment_terms','status','notes'] },
   expenseClaims: { table: 'expense_claims', select: 'id,claim_number,employee_id,expense_category,amount,currency,incurred_on,description,receipt_document_id,status,submitted_by,reviewed_by,reviewed_at,paid_at,review_note,created_at,updated_at', fields: ['claim_number','employee_id','expense_category','amount','currency','incurred_on','description','receipt_document_id','status','review_note'] },
+  admissionCampaigns: { table: 'admission_campaigns', select: 'id,campaign_code,name,academic_year,starts_on,ends_on,status,notes,created_by,created_at,updated_at', fields: ['campaign_code','name','academic_year','starts_on','ends_on','status','notes'] },
+  admissionApplications: { table: 'admission_applications', select: 'id,application_number,campaign_id,programme_id,applicant_name,email,phone,date_of_birth,applicant_category,qualifying_exam,qualifying_board,passing_year,qualifying_percentage,entrance_exam,entrance_score,application_fee_status,status,document_refs,assigned_reviewer,reviewed_at,decision_note,created_by,created_at,updated_at', fields: ['application_number','campaign_id','programme_id','applicant_name','email','phone','date_of_birth','applicant_category','qualifying_exam','qualifying_board','passing_year','qualifying_percentage','entrance_exam','entrance_score','application_fee_status','status','decision_note'] },
 } as const;
 
 type ModuleKey = keyof typeof MODULES;
@@ -68,6 +70,8 @@ const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> =
   vehicles: { active: ['maintenance', 'retired'], maintenance: ['active', 'retired'], retired: [] },
   drives: { planned: ['open', 'cancelled'], open: ['in_progress', 'cancelled'], in_progress: ['completed', 'cancelled'], completed: [], cancelled: [] },
   research: { proposed: ['submitted', 'rejected'], submitted: ['active', 'rejected', 'on_hold'], active: ['on_hold', 'completed'], on_hold: ['active', 'completed'], completed: [], rejected: [] },
+  admissionCampaigns: { draft: ['open', 'archived'], open: ['closed', 'archived'], closed: ['open', 'archived'], archived: [] },
+  admissionApplications: { submitted: ['documents_pending', 'under_review', 'withdrawn'], documents_pending: ['under_review', 'withdrawn'], under_review: ['shortlisted', 'offered', 'waitlisted', 'rejected', 'withdrawn'], shortlisted: ['offered', 'waitlisted', 'rejected', 'withdrawn'], offered: ['accepted', 'rejected', 'withdrawn'], waitlisted: ['offered', 'rejected', 'withdrawn'], accepted: [], rejected: [], withdrawn: [] },
 };
 
 @Controller('operations')
@@ -123,7 +127,7 @@ export class OperationsController {
     }
     if (!Object.keys(values).length) throw new BadRequestException('No supported fields were provided');
     values.institution_id = institutionId;
-    if (['employees','catalogue','assets','employers','research','evidence'].includes(module)) values.created_by = req.authUser!.id;
+    if (['employees','catalogue','assets','employers','research','evidence','admissionCampaigns','admissionApplications'].includes(module)) values.created_by = req.authUser!.id;
     if (module === 'leave') values.created_by = req.authUser!.id;
     if (module === 'expenseClaims') values.submitted_by = req.authUser!.id;
     if (module === 'procurement') values.requested_by = req.authUser!.id;
@@ -204,6 +208,10 @@ export class OperationsController {
           patch.reviewed_at = new Date().toISOString();
         }
         if (nextStatus === 'paid') patch.paid_at = new Date().toISOString();
+      }
+      if (currentStatus !== nextStatus && module === 'admissionApplications' && ['under_review','shortlisted','offered','accepted','waitlisted','rejected'].includes(nextStatus)) {
+        patch.assigned_reviewer = req.authUser!.id;
+        patch.reviewed_at = new Date().toISOString();
       }
     }
 
