@@ -98,6 +98,7 @@ export function TimetablePage() {
         subtitle="Your weekly class schedule for Semester V"
         actions={
           <div className="flex items-center gap-2">
+            {canManageTimetable && liveSession && <button onClick={() => setShowCreateForm((value) => !value)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground"><Plus className="size-3.5" />Add entry</button>}
             <button
               onClick={handleDownloadPDF}
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
@@ -108,6 +109,18 @@ export function TimetablePage() {
           </div>
         }
       />
+
+      {showCreateForm && liveSession && <form onSubmit={createTimetableEntry} className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="text-xs font-medium">Department<select value={selectedDepartmentId} onChange={(e) => setEntryForm({ ...entryForm, departmentId: e.target.value, facultyId: "" })} required className="mt-1 block h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"><option value="">Select department…</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
+        <label className="text-xs font-medium">Faculty member<select value={entryForm.facultyId} onChange={(e) => setEntryForm({ ...entryForm, facultyId: e.target.value })} required className="mt-1 block h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"><option value="">Select faculty…</option>{facultyOptions.filter((faculty) => (faculty.roleAssignmentDepartmentId || faculty.department_id) === selectedDepartmentId).map((faculty) => <option key={faculty.id} value={faculty.id}>{faculty.name || faculty.email || faculty.id}</option>)}</select></label>
+        <Field label="Subject / class" value={entryForm.subject} onChange={(value) => setEntryForm({ ...entryForm, subject: value })} required placeholder="Data Structures" />
+        <Field label="Cohort / batch" value={entryForm.cohort} onChange={(value) => setEntryForm({ ...entryForm, cohort: value })} required placeholder="SE-CE-A" />
+        <Field label="Room / lab" value={entryForm.room} onChange={(value) => setEntryForm({ ...entryForm, room: value })} placeholder="Lab 2" />
+        <label className="text-xs font-medium">Day<select value={entryForm.dayOfWeek} onChange={(e) => setEntryForm({ ...entryForm, dayOfWeek: e.target.value })} className="mt-1 block h-10 w-full rounded-lg border border-input bg-background px-3 text-sm">{[["1","Monday"],["2","Tuesday"],["3","Wednesday"],["4","Thursday"],["5","Friday"],["6","Saturday"]].map(([value,name]) => <option key={value} value={value}>{name}</option>)}</select></label>
+        <Field label="Starts at" type="time" value={entryForm.startsAt} onChange={(value) => setEntryForm({ ...entryForm, startsAt: value })} required />
+        <Field label="Ends at" type="time" value={entryForm.endsAt} onChange={(value) => setEntryForm({ ...entryForm, endsAt: value })} required />
+        <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-4"><button disabled={savingEntry} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Save className="size-4" />Save timetable</button><button type="button" onClick={() => setShowCreateForm(false)} className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm"><X className="size-4" />Cancel</button></div>
+      </form>}
 
       {/* Interactive Controls Bar: Day Tabs & Filter */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -337,4 +350,8 @@ export function TimetablePage() {
       )}
     </div>
   );
+}
+
+function Field({ label, value, onChange, type = "text", required = false, placeholder }) {
+  return <label className="text-xs font-medium">{label}<input type={type} value={value ?? ""} required={required} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} className="mt-1 block h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" /></label>;
 }
