@@ -32,6 +32,7 @@ const MODULES = {
   "/obe-mapping": { key:"outcomeMappings", title:"CO–PO Mapping Matrix", description:"Map course outcomes to programme outcomes with correlation strength and rationale.", icon:ClipboardList, fields:[["course_outcome_id","Course outcome ID","text",true],["program_outcome_id","Programme outcome ID","text",true],["correlation_level","Correlation level (1–3)","number",true],["rationale","Mapping rationale","textarea"]] },
   "/attainment-cycles": { key:"attainmentCycles", title:"Outcome Attainment Cycles", description:"Organise OBE assessment cycles by programme, term and cohort, with review status.", icon:ClipboardList, fields:[["programme_id","Programme ID","text",true],["term_id","Academic term ID","text"],["cycle_label","Cycle label","text",true],["cohort_label","Cohort label","text"],["status","Status","select",false,["draft","calculating","submitted_for_review","approved","reopened","archived"]],["review_note","Review note","textarea"]] },
   "/attainment-results": { key:"attainmentResults", title:"Outcome Attainment Results", description:"Record course/programme attainment, targets and assessment sample sizes.", icon:ClipboardList, fields:[["cycle_id","Attainment cycle ID","text",true],["outcome_type","Outcome type","select",true,["course","program"]],["outcome_id","Outcome ID","text",true],["attained_percent","Attained (%)","number"],["target_percent","Target (%)","number"],["sample_size","Sample size","number"]] },
+  "/institution-settings": { key:"institutionSettings", title:"Institution Configuration", description:"Configure academic-year dates, regional settings, contact details and enabled product modules for this institution.", icon:Building2, fields:[["academic_year_label","Academic year label","text"],["academic_year_starts_on","Academic year starts","date"],["academic_year_ends_on","Academic year ends","date"],["default_currency","Default currency (ISO 4217)","text",true],["locale","Locale","text",true],["timezone","Timezone (IANA)","text",true],["contact_email","Institution contact email","email"],["contact_phone","Institution contact phone","tel"],["enabled_modules","Enabled modules (comma separated)","text"]] },
 };
 
 const humanize = (key) => key.replace(/_/g," ").replace(/\b\w/g,(c)=>c.toUpperCase());
@@ -87,7 +88,7 @@ export function OperationsPage({ route }) {
       const value = form[key];
       if (value === undefined || value === "") continue;
       if (type === "number") payload[key] = Number(value);
-      else if (key === "authors" || key === "eligible_programmes") payload[key] = value.split(",").map((s)=>s.trim()).filter(Boolean);
+      else if (key === "authors" || key === "eligible_programmes" || key === "enabled_modules") payload[key] = value.split(",").map((s)=>s.trim()).filter(Boolean);
       else payload[key] = value;
     }
     try {
