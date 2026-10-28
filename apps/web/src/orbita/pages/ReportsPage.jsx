@@ -21,6 +21,8 @@ export function ReportsPage() {
   // present the demo catalog as institutional reports in a live session.
   const displayedReports = liveMode ? [] : reportsList;
   const [liveReportKind, setLiveReportKind] = useState("overview");
+  const [liveFrom, setLiveFrom] = useState("");
+  const [liveTo, setLiveTo] = useState("");
   const [liveReportData, setLiveReportData] = useState(null);
   const [liveReportLoading, setLiveReportLoading] = useState(false);
   const [liveReportError, setLiveReportError] = useState("");
@@ -30,7 +32,7 @@ export function ReportsPage() {
     let cancelled = false;
     setLiveReportLoading(true);
     setLiveReportError("");
-    reportsApi.generate(liveReportKind).then((result) => {
+    reportsApi.generate(liveReportKind, { from: liveFrom || undefined, to: liveTo || undefined }).then((result) => {
       if (!cancelled) setLiveReportData(result);
     }).catch((error) => {
       if (!cancelled) setLiveReportError(error?.message || "Unable to generate this institutional report.");
@@ -38,7 +40,7 @@ export function ReportsPage() {
       if (!cancelled) setLiveReportLoading(false);
     });
     return () => { cancelled = true; };
-  }, [liveMode, liveReportKind, session?.access_token]);
+  }, [liveMode, liveReportKind, liveFrom, liveTo, session?.access_token]);
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +66,7 @@ export function ReportsPage() {
             <h1 className="mt-1 font-display text-2xl font-bold text-foreground sm:text-3xl">Institutional Reports & Analytics</h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Metrics are generated from records your authenticated account is permitted to access. These are operational summaries, not externally certified reports.</p>
           </div>
-          <label className="grid gap-1.5 text-sm font-medium"><span>Report category</span><select value={liveReportKind} onChange={(e)=>setLiveReportKind(e.target.value)} className="min-w-56 rounded-lg border border-input bg-card px-3 py-2.5">{reportOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><button disabled={!liveReportData||liveReportLoading||!Object.keys(metrics).length} onClick={()=>{const rows=Object.entries(metrics);const esc=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;const csv=["metric,value",...rows.map(([k,v])=>[esc(labelFor(k)),esc(v)].join(","))].join("\r\n");const url=URL.createObjectURL(new Blob([String.fromCharCode(0xfeff),csv],{type:"text/csv;charset=utf-8;"}));const a=document.createElement("a");a.href=url;a.download="institutional-"+liveReportKind+"-report.csv";a.click();URL.revokeObjectURL(url);}} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-semibold disabled:opacity-40"><Download className="size-4"/> Export CSV</button>
+          <label className="grid gap-1.5 text-sm font-medium"><span>Report category</span><select value={liveReportKind} onChange={(e)=>setLiveReportKind(e.target.value)} className="min-w-56 rounded-lg border border-input bg-card px-3 py-2.5">{reportOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label className="grid gap-1.5 text-sm font-medium"><span>From</span><input type="date" value={liveFrom} max={liveTo||undefined} onChange={(e)=>setLiveFrom(e.target.value)} className="rounded-lg border border-input bg-card px-3 py-2.5"/></label><label className="grid gap-1.5 text-sm font-medium"><span>To</span><input type="date" value={liveTo} min={liveFrom||undefined} onChange={(e)=>setLiveTo(e.target.value)} className="rounded-lg border border-input bg-card px-3 py-2.5"/></label><button disabled={!liveReportData||liveReportLoading||!Object.keys(metrics).length} onClick={()=>{const rows=Object.entries(metrics);const esc=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;const csv=["metric,value",...rows.map(([k,v])=>[esc(labelFor(k)),esc(v)].join(","))].join("\r\n");const url=URL.createObjectURL(new Blob([String.fromCharCode(0xfeff),csv],{type:"text/csv;charset=utf-8;"}));const a=document.createElement("a");a.href=url;a.download="institutional-"+liveReportKind+"-report.csv";a.click();URL.revokeObjectURL(url);}} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-semibold disabled:opacity-40"><Download className="size-4"/> Export CSV</button>
         </div>
         {liveReportLoading && <div className="rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground">Generating report from institutional records…</div>}
         {liveReportError && <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{liveReportError}</div>}
