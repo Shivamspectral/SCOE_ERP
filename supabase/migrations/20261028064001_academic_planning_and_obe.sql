@@ -176,10 +176,13 @@ begin
   elsif tg_table_name = 'course_outcomes' then
     select institution_id into parent_institution from public.academic_subjects where id = new.subject_id;
     if parent_institution is distinct from new.institution_id then raise exception 'Subject must belong to this institution' using errcode = '23514'; end if;
-  elsif tg_table_name = 'program_outcomes' or tg_table_name = 'outcome_attainment_cycles' then
+  elsif tg_table_name = 'program_outcomes' then
     select institution_id into parent_institution from public.academic_programmes where id = new.programme_id;
     if parent_institution is distinct from new.institution_id then raise exception 'Programme must belong to this institution' using errcode = '23514'; end if;
-    if tg_table_name = 'outcome_attainment_cycles' and new.term_id is not null then
+  elsif tg_table_name = 'outcome_attainment_cycles' then
+    select institution_id into parent_institution from public.academic_programmes where id = new.programme_id;
+    if parent_institution is distinct from new.institution_id then raise exception 'Programme must belong to this institution' using errcode = '23514'; end if;
+    if new.term_id is not null then
       select institution_id into parent_institution from public.academic_terms where id = new.term_id;
       if parent_institution is distinct from new.institution_id then raise exception 'Term must belong to this institution' using errcode = '23514'; end if;
     end if;
@@ -191,6 +194,12 @@ begin
   elsif tg_table_name = 'outcome_attainment_results' then
     select institution_id into parent_institution from public.outcome_attainment_cycles where id = new.cycle_id;
     if parent_institution is distinct from new.institution_id then raise exception 'Attainment cycle must belong to this institution' using errcode = '23514'; end if;
+    if new.outcome_type = 'course' then
+      select institution_id into parent_institution from public.course_outcomes where id = new.outcome_id;
+    else
+      select institution_id into parent_institution from public.program_outcomes where id = new.outcome_id;
+    end if;
+    if parent_institution is distinct from new.institution_id then raise exception 'Outcome must belong to this institution' using errcode = '23514'; end if;
   end if;
   return new;
 end;
@@ -203,13 +212,4 @@ create trigger outcome_attainment_cycles_institution_guard before insert or upda
 create trigger course_program_outcome_mappings_institution_guard before insert or update on public.course_program_outcome_mappings for each row execute function app_private.guard_academic_planning_institution();
 create trigger outcome_attainment_results_institution_guard before insert or update on public.outcome_attainment_results for each row execute function app_private.guard_academic_planning_institution();
 
-do $$
-declare t text;
-begin
-  foreach t in array array[
-    'academic_programmes','academic_terms','curriculum_courses','course_outcomes',
-    'program_outcomes','course_program_outcome_mappings','outcome_attainment_cycles','outcome_attainment_results'
-  ] loop
-    execute format('revoke all on function app_private.guard_academic_planning_institution() from public, anon, authenticated');
-  end loop;
-end $$;
+revoke all on function app_private.guard_academic_planning_institution() from public, anon, authenticated;
