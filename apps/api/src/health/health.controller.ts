@@ -53,7 +53,7 @@ export class HealthController {
     } catch {
       return {
         status: 'degraded',
-        checks: { api: 'ok', database: 'unreachable' },
+        checks: { api: 'ok', supabaseAuth: 'unreachable' },
       };
     }
   }
