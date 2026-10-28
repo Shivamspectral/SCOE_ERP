@@ -81,6 +81,7 @@ export function OperationsPage({ route }) {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load records.");
       setRecords([]);
+      setTotalRecords(0);
     } finally { setLoading(false); }
   },[config.key,isDemoPreview,search,status,page,pageSize]);
 
