@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Plus, RefreshCw, Search, X, Save, Trash2, BriefcaseBusiness, BookOpen, Building2, CalendarDays, ClipboardList, GraduationCap, LibraryBig, Truck, Users, Wrench, Trophy, Shield, Wallet, LifeBuoy } from "lucide-react";
+import { AlertCircle, Plus, RefreshCw, Search, X, Save, Trash2, Download, BriefcaseBusiness, BookOpen, Building2, CalendarDays, ClipboardList, GraduationCap, LibraryBig, Truck, Users, Wrench, Trophy, Shield, Wallet, LifeBuoy } from "lucide-react";
 import { operationsApi, isBackendConfigured } from "../lib/api";
 import { usePortal } from "../context/PortalContext";
 
@@ -52,6 +52,9 @@ export function OperationsPage({ route }) {
   const config = MODULES[ROUTE_ALIASES[route] || route] || MODULES["/hr"];
   const { isDemoPreview } = usePortal();
   const [records,setRecords] = useState([]);
+  const [totalRecords,setTotalRecords] = useState(0);
+  const [page,setPage] = useState(0);
+  const pageSize = 50;
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState("");
   const [search,setSearch] = useState("");
@@ -66,17 +69,20 @@ export function OperationsPage({ route }) {
     setLoading(true); setError("");
     if (isDemoPreview || !isBackendConfigured) {
       setRecords([]);
+      setTotalRecords(0);
       setLoading(false);
       return;
     }
     try {
-      const result = await operationsApi.list(config.key, {search: search || undefined, status: status || undefined});
-      setRecords(Array.isArray(result) ? result : result?.data || []);
+      const result = await operationsApi.list(config.key, {search: search || undefined, status: status || undefined, limit: pageSize, offset: page * pageSize});
+      const items = Array.isArray(result) ? result : result?.items || result?.data || [];
+      setRecords(items);
+      setTotalRecords(typeof result?.total === "number" ? result.total : items.length);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to load records.");
       setRecords([]);
     } finally { setLoading(false); }
-  },[config.key,isDemoPreview,search,status]);
+  },[config.key,isDemoPreview,search,status,page,pageSize]);
 
   useEffect(()=>{ void load(); },[load]);
 
@@ -86,6 +92,7 @@ export function OperationsPage({ route }) {
     setForm({});
     setSearch("");
     setStatus("");
+    setPage(0);
     setError("");
     setNotice("");
   }, [route]);
@@ -177,9 +184,9 @@ export function OperationsPage({ route }) {
     {error && <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"><AlertCircle className="mt-0.5 size-4 shrink-0"/><span>{error}</span><button className="ml-auto" onClick={()=>setError("")} aria-label="Dismiss error"><X className="size-4"/></button></div>}
     <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row">
-        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder={"Search " + config.title.toLowerCase() + "..."} className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>
-        {config.fields.some((f)=>f[0]==="status") && <select value={status} onChange={(e)=>setStatus(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm"><option value="">All statuses</option>{config.fields.find((f)=>f[0]==="status")?.[4]?.map((s)=><option key={s} value={s}>{humanize(s)}</option>)}</select>}
-        <button onClick={()=>void load()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"><RefreshCw className="size-4"/> Refresh</button>
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><input value={search} onChange={(e)=>{setSearch(e.target.value);setPage(0);}} placeholder={"Search " + config.title.toLowerCase() + "..."} className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"/></div>
+        {config.fields.some((f)=>f[0]==="status") && <select value={status} onChange={(e)=>{setStatus(e.target.value);setPage(0);}} className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm"><option value="">All statuses</option>{config.fields.find((f)=>f[0]==="status")?.[4]?.map((s)=><option key={s} value={s}>{humanize(s)}</option>)}</select>}
+        <button onClick={()=>void load()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"><RefreshCw className="size-4"/> Refresh</button><button onClick={()=>{const cols=columns;const esc=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;const csv=[cols.join(","),...records.map((r)=>cols.map((k)=>esc(displayValue(r[k],k))).join(","))].join("\r\n");const url=URL.createObjectURL(new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8;"}));const a=document.createElement("a");a.href=url;a.download=config.key+"-page-"+(page+1)+".csv";a.click();URL.revokeObjectURL(url);}} disabled={!records.length} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted disabled:opacity-40"><Download className="size-4"/> Export page</button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground"><tr>{columns.map((c)=><th key={c} className="whitespace-nowrap px-4 py-3 font-semibold">{humanize(c)}</th>)}<th className="px-4 py-3 font-semibold">Update status</th><th className="px-4 py-3 font-semibold">Actions</th></tr></thead>
@@ -189,7 +196,7 @@ export function OperationsPage({ route }) {
           <tr><td colSpan={columns.length+2} className="px-4 py-14 text-center"><div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-muted"><Icon className="size-5 text-muted-foreground"/></div><p className="font-semibold text-foreground">{isDemoPreview || !isBackendConfigured ? "Ready for institutional data" : "No records found"}</p><p className="mt-1 text-sm text-muted-foreground">{isDemoPreview || !isBackendConfigured ? "Connect the backend to load and manage records." : "Create a record or adjust your search."}</p></td></tr>}
         </tbody></table>
       </div>
-      <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted-foreground"><span>{records.length} record{records.length===1?"":"s"} shown (up to 250)</span><span>Institution-scoped workspace</span></div>
+      <div className="flex flex-col gap-3 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between"><span>Showing {totalRecords===0?0:page*pageSize+1}–{Math.min((page+1)*pageSize,totalRecords)} of {totalRecords} records</span><div className="flex items-center gap-2"><button disabled={page===0||loading} onClick={()=>setPage((p)=>Math.max(0,p-1))} className="rounded-md border border-border px-3 py-1.5 disabled:opacity-40">Previous</button><span>Page {page+1} of {Math.max(1,Math.ceil(totalRecords/pageSize))}</span><button disabled={loading||(page+1)*pageSize>=totalRecords} onClick={()=>setPage((p)=>p+1)} className="rounded-md border border-border px-3 py-1.5 disabled:opacity-40">Next</button></div><span>Institution-scoped workspace</span></div>
     </section>
     {modal && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4" onMouseDown={(e)=>{if(e.target===e.currentTarget)setModal(false);}}><section role="dialog" aria-modal="true" aria-labelledby="operation-form-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl"><div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-5 py-4"><div><h2 id="operation-form-title" className="font-display text-lg font-bold">{editingRecord ? "Edit" : "Create"} {config.title.toLowerCase()} record</h2><p className="mt-1 text-xs text-muted-foreground">Required fields are marked with an asterisk.</p></div><button onClick={()=>setModal(false)} className="rounded-lg p-2 hover:bg-muted" aria-label="Close form"><X className="size-5"/></button></div>
       <form onSubmit={submit} className="space-y-5 p-5"><div className="grid gap-4 sm:grid-cols-2">{config.fields.filter(([key])=>editingRecord || key!=="status").map(([key,label,type,required,options])=><label key={key} className={"block space-y-1.5 "+(type==="textarea"?"sm:col-span-2":"")}><span className="text-sm font-medium text-foreground">{label}{required&&<span className="text-destructive"> *</span>}</span>{type==="select"?<select required={Boolean(required)} value={form[key]||""} onChange={(e)=>setForm((p)=>({...p,[key]:e.target.value}))} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"><option value="">Select…</option>{(options||[]).map((o)=><option key={o} value={o}>{humanize(o)}</option>)}</select>:type==="textarea"?<textarea required={Boolean(required)} rows={3} value={form[key]||""} onChange={(e)=>setForm((p)=>({...p,[key]:e.target.value}))} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder={"Enter "+label.toLowerCase()}/>:<input required={Boolean(required)} type={type==="number"?"number":type} min={type==="number"?0:undefined} step={type==="number"?"any":undefined} value={form[key]||""} onChange={(e)=>setForm((p)=>({...p,[key]:e.target.value}))} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder={type==="number"?"0": "Enter "+label.toLowerCase()}/>}</label>)}</div>
