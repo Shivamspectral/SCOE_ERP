@@ -272,7 +272,7 @@ export function PortalProvider({ children }) {
         if (!supabaseUrl || !supabaseAnonKey || !data.access_token) {
           throw new Error("Supabase URL, public key, or sign-in session is missing in this deployment.");
         }
-        bootstrapResponse = await fetch(`${supabaseUrl.replace(/\\/$/, "")}/functions/v1/bootstrap-first-principal`, {
+        bootstrapResponse = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/functions/v1/bootstrap-first-principal`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
