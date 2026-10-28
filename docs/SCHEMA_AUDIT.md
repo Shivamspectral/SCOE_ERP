@@ -1,6 +1,6 @@
 # Existing Supabase schema audit
 
-The connected Supabase project contains the core schema and 20 recorded migrations as of 2026-10-28. The repository's ordered migrations remain the intended schema source of truth; do not create a parallel model or wipe existing project data.
+The connected Supabase project contains the core schema and 21 recorded migrations as of 2026-10-28. The repository's ordered migrations remain the intended schema source of truth; do not create a parallel model or wipe existing project data.
 
 ## Existing core domains
 - Institutions, departments, profiles, responsibilities, and role assignments.
