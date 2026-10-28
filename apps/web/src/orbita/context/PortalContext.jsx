@@ -605,6 +605,8 @@ export function PortalProvider({ children }) {
 
   const realSession = Boolean(isBackendConfigured && isAuthenticated && session?.access_token);
 
+  const [usersList, setUsersList] = useState(initialAdminUsers.filter((user) => !['Student', 'Parent'].includes(user.role)));
+
   // User Management State (Super Admin)
   const addUser = useCallback(async (newUser) => {
     if (realSession) {
@@ -891,7 +893,6 @@ export function PortalProvider({ children }) {
     return (departmentsList ?? initialDepartments).filter((item) => item.name?.toLowerCase() === dept);
   }, [scopeMeta.level, activeProfile.dept, departmentsList, realSession]);
 
-  const [usersList, setUsersList] = useState(initialAdminUsers.filter((user) => !['Student', 'Parent'].includes(user.role)));
   const [usersLoaded, setUsersLoaded] = useState(false);
   useEffect(() => {
     if (!realSession) return;
