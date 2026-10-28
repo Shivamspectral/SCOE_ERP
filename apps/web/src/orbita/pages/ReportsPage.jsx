@@ -54,6 +54,7 @@ export function ReportsPage() {
     ];
     const metrics = liveReportData?.metrics || {};
     const labelFor = (key) => key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
+    const formatMetric = (key, value) => value == null ? "—" : ["invoiceAmountDue","invoiceAmountPaid","approvedBudgetAmount"].includes(key) ? new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(value)) : Number(value).toLocaleString("en-IN");
     return (
       <div className="space-y-6 animate-fade-in">
         <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Institutional Reports" }]} />
@@ -73,7 +74,7 @@ export function ReportsPage() {
               {Object.entries(metrics).map(([key,value])=>(
                 <div key={key} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                   <p className="text-xs font-medium text-muted-foreground">{labelFor(key)}</p>
-                  <p className="mt-2 font-display text-3xl font-bold tabular-nums text-foreground">{Number(value).toLocaleString("en-IN")}</p>
+                  <p className="mt-2 font-display text-3xl font-bold tabular-nums text-foreground">{formatMetric(key,value)}</p>
                 </div>
               ))}
             </div>
