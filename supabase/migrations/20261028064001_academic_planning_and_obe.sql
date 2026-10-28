@@ -236,6 +236,6 @@ end;
 $$;
 drop trigger if exists academic_terms_current_guard on public.academic_terms;
 create trigger academic_terms_current_guard
-before insert or update of is_current, institution_id on public.academic_terms
+before insert or update on public.academic_terms
 for each row execute function app_private.ensure_single_current_academic_term();
 revoke all on function app_private.ensure_single_current_academic_term() from public, anon, authenticated;
