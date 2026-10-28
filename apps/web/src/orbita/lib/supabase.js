@@ -39,16 +39,20 @@ function emit() {
   });
 }
 
-function persist(next) {
+function normalizeSession(next) {
   // The raw Supabase Auth REST response commonly includes expires_in but omits
-  // expires_at (the official SDK normally derives it). Persist an absolute
-  // expiry so getSession() can refresh tokens before they expire.
-  const normalized = next?.access_token && !next.expires_at && Number.isFinite(Number(next.expires_in))
-    ? { ...next, expires_at: Math.floor(Date.now() / 1000) + Number(next.expires_in) }
-    : next;
-  session = normalized;
+  // expires_at (the official SDK normally derives it). Derive an absolute
+  // expiry for both new sessions and older sessions restored from localStorage.
+  if (!next?.access_token || next.expires_at || !Number.isFinite(Number(next.expires_in))) {
+    return next;
+  }
+  return { ...next, expires_at: Math.floor(Date.now() / 1000) + Number(next.expires_in) };
+}
+
+function persist(next) {
+  session = normalizeSession(next);
   try {
-    if (normalized) localStorage.setItem(SESSION_KEY, JSON.stringify(normalized));
+    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     else localStorage.removeItem(SESSION_KEY);
   } catch {
     /* storage unavailable (private mode / WebView) */
@@ -59,7 +63,11 @@ function persist(next) {
 function restore() {
   if (session) return session;
   try {
-    session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    session = normalizeSession(JSON.parse(localStorage.getItem(SESSION_KEY) || "null"));
+    // Migrate an older stored session once so future boots keep the expiry.
+    if (session?.access_token && session.expires_at) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    }
   } catch {
     session = null;
   }
