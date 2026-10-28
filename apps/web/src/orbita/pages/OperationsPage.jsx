@@ -35,11 +35,13 @@ const MODULES = {
   "/institution-settings": { key:"institutionSettings", title:"Institution Configuration", description:"Configure academic-year dates, regional settings, contact details and enabled product modules for this institution.", icon:Building2, fields:[["academic_year_label","Academic year label","text"],["academic_year_starts_on","Academic year starts","date"],["academic_year_ends_on","Academic year ends","date"],["default_currency","Default currency (ISO 4217)","text",true],["locale","Locale","text",true],["timezone","Timezone (IANA)","text",true],["contact_email","Institution contact email","email"],["contact_phone","Institution contact phone","tel"],["enabled_modules","Enabled modules (comma separated)","text"]] },
 };
 
+const ROUTE_ALIASES = { "/clubs": "/clubs-admin", "/sports": "/sports-facilities", "/alumni": "/alumni-records", "/hostel": "/hostel-rooms", "/transport": "/vehicles", "/placements": "/drives", "/events": "/institution-events" };
+
 const humanize = (key) => key.replace(/_/g," ").replace(/\b\w/g,(c)=>c.toUpperCase());
 const displayValue = (value) => Array.isArray(value) ? value.join(", ") : value && typeof value === "object" ? JSON.stringify(value) : value == null || value === "" ? "—" : String(value);
 
 export function OperationsPage({ route }) {
-  const config = MODULES[route] || MODULES["/hr"];
+  const config = MODULES[ROUTE_ALIASES[route] || route] || MODULES["/hr"];
   const { isDemoPreview } = usePortal();
   const [records,setRecords] = useState([]);
   const [loading,setLoading] = useState(true);
