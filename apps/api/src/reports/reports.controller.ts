@@ -81,6 +81,8 @@ export class ReportsController {
         ['openWorkOrders','campus_work_orders',{status:'open'}], ['assetsActive','campus_assets',{status:'active'}],
         ['vehiclesActive','transport_vehicles',{status:'active'}], ['activeHostelRooms','hostel_rooms',{status:'available'}],
         ['activeCommittees','institution_committees',{status:'active'}], ['visitorsCurrentlyOnCampus','visitor_register',{status:'checked_in'}],
+        ['activeHostelAllocations','hostel_allocations',{status:'active'}], ['activeTransportRoutes','transport_routes',{status:'active'}],
+        ['activeTransportAssignments','student_transport_assignments',{status:'active'}], ['openStaffGrievances','staff_grievances',{status:'submitted'}],
       ],
       accreditation: [
         ['evidenceDraft','accreditation_evidence',{status:'draft'}], ['evidenceInProgress','accreditation_evidence',{status:'in_progress'}],
