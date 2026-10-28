@@ -32,7 +32,7 @@ export class HealthController {
     }
 
     try {
-      const response = await fetch(`${url.replace(/\\/+$/, '')}/auth/v1/health`, {
+      const response = await fetch(`${url.replace(/\/+$/, '')}/auth/v1/health`, {
         method: 'GET',
         headers: { apikey: key },
         signal: AbortSignal.timeout(3000),
