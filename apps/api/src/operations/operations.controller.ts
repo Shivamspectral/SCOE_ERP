@@ -108,19 +108,21 @@ export class OperationsController {
   }
 
   @Get(':module')
-  async list(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Query('status') status?: string, @Query('search') search?: string) {
+  async list(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Query('status') status?: string, @Query('search') search?: string, @Query('limit') limitRaw?: string, @Query('offset') offsetRaw?: string) {
     const config = this.config(module);
     const { client } = await this.institution(req, module);
-    let query = client.from(config.table).select(config.select).order('created_at', { ascending: false }).limit(250);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(limitRaw ?? '50', 10) || 50));
+    const offset = Math.max(0, Number.parseInt(offsetRaw ?? '0', 10) || 0);
+    let query = client.from(config.table).select(config.select, { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
     if (status && config.fields.includes('status' as never)) query = query.eq('status', status);
     if (search?.trim()) {
       const term = search.trim().replace(/[%_(),]/g, '').slice(0, 80);
-      const searchable = config.fields.filter((field) => ['title','name','full_name','employee_code','request_number','ticket_number','asset_tag','registration_number','accession_number','project_code','criterion_code','building','room_number','committee_code','alumni_code','laboratory','visitor_name','facility_code','club_code'].includes(field));
+      const searchable = config.fields.filter((field) => ['title','name','full_name','employee_code','request_number','ticket_number','asset_tag','registration_number','accession_number','project_code','criterion_code','building','room_number','committee_code','alumni_code','laboratory','visitor_name','facility_code','club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','budget_code','claim_number','legal_name','vendor_code','application_number','applicant_name','campaign_code','exam_code','case_number','subject'].includes(field));
       if (term && searchable.length) query = query.or(searchable.map((field) => `${field}.ilike.%${term}%`).join(','));
     }
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) throw error;
-    return { data: data ?? [] };
+    return { data: { items: data ?? [], total: count ?? 0, limit, offset } };
   }
 
   @Post(':module')
