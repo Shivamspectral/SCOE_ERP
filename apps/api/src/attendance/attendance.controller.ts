@@ -9,6 +9,30 @@ import { CreateAttendanceSessionDto, ReviewAttendanceDto, SaveAttendanceRecordsD
 export class AttendanceController {
   constructor(private readonly db: SupabaseRequestClient) {}
 
+  @Get('summary')
+  async summary(@Req() request: AuthenticatedRequest) {
+    const client = this.db.forRequest(request);
+    const countStatus = async (status: 'present' | 'absent' | 'late' | 'excused') => {
+      const { count, error } = await client.from('attendance_records')
+        .select('id', { count: 'exact', head: true })
+        .eq('attendance_status', status);
+      if (error) throw error;
+      return count ?? 0;
+    };
+    const [present, absent, late, excused] = await Promise.all([
+      countStatus('present'), countStatus('absent'), countStatus('late'), countStatus('excused'),
+    ]);
+    const total = present + absent + late + excused;
+    return {
+      totalRecords: total,
+      present,
+      absent,
+      late,
+      excused,
+      attendanceRatePercent: total ? Math.round(((present + late) / total) * 1000) / 10 : null,
+    };
+  }
+
   @Get('sessions')
   async listSessions(@Req() request: AuthenticatedRequest, @Query('classId') classId?: string, @Query('status') status?: string) {
     const client = this.db.forRequest(request);
