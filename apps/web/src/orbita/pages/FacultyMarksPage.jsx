@@ -38,10 +38,12 @@ export function FacultyMarksPage() {
             id: student.id,
             name: student.full_name || student.name || "Unnamed student",
             rollNo: student.roll_number || student.rollNo || "",
-            marksInSem: Number(inSem?.marks_obtained ?? 0),
-            marksEndSem: Number(endSem?.marks_obtained ?? 0),
+            marksInSem: inSem?.marks_obtained == null ? "" : Number(inSem.marks_obtained),
+            marksEndSem: endSem?.marks_obtained == null ? "" : Number(endSem.marks_obtained),
             inSemRecordId: inSem?.id || null,
             endSemRecordId: endSem?.id || null,
+            inSemStatus: inSem?.status || null,
+            endSemStatus: endSem?.status || null,
           };
         });
         setLiveMarks(rows);
@@ -60,12 +62,17 @@ export function FacultyMarksPage() {
   // Never show synthetic marks to a signed-in user while live records are loading or unavailable.
   const displayedMarks = liveMode ? (liveMarks ?? []) : previewMarks;
   const changeMarks = (studentId, inSem, endSem) => {
+    const validScore = (value, maximum) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= maximum);
+    if (!validScore(inSem, 30) || !validScore(endSem, 70)) {
+      toast({ title: "Invalid marks", description: "In-sem marks must be 0–30 and end-sem marks must be 0–70.", variant: "warning" });
+      return;
+    }
     if (liveMarks) {
       setLiveMarks((prev) => prev.map((student) => student.id === studentId
-        ? { ...student, marksInSem: Number(inSem), marksEndSem: Number(endSem) }
+        ? { ...student, marksInSem: inSem === "" ? "" : Number(inSem), marksEndSem: endSem === "" ? "" : Number(endSem) }
         : student));
     } else {
-      updatePreviewMarks(studentId, inSem, endSem);
+      updatePreviewMarks(studentId, inSem === "" ? 0 : inSem, endSem === "" ? 0 : endSem);
     }
   };
 
@@ -73,14 +80,25 @@ export function FacultyMarksPage() {
     if (!isBackendConfigured || !session?.access_token || !liveMarks) return false;
     setSaving(true);
     try {
-      await Promise.all(liveMarks.flatMap((student) => [
-        student.inSemRecordId
-          ? marksApi.update({ id: student.inSemRecordId, marksObtained: Number(student.marksInSem || 0) })
-          : marksApi.upsert({ studentId: student.id, classId: student.class_id || undefined, assessmentName: "In-Sem", maxMarks: 30, marksObtained: Number(student.marksInSem || 0) }),
-        student.endSemRecordId
-          ? marksApi.update({ id: student.endSemRecordId, marksObtained: Number(student.marksEndSem || 0) })
-          : marksApi.upsert({ studentId: student.id, classId: student.class_id || undefined, assessmentName: "End-Sem", maxMarks: 70, marksObtained: Number(student.marksEndSem || 0) }),
-      ]));
+      const writes = liveMarks.flatMap((student) => {
+        const operations = [];
+        if (student.marksInSem !== "" && student.marksInSem != null) {
+          operations.push(student.inSemRecordId
+            ? marksApi.update({ id: student.inSemRecordId, marksObtained: Number(student.marksInSem) })
+            : marksApi.upsert({ studentId: student.id, classId: student.class_id || undefined, assessmentName: "In-Sem", maxMarks: 30, marksObtained: Number(student.marksInSem) }));
+        }
+        if (student.marksEndSem !== "" && student.marksEndSem != null) {
+          operations.push(student.endSemRecordId
+            ? marksApi.update({ id: student.endSemRecordId, marksObtained: Number(student.marksEndSem) })
+            : marksApi.upsert({ studentId: student.id, classId: student.class_id || undefined, assessmentName: "End-Sem", maxMarks: 70, marksObtained: Number(student.marksEndSem) }));
+        }
+        return operations;
+      });
+      if (!writes.length) {
+        toast({ title: "No marks entered", description: "Enter at least one mark before saving.", variant: "warning" });
+        return false;
+      }
+      await Promise.all(writes);
       const records = await marksApi.list({ limit: 300 });
       if (Array.isArray(records)) setLiveMarks((prev) => prev.map((student) => {
         const rows = records.filter((record) => record.student_id === student.id);
@@ -203,10 +221,12 @@ export function FacultyMarksPage() {
             Subject Evaluation
           </span>
           <h2 className="mt-0.5 font-display text-lg font-bold text-foreground">
-            Data Structures & Algorithms (310242)
+            {liveMode ? "Institutional Assessment Records" : "Data Structures & Algorithms (310242)"}
           </h2>
           <p className="text-xs text-muted-foreground">
-            Class: TE Computer Div A · Academic Year: 2025-26 Term I · Coordinator: Prof. R. Kale
+            {liveMode
+              ? "Assessment records shown below are loaded from your authorized institutional scope. Configure class and subject assignments to narrow this register."
+              : "Demo preview · TE Computer Div A · Sample academic year and coordinator details"}
           </p>
         </div>
 
@@ -281,8 +301,8 @@ export function FacultyMarksPage() {
               ) : filteredStudents.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">{liveMode ? "No institutional student or marks records are available in your permitted scope." : "No sample marks match your search."}</td></tr>
               ) : filteredStudents.map((s) => {
-                const inSem = s.marksInSem || 0;
-                const endSem = s.marksEndSem || 0;
+                const inSem = Number(s.marksInSem || 0);
+                const endSem = Number(s.marksEndSem || 0);
                 const total = inSem + endSem;
                 let grade = "F";
                 if (total >= 80) grade = "O (Outstanding)";
@@ -307,6 +327,8 @@ export function FacultyMarksPage() {
                         type="number"
                         min="0"
                         max="30"
+                        step="0.01"
+                        disabled={liveMode && ["submitted", "verified", "locked"].includes(s.inSemStatus)}
                         value={s.marksInSem}
                         onChange={(e) =>
                           changeMarks(s.id, e.target.value, s.marksEndSem)
@@ -319,6 +341,8 @@ export function FacultyMarksPage() {
                         type="number"
                         min="0"
                         max="70"
+                        step="0.01"
+                        disabled={liveMode && ["submitted", "verified", "locked"].includes(s.endSemStatus)}
                         value={s.marksEndSem}
                         onChange={(e) =>
                           changeMarks(s.id, s.marksInSem, e.target.value)
