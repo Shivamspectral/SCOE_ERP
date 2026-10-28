@@ -66,7 +66,7 @@ export class ReportsController {
         ['sessionsDraft','attendance_sessions',{status:'draft'}], ['sessionsSubmitted','attendance_sessions',{status:'submitted'}],
         ['sessionsVerified','attendance_sessions',{status:'verified'}], ['totalAttendanceRecords','attendance_records',{}],
         ['presentRecords','attendance_records',{attendance_status:'present'}], ['absentRecords','attendance_records',{attendance_status:'absent'}],
-        ['onDutyRecords','attendance_records',{attendance_status:'on_duty'}],
+        ['lateRecords','attendance_records',{attendance_status:'late'}], ['excusedRecords','attendance_records',{attendance_status:'excused'}],
       ],
       finance: [
         ['feeStructures','fee_structures',{status:'active'}], ['unpaidInvoices','fee_invoices',{status:'unpaid'}],
@@ -114,7 +114,7 @@ export class ReportsController {
       const { data, error } = await query;
       if (error) throw error;
       const rows = data ?? [];
-      const present = rows.filter((row: { attendance_status: string }) => ['present','on_duty'].includes(row.attendance_status)).length;
+      const present = rows.filter((row: { attendance_status: string }) => ['present','late'].includes(row.attendance_status)).length;
       summary.attendanceRatePercent = rows.length ? Math.round((present / rows.length) * 1000) / 10 : null;
     }
 
