@@ -20,7 +20,17 @@ export class StudentsController {
     if (classId) query = query.eq('class_id', classId);
     if (departmentId) query = query.eq('department_id', departmentId);
     if (status && ['active','inactive','graduated','transferred'].includes(status)) query = query.eq('status', status);
-    if (search?.trim()) query = query.ilike('full_name', `%${search.trim().replace(/[%_]/g, '')}%`);
+    if (search?.trim()) {
+      // Restrict the PostgREST filter grammar to ordinary identifier characters so
+      // user input cannot inject commas, parentheses, or other filter operators.
+      const term = search.trim().replace(/[^a-zA-Z0-9@.+\\- ]/g, '').slice(0, 80);
+      if (term) {
+        const pattern = `%${term}%`;
+        query = query.or(
+          `full_name.ilike.${pattern},roll_number.ilike.${pattern},registration_number.ilike.${pattern},email.ilike.${pattern}`,
+        );
+      }
+    }
     const { data, count, error } = await query;
     if (error) throw error;
     return { data: data ?? [], count: count ?? data?.length ?? 0, limit, offset };
