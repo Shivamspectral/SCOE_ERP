@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import type { Request } from 'express';
@@ -20,9 +20,16 @@ export class SupabaseAuthGuard implements CanActivate {
     const token = header?.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (!token) throw new UnauthorizedException('Authentication required');
 
+    const url = this.config.get<string>('SUPABASE_URL');
+    const publishableKey = this.config.get<string>('SUPABASE_PUBLISHABLE_KEY');
+    if (!url || !publishableKey) {
+      // Never bypass authentication just because the backend is in demo mode.
+      throw new ServiceUnavailableException('Authentication provider is not configured');
+    }
+
     const client = createClient(
-      this.config.getOrThrow<string>('SUPABASE_URL'),
-      this.config.getOrThrow<string>('SUPABASE_PUBLISHABLE_KEY'),
+      url,
+      publishableKey,
       { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
     );
     const { data, error } = await client.auth.getUser(token);
