@@ -67,7 +67,21 @@ export class AssignmentsController {
 
   @Patch(':id/status')
   async updateStatus(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: UpdateAssignmentStatusDto) {
-    const { data, error } = await this.db.forRequest(request).from('assignment_records')
+    const client = this.db.forRequest(request);
+    const { data: current, error: currentError } = await client.from('assignment_records')
+      .select('id,status').eq('id', id).maybeSingle();
+    if (currentError) throw currentError;
+    if (!current) throw new NotFoundException('Assignment not found or status change is not permitted');
+    const transitions: Record<string, string[]> = {
+      draft: ['published','archived'],
+      published: ['closed','archived'],
+      closed: ['published','archived'],
+      archived: [],
+    };
+    if (current.status !== body.status && !(transitions[current.status] ?? []).includes(body.status)) {
+      throw new BadRequestException(`Assignment cannot transition from ${current.status} to ${body.status}`);
+    }
+    const { data, error } = await client.from('assignment_records')
       .update({ status: body.status }).eq('id', id)
       .select('id,status,updated_at').maybeSingle();
     if (error) throw error;
