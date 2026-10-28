@@ -255,21 +255,48 @@ export function PortalProvider({ children }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
-    setSession(data.session || null);
+    // This repository uses a small REST-based Supabase client, not the official
+    // SDK; the sign-in response itself is the session and has no functions.invoke().
+    setSession(data);
     setIsDemoPreview(false);
     setIsAuthenticated(true);
 
-    // One-time bootstrap for the designated first Principal. The server-side
-    // function verifies the authenticated email and refuses if another leader exists.
+    // One-time bootstrap for the designated first Principal. Call the Edge Function
+    // over HTTPS using the public anon key and this user's authenticated access token.
     if ((data.user?.email || email).trim().toLowerCase() === "scoeprinciple@gmail.com") {
-      const { data: bootstrapData, error: bootstrapError } = await supabase.functions.invoke("bootstrap-first-principal");
-      if (bootstrapError || !bootstrapData?.success) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      let bootstrapResponse;
+      let bootstrapData;
+      try {
+        if (!supabaseUrl || !supabaseAnonKey || !data.access_token) {
+          throw new Error("Supabase URL, public key, or sign-in session is missing in this deployment.");
+        }
+        bootstrapResponse = await fetch(`${supabaseUrl.replace(/\\/$/, "")}/functions/v1/bootstrap-first-principal`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${data.access_token}`,
+          },
+          body: JSON.stringify({}),
+        });
+        bootstrapData = await bootstrapResponse.json().catch(() => ({}));
+      } catch (bootstrapError) {
         await supabase.auth.signOut();
         setSession(null);
         setIsAuthenticated(false);
         setIsDemoPreview(false);
         setUserRole("Pending");
-        throw new Error(bootstrapData?.error || bootstrapError?.message || "Could not initialize the first Principal account.");
+        throw new Error(bootstrapError?.message || "Could not contact Principal initialization service.");
+      }
+      if (!bootstrapResponse.ok || !bootstrapData?.success) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setIsAuthenticated(false);
+        setIsDemoPreview(false);
+        setUserRole("Pending");
+        throw new Error(bootstrapData?.error || `Principal initialization failed (HTTP ${bootstrapResponse.status}).`);
       }
     }
 
