@@ -226,6 +226,25 @@ export function getNavigationForRole(role) {
     ];
   }
 
+  if (role === "Coordinator") {
+    return [
+      { title: "Overview", items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, tooltip: "Coordinator overview" }] },
+      { title: "Institutional Operations", items: [
+        { label: "Approvals & Requests", href: "/approvals", icon: FileCheck, tooltip: "Review institutional workflows" },
+        { label: "Student Records", href: "/students", icon: Users, tooltip: "Staff-managed internal student directory" },
+        { label: "Finance & Fees", href: "/finance", icon: Wallet, tooltip: "Fee invoices and payment ledger" },
+        { label: "Library", href: "/library", icon: Library, tooltip: "Catalogue and circulation" },
+        { label: "Documents", href: "/documents", icon: FileBadge, tooltip: "Institutional documents" },
+        { label: "Reports", href: "/reports", icon: FileSpreadsheet, tooltip: "Operational reports" },
+      ] },
+      { title: "System", items: [
+        { label: "Notices & Alerts", href: "/notices", icon: Bell, tooltip: "Official notices", aliases: ["/notifications"] },
+        { label: "Profile", href: "/profile", icon: UserRound, tooltip: "Staff profile" },
+        { label: "Settings", href: "/settings", icon: Settings, tooltip: "Preferences and security" },
+      ] },
+    ];
+  }
+
   // Default: Student role
   return [
     {
