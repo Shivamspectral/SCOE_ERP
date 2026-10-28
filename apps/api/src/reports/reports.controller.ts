@@ -97,7 +97,61 @@ export class ReportsController {
     };
 
     const metrics = await Promise.all(definitions[kind as ReportKind].map(async ([label, table, filters]) => [label, await count(table, filters)] as const));
-    const summary = Object.fromEntries(metrics);
+    const summary: Record<string, number | null> = Object.fromEntries(metrics);
+
+    if (kind === 'attendance') {
+      let query: any = client.from('attendance_records').select('attendance_status').limit(10000);
+      if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
+      if (parsedTo) query = query.lte('created_at', parsedTo.toISOString());
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = data ?? [];
+      const present = rows.filter((row: { attendance_status: string }) => ['present','on_duty'].includes(row.attendance_status)).length;
+      summary.attendanceRatePercent = rows.length ? Math.round((present / rows.length) * 1000) / 10 : null;
+    }
+
+    if (kind === 'academic') {
+      let query: any = client.from('marks_records').select('student_id,marks_obtained,max_marks').in('status', ['verified','locked']).not('marks_obtained', 'is', null).limit(10000);
+      if (departmentId) query = query.eq('department_id', departmentId);
+      if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
+      if (parsedTo) query = query.lte('created_at', parsedTo.toISOString());
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = (data ?? []).filter((row: { marks_obtained: number | string | null; max_marks: number | string | null }) => Number(row.max_marks) > 0 && Number.isFinite(Number(row.marks_obtained)));
+      summary.averageVerifiedMarksPercent = rows.length ? Math.round(rows.reduce((sum: number, row: { marks_obtained: number | string; max_marks: number | string }) => sum + (Number(row.marks_obtained) / Number(row.max_marks)) * 100, 0) / rows.length * 10) / 10 : null;
+    }
+
+    if (kind === 'finance') {
+      let invoiceQuery: any = client.from('fee_invoices').select('amount_due,amount_paid,status').limit(10000);
+      let budgetQuery: any = client.from('finance_budgets').select('allocated_amount,status').limit(10000);
+      if (parsedFrom) {
+        invoiceQuery = invoiceQuery.gte('created_at', parsedFrom.toISOString());
+        budgetQuery = budgetQuery.gte('created_at', parsedFrom.toISOString());
+      }
+      if (parsedTo) {
+        invoiceQuery = invoiceQuery.lte('created_at', parsedTo.toISOString());
+        budgetQuery = budgetQuery.lte('created_at', parsedTo.toISOString());
+      }
+      const [invoiceResult, budgetResult] = await Promise.all([invoiceQuery, budgetQuery]);
+      if (invoiceResult.error) throw invoiceResult.error;
+      if (budgetResult.error) throw budgetResult.error;
+      const invoices = invoiceResult.data ?? [];
+      const budgets = budgetResult.data ?? [];
+      summary.invoiceAmountDue = Math.round(invoices.reduce((sum: number, row: { amount_due: number | string }) => sum + Number(row.amount_due || 0), 0) * 100) / 100;
+      summary.invoiceAmountPaid = Math.round(invoices.reduce((sum: number, row: { amount_paid: number | string }) => sum + Number(row.amount_paid || 0), 0) * 100) / 100;
+      summary.approvedBudgetAmount = Math.round(budgets.filter((row: { status: string }) => row.status === 'approved').reduce((sum: number, row: { allocated_amount: number | string }) => sum + Number(row.allocated_amount || 0), 0) * 100) / 100;
+    }
+
+    if (kind === 'accreditation') {
+      let query: any = client.from('outcome_attainment_results').select('attained_percent').not('attained_percent', 'is', null).limit(10000);
+      if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
+      if (parsedTo) query = query.lte('created_at', parsedTo.toISOString());
+      const { data, error } = await query;
+      if (error) throw error;
+      const values = (data ?? []).map((row: { attained_percent: number | string }) => Number(row.attained_percent)).filter((value: number) => Number.isFinite(value));
+      summary.averageOutcomeAttainmentPercent = values.length ? Math.round(values.reduce((sum: number, value: number) => sum + value, 0) / values.length * 10) / 10 : null;
+    }
+
     return { data: { kind, generatedAt: new Date().toISOString(), filters: { from: from || null, to: to || null, departmentId: departmentId || null }, metrics: summary } };
   }
 }
