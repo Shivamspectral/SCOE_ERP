@@ -124,7 +124,7 @@ export function BulkAccountsPage() {
           body: { rows: rows.slice(offset, offset + 100) },
         });
         if (invokeError || !data || !Array.isArray(data.results)) {
-          throw new Error("Batch " + batchNo + " could not be confirmed. Stop here and inspect Supabase function logs before retrying, because the server may have completed some operations.");
+          throw new Error((invokeError?.message ? invokeError.message + " " : "") + "Batch " + batchNo + " could not be confirmed. Stop here and inspect Supabase function logs before retrying, because the server may have completed some operations.");
         }
         allResults.push(...data.results);
         setResults([...allResults]);

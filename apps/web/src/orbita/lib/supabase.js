@@ -206,4 +206,46 @@ export const supabase = {
       return { data: { session: data }, error: null };
     },
   },
+
+  functions: {
+    /**
+     * Minimal equivalent of supabase-js `functions.invoke`.
+     * Sends the signed-in user's access token (refreshing it first if it is about
+     * to expire) and resolves to { data, error } instead of throwing, matching the
+     * official SDK contract the pages already rely on.
+     */
+    async invoke(name, { body, headers: extraHeaders = {}, method = "POST" } = {}) {
+      try {
+        if (!isSupabaseConfigured) {
+          throw new Error("Authentication is not configured for this deployment.");
+        }
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        if (!token) throw new Error("You must be signed in to call this function.");
+
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/${encodeURIComponent(name)}`, {
+          method,
+          headers: { ...headers(token), ...extraHeaders },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+
+        const text = await res.text();
+        let parsed = null;
+        try {
+          parsed = text ? JSON.parse(text) : null;
+        } catch {
+          parsed = text;
+        }
+
+        if (!res.ok) {
+          const message =
+            parsed?.error || parsed?.message || parsed?.msg || `Function ${name} failed (${res.status})`;
+          return { data: null, error: Object.assign(new Error(message), { status: res.status }) };
+        }
+        return { data: parsed, error: null };
+      } catch (error) {
+        return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
+      }
+    },
+  },
 };
