@@ -3,7 +3,7 @@ import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
 
-const REPORT_KINDS = ['overview','academic','attendance','examinations','admissions','operations','accreditation','library','hr'] as const;
+const REPORT_KINDS = ['overview','academic','attendance','examinations','mentoring','admissions','operations','accreditation','library','hr'] as const;
 type ReportKind = typeof REPORT_KINDS[number];
 
 @Controller('reports')
@@ -34,7 +34,7 @@ export class ReportsController {
 
     const count = async (table: string, filters: Record<string, string> = {}) => {
       let query: any = client.from(table).select('id', { count: 'exact', head: true });
-      if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','assignment_records','academic_programmes','finance_budgets','hr_employees','research_projects','examination_sessions'].includes(table)) query = query.eq('department_id', departmentId);
+      if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','assignment_records','academic_programmes','finance_budgets','hr_employees','research_projects','examination_sessions','faculty_mentoring_assignments','faculty_mentoring_meetings'].includes(table)) query = query.eq('department_id', departmentId);
       if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
       if (parsedTo) {
         const upperBound = /^\d{4}-\d{2}-\d{2}$/.test(to || '') ? new Date(parsedTo.getTime() + 24 * 60 * 60 * 1000 - 1) : parsedTo;
@@ -84,6 +84,13 @@ export class ReportsController {
         ['timetableSlotsScheduled','examination_timetable',{status:'scheduled'}],
         ['timetableSlotsPublished','examination_timetable',{status:'published'}],
         ['timetableSlotsCompleted','examination_timetable',{status:'completed'}],
+      ],
+      mentoring: [
+        ['activeMentorAssignments','faculty_mentoring_assignments',{status:'active'}],
+        ['inactiveMentorAssignments','faculty_mentoring_assignments',{status:'inactive'}],
+        ['completedMentorAssignments','faculty_mentoring_assignments',{status:'completed'}],
+        ['openCounsellingFollowUps','faculty_mentoring_meetings',{status:'open'}],
+        ['resolvedCounsellingFollowUps','faculty_mentoring_meetings',{status:'resolved'}],
       ],
       admissions: [
         ['campaignsOpen','admission_campaigns',{status:'open'}], ['applicationsSubmitted','admission_applications',{status:'submitted'}],
