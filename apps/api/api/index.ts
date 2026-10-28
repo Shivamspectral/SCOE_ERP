@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AppModule } from '../src/app.module';
+import { restoreOriginalVercelPath } from '../src/vercel/vercel-path';
 
 let handlerPromise: Promise<(req: Request, res: Response) => unknown> | undefined;
 
@@ -48,6 +49,7 @@ export default async function handler(req: Request, res: Response) {
   try {
     handlerPromise ??= createHandler();
     const appHandler = await handlerPromise;
+    restoreOriginalVercelPath(req);
     return appHandler(req, res);
   } catch (error) {
     handlerPromise = undefined;
