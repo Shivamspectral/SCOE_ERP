@@ -17,6 +17,7 @@ export function AttendancePage() {
   const { toast, backendConfigured, isAuthenticated, session, userRole } = usePortal();
   const liveMode = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [reviewSessions, setReviewSessions] = useState(liveMode ? [] : previewSessions);
+  const [summary, setSummary] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [returningSessionId, setReturningSessionId] = useState(null);
   const [reviewReason, setReviewReason] = useState("");
@@ -29,6 +30,9 @@ export function AttendancePage() {
     let cancelled = false;
     setReviewSessions([]);
     setReviewLoading(true);
+    attendanceApi.summary().then((result) => {
+      if (!cancelled) setSummary(result ?? null);
+    }).catch(() => { if (!cancelled) setSummary(null); });
     attendanceApi.sessions().then((rows) => {
       if (!cancelled) setReviewSessions(Array.isArray(rows) ? rows : []);
     }).catch((error) => {
@@ -80,10 +84,13 @@ export function AttendancePage() {
           Demo workspace · sample records only. Actions here do not update institutional data.
         </div>
       )}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Sessions in scope</p><p className="mt-1 text-2xl font-bold text-foreground">{reviewSessions.length}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Awaiting review</p><p className="mt-1 text-2xl font-bold text-foreground">{pendingReview.length}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Verified</p><p className="mt-1 text-2xl font-bold text-foreground">{verifiedCount}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Verified sessions</p><p className="mt-1 text-2xl font-bold text-foreground">{verifiedCount}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Attendance rate</p><p className="mt-1 text-2xl font-bold text-foreground">{summary?.attendanceRatePercent == null ? "—" : `${summary.attendanceRatePercent}%`}</p><p className="mt-1 text-xs text-muted-foreground">Present and late records</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Absent records</p><p className="mt-1 text-2xl font-bold text-foreground">{summary?.absent == null ? "—" : summary.absent.toLocaleString("en-IN")}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Total attendance entries</p><p className="mt-1 text-2xl font-bold text-foreground">{summary?.totalRecords == null ? "—" : summary.totalRecords.toLocaleString("en-IN")}</p></CardContent></Card>
       </div>
       {reviewLoading && <p className="py-8 text-center text-sm text-muted-foreground">Loading attendance sessions…</p>}
       {!reviewLoading && reviewSessions.length === 0 && <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No attendance sessions are available in your permitted scope yet.</CardContent></Card>}
