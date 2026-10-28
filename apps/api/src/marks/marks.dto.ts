@@ -5,7 +5,7 @@ export class CreateMarksRecordDto {
   @IsOptional() @IsUUID() classId?: string;
   @IsOptional() @IsUUID() subjectId?: string;
   @IsString() @MinLength(2) @MaxLength(120) assessmentName!: string;
-  @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) maxMarks!: number;
+  @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) maxMarks!: number;
   @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) marksObtained?: number;
 }
 
