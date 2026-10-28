@@ -49,7 +49,7 @@ const OPERATION_ROUTES = new Set([
   "/accreditation", "/institution-events", "/committees", "/committee-members", "/clubs-admin",
   "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors", "/programmes",
   "/academic-terms", "/curriculum", "/course-outcomes", "/program-outcomes", "/obe-mapping",
-  "/attainment-cycles", "/attainment-results", "/institution-settings", "/budgets", "/vendors", "/expense-claims", "/admissions-campaigns", "/admission-applications",
+  "/attainment-cycles", "/attainment-results", "/institution-settings", "/budgets", "/vendors", "/expense-claims", "/admissions-campaigns", "/admission-applications", "/exam-schedule", "/exam-timetable", "/examinations",
   "/clubs", "/sports", "/alumni", "/hostel", "/transport", "/placements", "/events",
 ]);
 
@@ -70,7 +70,7 @@ export default function App() {
     const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
     const liveDataRoutes = new Set([
       "/dashboard", "/timetable", "/attendance", "/marks", "/notices", "/notifications", "/profile", "/settings",
-      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance",
+      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results",
       "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
       ...OPERATION_ROUTES,
     ]);
@@ -88,7 +88,8 @@ export default function App() {
       case "/feedback": case "/support": case "/grievances": return <FeedbackPage />;
       case "/profile": return <ProfilePage />;
       case "/academics": case "/courses": case "/subjects": return <AcademicsPage />;
-      case "/examinations": case "/results": return <ExaminationsPage />;
+      case "/examinations": return <ExaminationsPage />;
+      case "/results": return <FacultyMarksPage />;
       case "/clubs": return <ClubsPage />;
       case "/sports": return <SportsPage />;
       case "/library": return <LibraryPage />;
