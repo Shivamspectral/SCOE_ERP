@@ -56,7 +56,7 @@ export function TimetablePage() {
     return () => { cancelled = true; };
   }, [backendConfigured, isAuthenticated, session?.access_token, toast]);
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
-  const canManageTimetable = ["Principal", "HOD", "Coordinator", "Administrator"].includes(userRole);
+  const canManageTimetable = ["Principal", "Vice-Principal", "HOD", "Coordinator", "Administrator"].includes(userRole);
   const matchingDepartment = departments.find((department) => department.name?.toLowerCase() === activeProfile?.dept?.toLowerCase());
   const selectedDepartmentId = entryForm.departmentId || matchingDepartment?.id || departments[0]?.id || "";
 
