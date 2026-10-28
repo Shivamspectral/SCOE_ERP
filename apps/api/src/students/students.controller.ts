@@ -23,7 +23,7 @@ export class StudentsController {
     if (search?.trim()) {
       // Restrict the PostgREST filter grammar to ordinary identifier characters so
       // user input cannot inject commas, parentheses, or other filter operators.
-      const term = search.trim().replace(/[^a-zA-Z0-9@.+\\- ]/g, '').slice(0, 80);
+      const term = search.trim().replace(/[^a-zA-Z0-9@.+ -]/g, '').slice(0, 80);
       if (term) {
         const pattern = `%${term}%`;
         query = query.or(
