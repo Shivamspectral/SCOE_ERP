@@ -21,6 +21,12 @@ const MODULES = {
 
 type ModuleKey = keyof typeof MODULES;
 
+const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> = {
+  leave: { pending: ['approved', 'rejected', 'cancelled'], approved: [], rejected: [], cancelled: [] },
+  procurement: { draft: ['submitted', 'cancelled'], submitted: ['approved', 'rejected', 'cancelled'], approved: ['ordered', 'cancelled'], rejected: ['draft', 'cancelled'], ordered: ['received'], received: [], cancelled: [] },
+  workOrders: { open: ['assigned', 'in_progress', 'cancelled'], assigned: ['in_progress', 'blocked', 'cancelled'], in_progress: ['blocked', 'resolved', 'cancelled'], blocked: ['assigned', 'in_progress', 'cancelled'], resolved: ['closed', 'in_progress'], closed: [], cancelled: [] },
+};
+
 @Controller('operations')
 @UseGuards(SupabaseAuthGuard)
 export class OperationsController {
@@ -94,6 +100,30 @@ export class OperationsController {
       if (body[field] !== undefined) patch[field] = body[field];
     }
     if (!Object.keys(patch).length) throw new BadRequestException('No supported fields were provided');
+
+    if (typeof patch.status === 'string' && STATUS_TRANSITIONS[module as ModuleKey]) {
+      const { data: current, error: readError } = await client.from(config.table).select('status').eq('id', id).maybeSingle();
+      if (readError) throw readError;
+      if (!current) throw new NotFoundException('Record not found or update is not permitted');
+      const currentStatus = String(current.status ?? 'draft');
+      const nextStatus = String(patch.status);
+      if (currentStatus !== nextStatus && !(STATUS_TRANSITIONS[module as ModuleKey]?.[currentStatus] ?? []).includes(nextStatus)) {
+        throw new BadRequestException('Invalid status transition: ' + currentStatus + ' -> ' + nextStatus);
+      }
+      if (currentStatus !== nextStatus && module === 'leave' && ['approved','rejected'].includes(nextStatus)) {
+        patch.reviewer_id = req.authUser!.id;
+        patch.reviewed_at = new Date().toISOString();
+      }
+      if (currentStatus !== nextStatus && module === 'procurement' && ['approved','rejected'].includes(nextStatus)) {
+        patch.reviewed_by = req.authUser!.id;
+        patch.reviewed_at = new Date().toISOString();
+      }
+      if (currentStatus !== nextStatus && module === 'workOrders') {
+        if (nextStatus === 'resolved') patch.resolved_at = new Date().toISOString();
+        if (currentStatus === 'resolved' && nextStatus === 'in_progress') patch.resolved_at = null;
+      }
+    }
+
     const { data, error } = await client.from(config.table).update(patch).eq('id', id).select(config.select).maybeSingle();
     if (error) throw error;
     if (!data) throw new NotFoundException('Record not found or update is not permitted');
