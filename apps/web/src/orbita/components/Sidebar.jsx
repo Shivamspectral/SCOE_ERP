@@ -28,6 +28,7 @@ import {
   ListOrdered,
   KeyRound,
   FileSpreadsheet,
+  Wallet,
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { college } from "../data/portalData";
@@ -156,6 +157,7 @@ export function getNavigationForRole(role) {
         title: "Executive Approvals & Audits",
         items: [
           { label: "Approvals & Sanctions", href: "/approvals", icon: FileCheck, tooltip: "Sanction leave, budget & requisitions" },
+          { label: "Finance & Fees", href: "/finance", icon: Wallet, tooltip: "Staff fee invoices and payment ledger" },
           { label: "Reports & Accreditations", href: "/reports", icon: FileSpreadsheet, tooltip: "SPPU, NBA & NAAC audit files" },
           { label: "Training & Placements", href: "/placements", icon: Briefcase, tooltip: "Campus recruitment & top packages" },
           { label: "Examinations & SGPA", href: "/examinations", icon: GraduationCap, tooltip: "University pass rates & toppers" },
@@ -194,6 +196,7 @@ export function getNavigationForRole(role) {
           { label: "User Management (IAM)", href: "/users", icon: Users, tooltip: "Manage students, faculty & admins" },
           { label: "Approvals & Clearances", href: "/approvals", icon: FileCheck, tooltip: "Root administrative sanction desk" },
           { label: "System Audit Logs", href: "/logs", icon: Shield, tooltip: "Security & transaction logs" },
+          { label: "Finance & Fees", href: "/finance", icon: Wallet, tooltip: "Staff fee invoices and payment ledger" },
         ],
       },
       {
