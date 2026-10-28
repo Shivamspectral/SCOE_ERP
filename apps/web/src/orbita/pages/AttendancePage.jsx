@@ -22,6 +22,7 @@ export function AttendancePage() {
   const [reviewReason, setReviewReason] = useState("");
   // Keep the UI aligned with roles currently supported by the database and API.
   const canReviewAttendance = ["Principal", "Super Admin", "HOD", "Coordinator"].includes(userRole);
+  const attendanceAudience = userRole === "Faculty" ? "Your submitted and verified sessions" : userRole === "HOD" ? "Department-wide attendance and review queue" : "Institution-wide attendance oversight";
 
   useEffect(() => {
     if (!liveMode) return;
@@ -70,9 +71,10 @@ export function AttendancePage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <Breadcrumb
-        title="Department Attendance Review"
-        subtitle="Review submitted class attendance, verify records, or return incomplete sessions to faculty."
+        title={userRole === "Faculty" ? "My Attendance Sessions" : userRole === "HOD" ? "Department Attendance Review" : "Institutional Attendance Oversight"}
+        subtitle={userRole === "Faculty" ? "View attendance sessions you recorded, their review status, and any correction notes." : userRole === "HOD" ? "Review department attendance, verify submissions, and return incomplete sessions to faculty." : "Review institution-wide attendance submissions, verification status, and outstanding corrections."}
       />
+      {liveMode && <p className="text-xs text-muted-foreground">{attendanceAudience}</p>}
       {!liveMode && (
         <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
           Demo workspace · sample records only. Actions here do not update institutional data.
