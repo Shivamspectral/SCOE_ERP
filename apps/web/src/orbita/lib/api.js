@@ -151,6 +151,15 @@ export const usersApi = {
   remove: (id) => api.del(`/api/users/${id}`),
 };
 
+export const libraryApi = {
+  books: (query) => api.get("/api/library/books", query),
+  createBook: (payload) => api.post("/api/library/books", payload),
+  updateBook: (id, payload) => api.patch(`/api/library/books/${id}`, payload),
+  loans: (query) => api.get("/api/library/loans", query),
+  issue: (payload) => api.post("/api/library/loans", payload),
+  returnLoan: (id) => api.post(`/api/library/loans/${id}/return`, {}),
+};
+
 export const studentsApi = {
   list: (query) => api.get("/api/students", query),
   get: (id) => api.get(`/api/students/${id}`),
