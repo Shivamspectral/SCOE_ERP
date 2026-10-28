@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Plus, RefreshCw, Search, X, Save, BriefcaseBusiness, BookOpen, Building2, CalendarDays, ClipboardList, GraduationCap, LibraryBig, Truck, Users, Wrench } from "lucide-react";
+import { AlertCircle, Plus, RefreshCw, Search, X, Save, Trash2, BriefcaseBusiness, BookOpen, Building2, CalendarDays, ClipboardList, GraduationCap, LibraryBig, Truck, Users, Wrench } from "lucide-react";
 import { operationsApi, isBackendConfigured } from "../lib/api";
 import { usePortal } from "../context/PortalContext";
 
@@ -81,6 +81,18 @@ export function OperationsPage({ route }) {
     finally { setSaving(false); }
   };
 
+  const remove = async (record) => {
+    const label = record.title || record.full_name || record.name || record.ticket_number || record.id;
+    if (!window.confirm("Delete this record? This action may be irreversible.\n\n" + label)) return;
+    setError(""); setNotice("");
+    try {
+      await operationsApi.remove(config.key, record.id);
+      setNotice("Record deleted."); await load();
+    } catch(e) {
+      setError(e instanceof Error ? e.message : "Could not delete record. This action may require administrator privileges.");
+    }
+  };
+
   const update = async (record, key, value) => {
     if (isDemoPreview || !isBackendConfigured) return;
     try { await operationsApi.update(config.key,record.id,{[key]:value}); setNotice("Record updated."); await load(); }
@@ -106,10 +118,10 @@ export function OperationsPage({ route }) {
         <button onClick={()=>void load()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"><RefreshCw className="size-4"/> Refresh</button>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground"><tr>{columns.map((c)=><th key={c} className="whitespace-nowrap px-4 py-3 font-semibold">{humanize(c)}</th>)}<th className="px-4 py-3 font-semibold">Update status</th></tr></thead>
+        <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground"><tr>{columns.map((c)=><th key={c} className="whitespace-nowrap px-4 py-3 font-semibold">{humanize(c)}</th>)}<th className="px-4 py-3 font-semibold">Update status</th><th className="px-4 py-3 font-semibold">Actions</th></tr></thead>
         <tbody className="divide-y divide-border">
-          {loading ? <tr><td colSpan={columns.length+1} className="px-4 py-12 text-center text-muted-foreground"><RefreshCw className="mx-auto mb-2 size-5 animate-spin"/>Loading records…</td></tr> :
-          records.length ? records.map((record)=><tr key={record.id} className="hover:bg-muted/30">{columns.map((c)=><td key={c} className="max-w-64 px-4 py-3 text-foreground"><span className="block truncate" title={displayValue(record[c])}>{displayValue(record[c])}</span></td>)}<td className="px-4 py-3">{config.fields.some((f)=>f[0]==="status") ? <select aria-label={"Update status for "+(record.title||record.full_name||record.name||record.id)} value={record.status||""} onChange={(e)=>void update(record,"status",e.target.value)} className="max-w-44 rounded-md border border-input bg-background px-2 py-1.5 text-xs">{config.fields.find((f)=>f[0]==="status")?.[4]?.map((s)=><option key={s} value={s}>{humanize(s)}</option>)}</select> : <span className="text-muted-foreground">—</span>}</td></tr>) :
+          {loading ? <tr><td colSpan={columns.length+2} className="px-4 py-12 text-center text-muted-foreground"><RefreshCw className="mx-auto mb-2 size-5 animate-spin"/>Loading records…</td></tr> :
+          records.length ? records.map((record)=><tr key={record.id} className="hover:bg-muted/30">{columns.map((c)=><td key={c} className="max-w-64 px-4 py-3 text-foreground"><span className="block truncate" title={displayValue(record[c])}>{displayValue(record[c])}</span></td>)}<td className="px-4 py-3">{config.fields.some((f)=>f[0]==="status") ? <select aria-label={"Update status for "+(record.title||record.full_name||record.name||record.id)} value={record.status||""} onChange={(e)=>void update(record,"status",e.target.value)} className="max-w-44 rounded-md border border-input bg-background px-2 py-1.5 text-xs">{config.fields.find((f)=>f[0]==="status")?.[4]?.map((s)=><option key={s} value={s}>{humanize(s)}</option>)}</select> : <span className="text-muted-foreground">—</span>}</td><td className="px-4 py-3"><button onClick={()=>void remove(record)} className="inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10" title="Delete record"><Trash2 className="size-3.5"/> Delete</button></td></tr>) :
           <tr><td colSpan={columns.length+1} className="px-4 py-14 text-center"><div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-muted"><Icon className="size-5 text-muted-foreground"/></div><p className="font-semibold text-foreground">{isDemoPreview || !isBackendConfigured ? "Ready for institutional data" : "No records found"}</p><p className="mt-1 text-sm text-muted-foreground">{isDemoPreview || !isBackendConfigured ? "Connect the backend to load and manage records." : "Create a record or adjust your search."}</p></td></tr>}
         </tbody></table>
       </div>
