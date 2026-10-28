@@ -18,6 +18,7 @@ import { ExaminationsPage } from "./pages/ExaminationsPage";
 import { ClubsPage } from "./pages/ClubsPage";
 import { SportsPage } from "./pages/SportsPage";
 import { LibraryPage } from "./pages/LibraryPage";
+import { FinancePage } from "./pages/FinancePage";
 import { DocumentsPage } from "./pages/DocumentsPage";
 import { PlacementsPage } from "./pages/PlacementsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
@@ -75,7 +76,7 @@ export default function App() {
     const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
     const liveDataRoutes = new Set([
       "/dashboard", "/timetable", "/attendance", "/marks", "/notices", "/notifications", "/profile", "/settings",
-      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks",
+      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance",
       "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
     ]);
     if (liveSession && !liveDataRoutes.has(currentRoute)) {
@@ -122,6 +123,8 @@ export default function App() {
         return <SportsPage />;
       case "/library":
         return <LibraryPage />;
+      case "/finance":
+        return <FinancePage />;
       case "/documents":
         return <DocumentsPage />;
       case "/placements":
