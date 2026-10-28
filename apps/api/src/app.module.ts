@@ -19,6 +19,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { AuditModule } from './audit/audit.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FacultyModule } from './faculty/faculty.module';
+import { LibraryModule } from './library/library.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { FacultyModule } from './faculty/faculty.module';
     AuditModule,
     TasksModule,
     FacultyModule,
+    LibraryModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
