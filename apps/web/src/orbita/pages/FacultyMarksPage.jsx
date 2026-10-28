@@ -88,6 +88,8 @@ export function FacultyMarksPage() {
           ...student,
           inSemRecordId: rows.find((record) => /in.?sem|internal/i.test(record.assessment_name))?.id || student.inSemRecordId,
           endSemRecordId: rows.find((record) => /end.?sem|university/i.test(record.assessment_name))?.id || student.endSemRecordId,
+          inSemStatus: rows.find((record) => /in.?sem|internal/i.test(record.assessment_name))?.status || student.inSemStatus,
+          endSemStatus: rows.find((record) => /end.?sem|university/i.test(record.assessment_name))?.status || student.endSemStatus,
         };
       }));
       return Array.isArray(records) ? records : [];
@@ -141,7 +143,14 @@ export function FacultyMarksPage() {
       }
       const records = Array.isArray(saved) ? saved : [];
       const studentIds = new Set(liveMarks.map((student) => student.id));
-      await Promise.all(records.filter((record) => studentIds.has(record.student_id) && ["draft", "returned"].includes(record.status)).map((record) => marksApi.submit(record.id)));
+      const eligible = records.filter((record) => studentIds.has(record.student_id)
+        && ["draft", "returned"].includes(record.status)
+        && record.marks_obtained !== null && record.marks_obtained !== undefined);
+      if (!eligible.length) {
+        toast({ title: "No draft marks to submit", description: "Enter and save marks first. Submitted, verified, or locked records cannot be resubmitted.", variant: "warning" });
+        return;
+      }
+      await Promise.all(eligible.map((record) => marksApi.submit(record.id)));
       addSystemLog("Submitted examination marks for internal review", "Success");
       toast({ title: "Submitted for internal review", description: "The marks are recorded in the ERP review workflow. This does not upload anything to SPPU.", variant: "success" });
     } catch (error) {
