@@ -20,6 +20,24 @@ const ALLOWED_DOCUMENT_TYPES: Record<string, string[]> = {
   'image/jpeg': ['.jpg', '.jpeg'],
 };
 
+function hasExpectedFileSignature(mimeType: string, buffer: Buffer): boolean {
+  if (mimeType === 'application/pdf') return buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+  if (mimeType === 'image/png') return buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (mimeType === 'image/jpeg') return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (['application/msword', 'application/vnd.ms-excel'].includes(mimeType)) {
+    return buffer.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+  }
+  if ([
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ].includes(mimeType)) {
+    return buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04;
+  }
+  // Plain text and CSV must not contain binary NUL bytes.
+  if (mimeType === 'text/plain' || mimeType === 'text/csv') return !buffer.includes(0);
+  return false;
+}
+
 @Controller('documents')
 @UseGuards(SupabaseAuthGuard)
 export class DocumentsController {
@@ -99,6 +117,9 @@ export class DocumentsController {
     const allowedExtensions = ALLOWED_DOCUMENT_TYPES[file.mimetype];
     if (!allowedExtensions || !allowedExtensions.includes(extension)) {
       throw new UnsupportedMediaTypeException('Allowed file types are PDF, Word, Excel, CSV, TXT, PNG and JPEG');
+    }
+    if (!hasExpectedFileSignature(file.mimetype, file.buffer)) {
+      throw new UnsupportedMediaTypeException('The file content does not match its declared file type');
     }
 
     const client = this.db.forRequest(request);
