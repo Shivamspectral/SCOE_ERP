@@ -34,6 +34,7 @@ import { OperationsPage } from "./pages/OperationsPage";
 import { FacultyClassesPage } from "./pages/FacultyClassesPage";
 import { FacultyMarksPage } from "./pages/FacultyMarksPage";
 import { FacultyMentoringPage } from "./pages/FacultyMentoringPage";
+import { MentoringPage } from "./pages/MentoringPage";
 import { FacultyTasksPage } from "./pages/FacultyTasksPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { FacultyListPage } from "./pages/FacultyListPage";
@@ -111,7 +112,7 @@ export default function App() {
       case "/alumni": return <AlumniPage />;
       case "/classes": case "/enrollments": return <FacultyClassesPage />;
       case "/marks": return <FacultyMarksPage />;
-      case "/mentoring": return <FacultyMentoringPage />;
+      case "/mentoring": return <MentoringPage />;
       case "/tasks": return <FacultyTasksPage />;
       case "/department": case "/departments": return <DepartmentsPage />;
       case "/faculty": return <FacultyListPage />;
