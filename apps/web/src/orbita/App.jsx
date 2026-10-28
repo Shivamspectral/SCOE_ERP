@@ -33,7 +33,6 @@ import { OperationsPage } from "./pages/OperationsPage";
 // Role-specific interactive pages
 import { FacultyClassesPage } from "./pages/FacultyClassesPage";
 import { FacultyMarksPage } from "./pages/FacultyMarksPage";
-import { FacultyMentoringPage } from "./pages/FacultyMentoringPage";
 import { MentoringPage } from "./pages/MentoringPage";
 import { FacultyTasksPage } from "./pages/FacultyTasksPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
