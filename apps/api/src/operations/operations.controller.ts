@@ -131,7 +131,7 @@ export class OperationsController {
   @Delete(':module/:id')
   async remove(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Param('id', new ParseUUIDPipe()) id: string) {
     const config = this.config(module);
-    const { client } = await this.institution(req);
+    const { client } = await this.institution(req, module);
     const { data, error } = await client.from(config.table).delete().eq('id', id).select('id').maybeSingle();
     if (error) throw error;
     if (!data) throw new NotFoundException('Record not found or deletion is not permitted');
@@ -141,7 +141,7 @@ export class OperationsController {
   @Patch(':module/:id')
   async update(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: Record<string, unknown>) {
     const config = this.config(module);
-    const { client } = await this.institution(req);
+    const { client } = await this.institution(req, module);
     const patch: Record<string, unknown> = {};
     for (const field of config.fields as readonly string[]) {
       if (body[field] !== undefined) patch[field] = body[field];
