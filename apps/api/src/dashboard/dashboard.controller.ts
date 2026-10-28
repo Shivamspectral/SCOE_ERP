@@ -43,7 +43,7 @@ export class DashboardController {
 
     const [
       students, departments, classes, subjects, pendingApprovals, pendingTasks,
-      notices, submittedSessions, totalAttendance, presentAttendance, onDutyAttendance,
+      notices, submittedSessions, totalAttendance, presentAttendance, lateAttendance,
       assignmentCount, examSessionsPublished, applicationsUnderReview, openAdmissionCampaigns, roleRows, markRows,
     ] = await Promise.all([
       count('academic_students', { status: 'active' }),
@@ -56,7 +56,7 @@ export class DashboardController {
       count('attendance_sessions', { status: 'submitted' }),
       count('attendance_records'),
       count('attendance_records', { attendance_status: 'present' }),
-      count('attendance_records', { attendance_status: 'on_duty' }),
+      count('attendance_records', { attendance_status: 'late' }),
       count('assignment_records'),
       count('examination_sessions', { status: 'published' }),
       count('admission_applications', { status: 'under_review' }),
@@ -68,7 +68,7 @@ export class DashboardController {
     if (markRows.error) throw markRows.error;
     const faculty = new Set((roleRows.data ?? []).map((row) => row.user_id)).size;
     const { averageScore, lowScoreStudents } = summarizeVerifiedMarks(markRows.data ?? []);
-    const attendanceRate = totalAttendance ? Math.round(((presentAttendance + onDutyAttendance) / totalAttendance) * 1000) / 10 : null;
+    const attendanceRate = totalAttendance ? Math.round(((presentAttendance + lateAttendance) / totalAttendance) * 1000) / 10 : null;
 
     return {
       students, faculty, departments, classes, subjects, assignments: assignmentCount,
