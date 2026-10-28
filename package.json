@@ -20,6 +20,6 @@
     "node": ">=22.12.0"
   },
   "pnpm": {
-    "ignoredBuiltDependencies": ["@scarf/scarf"]
+    "dangerouslyAllowAllBuilds": true
   }
 }
