@@ -32,6 +32,15 @@ const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> =
   leave: { pending: ['approved', 'rejected', 'cancelled'], approved: [], rejected: [], cancelled: [] },
   procurement: { draft: ['submitted', 'cancelled'], submitted: ['approved', 'rejected', 'cancelled'], approved: ['ordered', 'cancelled'], rejected: ['draft', 'cancelled'], ordered: ['received'], received: [], cancelled: [] },
   workOrders: { open: ['assigned', 'in_progress', 'cancelled'], assigned: ['in_progress', 'blocked', 'cancelled'], in_progress: ['blocked', 'resolved', 'cancelled'], blocked: ['assigned', 'in_progress', 'cancelled'], resolved: ['closed', 'in_progress'], closed: [], cancelled: [] },
+  committees: { draft: ['active', 'archived'], active: ['inactive', 'archived'], inactive: ['active', 'archived'], archived: [] },
+  committeeMembers: { active: ['inactive', 'completed'], inactive: ['active', 'completed'], completed: [] },
+  clubsAdmin: { proposed: ['active', 'inactive'], active: ['inactive', 'archived'], inactive: ['active', 'archived'], archived: [] },
+  alumniRecords: { active: ['inactive', 'do_not_contact'], inactive: ['active', 'do_not_contact'], do_not_contact: ['inactive'] },
+  labInventory: { available: ['in_use', 'maintenance', 'retired', 'disposed'], in_use: ['available', 'maintenance', 'retired'], maintenance: ['available', 'in_use', 'retired', 'disposed'], retired: ['disposed'], disposed: [] },
+  sportsFacilities: { available: ['booked', 'maintenance', 'closed'], booked: ['available', 'maintenance', 'closed'], maintenance: ['available', 'closed'], closed: ['available'] },
+  visitors: { expected: ['checked_in', 'denied'], checked_in: ['checked_out'], checked_out: [], denied: [] },
+  events: { draft: ['planned', 'cancelled'], planned: ['published', 'cancelled'], published: ['completed', 'cancelled'], completed: [], cancelled: [] },
+  evidence: { draft: ['in_progress', 'archived'], in_progress: ['submitted_for_review', 'archived'], submitted_for_review: ['approved', 'needs_revision'], needs_revision: ['in_progress', 'archived'], approved: ['archived'], archived: [] },
 };
 
 @Controller('operations')
@@ -128,6 +137,10 @@ export class OperationsController {
       if (currentStatus !== nextStatus && module === 'workOrders') {
         if (nextStatus === 'resolved') patch.resolved_at = new Date().toISOString();
         if (currentStatus === 'resolved' && nextStatus === 'in_progress') patch.resolved_at = null;
+      }
+      if (currentStatus !== nextStatus && module === 'visitors') {
+        if (nextStatus === 'checked_in') patch.checked_in_at = new Date().toISOString();
+        if (nextStatus === 'checked_out') patch.checked_out_at = new Date().toISOString();
       }
     }
 
