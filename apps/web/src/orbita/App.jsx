@@ -49,7 +49,7 @@ const OPERATION_ROUTES = new Set([
   "/accreditation", "/institution-events", "/committees", "/committee-members", "/clubs-admin",
   "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors", "/programmes",
   "/academic-terms", "/curriculum", "/course-outcomes", "/program-outcomes", "/obe-mapping",
-  "/attainment-cycles", "/attainment-results", "/institution-settings",
+  "/attainment-cycles", "/attainment-results", "/institution-settings", "/budgets", "/vendors", "/expense-claims",
   "/clubs", "/sports", "/alumni", "/hostel", "/transport", "/placements", "/events",
 ]);
 
