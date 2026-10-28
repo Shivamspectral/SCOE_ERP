@@ -28,6 +28,7 @@ import {
   ListOrdered,
   KeyRound,
   FileSpreadsheet,
+  ChevronDown,
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
 import { college } from "../data/portalData";
@@ -140,7 +141,7 @@ export function getNavigationForRole(role) {
       {
         title: "Main",
         items: [
-          { label: "Executive Dashboard", href: "/dashboard", icon: LayoutDashboard, tooltip: "Institutional leadership overview" },
+          { label: "Executive Overview", href: "/dashboard", icon: LayoutDashboard, tooltip: "Institutional leadership overview" },
         ],
       },
       {
@@ -349,48 +350,105 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         </div>
 
         {/* Sidebar Nav Links */}
-        <nav className="scrollbar-thin flex-1 space-y-5 overflow-y-auto px-3 py-4">
-          {navigationGroups.map((group) => (
-            <div key={group.title}>
-              {!collapsed && (
-                <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                  {group.title}
-                </p>
-              )}
-              {collapsed && <div className="mx-2 mb-2 h-px bg-sidebar-border" />}
-              <ul className="space-y-0.5">
-                {group.items.map((item) => {
-                  const active = isItemActive(item);
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.label}>
-                      <button
-                        onClick={() => {
-                          navigate(item.href);
-                          if (mobileOpen) onClose();
-                        }}
-                        title={collapsed ? item.label : item.tooltip}
-                        className={`group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors text-left ${
-                          collapsed ? "justify-center" : ""
-                        } ${
-                          active
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm font-semibold"
-                            : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        }`}
-                        aria-current={active ? "page" : undefined}
-                      >
-                        {active && !collapsed && (
-                          <span className="absolute -left-3 h-6 w-1 rounded-r-full bg-sidebar-primary" />
-                        )}
-                        <Icon className="size-[18px] shrink-0" />
-                        {!collapsed && <span className="truncate">{item.label}</span>}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+        <nav className="scrollbar-thin flex-1 space-y-3 overflow-y-auto px-3 py-4">
+          {navigationGroups.map((group) => {
+            const isExecutive = userRole === "Principal" || userRole === "Vice-Principal";
+            const isExecutiveDropdown = isExecutive && group.title !== "Main";
+            const groupActive = group.items.some(isItemActive);
+
+            if (isExecutiveDropdown) {
+              const GroupIcon = group.items[0]?.icon || LayoutDashboard;
+              return (
+                <div key={group.title} className="relative group/nav">
+                  <div
+                    tabIndex={0}
+                    title={collapsed ? group.title : undefined}
+                    className={`flex w-full cursor-default items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-semibold transition-colors outline-none ${
+                      groupActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:bg-sidebar-accent"
+                    } ${collapsed ? "justify-center" : ""}`}
+                  >
+                    <GroupIcon className="size-[18px] shrink-0" />
+                    {!collapsed && <span className="min-w-0 flex-1 truncate">{group.title}</span>}
+                    {!collapsed && <ChevronDown className="size-4 shrink-0 transition-transform group-hover/nav:rotate-180 group-focus-within/nav:rotate-180" />}
+                  </div>
+                  <div className={`z-50 mt-1 rounded-xl border border-sidebar-border bg-sidebar p-1.5 shadow-lg ring-1 ring-black/5 transition-opacity group-hover/nav:block group-focus-within/nav:block ${
+                    collapsed
+                      ? "absolute left-full top-0 ml-2 hidden w-64"
+                      : "hidden w-full"
+                  }`}>
+                    {group.items.map((item) => {
+                      const active = isItemActive(item);
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.label}
+                          onClick={() => {
+                            navigate(item.href);
+                            if (mobileOpen) onClose();
+                          }}
+                          title={item.tooltip}
+                          className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
+                            active
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          }`}
+                          aria-current={active ? "page" : undefined}
+                        >
+                          <Icon className="size-4 shrink-0" />
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          {active && <span className="size-1.5 rounded-full bg-current" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={group.title}>
+                {!collapsed && !isExecutive && (
+                  <p className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {group.title}
+                  </p>
+                )}
+                {collapsed && !isExecutive && <div className="mx-2 mb-2 h-px bg-sidebar-border" />}
+                <ul className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isItemActive(item);
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.label}>
+                        <button
+                          onClick={() => {
+                            navigate(item.href);
+                            if (mobileOpen) onClose();
+                          }}
+                          title={collapsed ? item.label : item.tooltip}
+                          className={`group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors text-left ${
+                            collapsed ? "justify-center" : ""
+                          } ${
+                            active
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm font-semibold"
+                              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          }`}
+                          aria-current={active ? "page" : undefined}
+                        >
+                          {active && !collapsed && (
+                            <span className="absolute -left-3 h-6 w-1 rounded-r-full bg-sidebar-primary" />
+                          )}
+                          <Icon className="size-[18px] shrink-0" />
+                          {!collapsed && <span className="truncate">{item.label}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
 
         {/* Sidebar Footer */}
