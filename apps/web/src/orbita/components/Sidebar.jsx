@@ -302,7 +302,28 @@ export function getNavigationForRole(role) {
 export function Sidebar({ collapsed, mobileOpen, onClose }) {
   const { currentRoute, navigate, userRole } = usePortal();
 
-  const navigationGroups = getNavigationForRole(userRole);
+  const staffOperationsRoles = ["Faculty", "Staff", "HOD", "Principal", "Vice-Principal", "Super Admin", "Coordinator", "Administrator", "HR", "Librarian", "Finance", "Placement Officer", "IQAC Coordinator"];
+  const navigationGroups = [
+    ...getNavigationForRole(userRole),
+    ...(staffOperationsRoles.includes(userRole) ? [{
+      title: "Operations & Governance",
+      items: [
+        { label: "Human Resources", href: "/hr", icon: Users, tooltip: "Staff records and employment" },
+        { label: "Leave Management", href: "/leave", icon: CalendarDays, tooltip: "Staff leave requests and decisions" },
+        { label: "Procurement", href: "/procurement", icon: ClipboardCheck, tooltip: "Purchasing and requisitions" },
+        { label: "Library Catalogue", href: "/catalogue", icon: Library, tooltip: "Catalogue management" },
+        { label: "Facilities & Repairs", href: "/work-orders", icon: LifeBuoy, tooltip: "Maintenance and work orders" },
+        { label: "Asset Register", href: "/assets", icon: Building2, tooltip: "Equipment and asset lifecycle" },
+        { label: "Hostel Rooms", href: "/hostel-rooms", icon: BedDouble, tooltip: "Room inventory and capacity" },
+        { label: "Transport Fleet", href: "/vehicles", icon: Bus, tooltip: "Vehicle and permit records" },
+        { label: "Employer Relations", href: "/employers", icon: Briefcase, tooltip: "Recruiter contacts" },
+        { label: "Placement Drives", href: "/drives", icon: GraduationCap, tooltip: "Recruitment drive planning" },
+        { label: "Research Projects", href: "/research", icon: BookOpen, tooltip: "Research grants and projects" },
+        { label: "Accreditation Evidence", href: "/accreditation", icon: FileSpreadsheet, tooltip: "NAAC, NBA and IQAC evidence" },
+        { label: "Institutional Events", href: "/institution-events", icon: CalendarHeart, tooltip: "Institution-wide event calendar" },
+      ],
+    }] : []),
+  ];
 
   const isItemActive = (item) => {
     if (currentRoute === item.href) return true;
