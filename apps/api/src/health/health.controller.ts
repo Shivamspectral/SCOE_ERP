@@ -15,8 +15,9 @@ export class HealthController {
   }
 
   /**
-   * A real readiness probe: liveness remains cheap, while readiness checks that
-   * the configured Supabase Auth endpoint is reachable. Never expose credentials
+   * A real provider-readiness probe: liveness remains cheap, while readiness checks
+   * that the configured Supabase Auth endpoint is reachable. This does not claim
+   * that every database query or RLS policy has been validated. Never expose credentials
    * or raw provider errors in this public response.
    */
   @Get('ready')
@@ -27,7 +28,7 @@ export class HealthController {
     if (!url || !key) {
       return {
         status: 'degraded',
-        checks: { api: 'ok', database: 'not-configured' },
+        checks: { api: 'ok', supabaseAuth: 'not-configured' },
       };
     }
 
@@ -41,13 +42,13 @@ export class HealthController {
       if (!response.ok) {
         return {
           status: 'degraded',
-          checks: { api: 'ok', database: 'unreachable' },
+          checks: { api: 'ok', supabaseAuth: 'unreachable' },
         };
       }
 
       return {
         status: 'ok',
-        checks: { api: 'ok', database: 'reachable' },
+        checks: { api: 'ok', supabaseAuth: 'reachable' },
       };
     } catch {
       return {
