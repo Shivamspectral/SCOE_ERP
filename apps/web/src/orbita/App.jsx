@@ -47,7 +47,9 @@ const OPERATION_ROUTES = new Set([
   "/hr", "/leave", "/procurement", "/catalogue", "/work-orders", "/assets",
   "/hostel-rooms", "/vehicles", "/employers", "/drives", "/research",
   "/accreditation", "/institution-events", "/committees", "/committee-members", "/clubs-admin",
-  "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors",
+  "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors", "/programmes",
+  "/academic-terms", "/curriculum", "/course-outcomes", "/program-outcomes", "/obe-mapping",
+  "/attainment-cycles", "/attainment-results",
 ]);
 
 export default function App() {
