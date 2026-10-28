@@ -1,16 +1,42 @@
 import React, { useEffect, useState } from "react";
-import { Clock, MapPin, Download, Filter, Calendar, User, BookOpen } from "lucide-react";
+import { Clock, MapPin, Download, Filter, Calendar, User, BookOpen, Plus, Save, X } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Card, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { weeklyTimetable, college } from "../data/portalData";
 import { usePortal } from "../context/PortalContext";
-import { academicApi } from "../lib/api";
+
+const groupTimetableRows = (rows) => {
+  const dayNames = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
+  const grouped = {};
+  (rows || []).forEach((row) => {
+    const day = dayNames[row.day_of_week];
+    if (!day) return;
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push({
+      subject: row.subject,
+      type: /lab|practical/i.test(row.subject) ? "Lab" : "Lecture",
+      time: `${String(row.starts_at).slice(0, 5)} - ${String(row.ends_at).slice(0, 5)}`,
+      room: row.room || "Room not assigned",
+      faculty: row.faculty_name || "",
+      cohort: row.cohort,
+      department_id: row.department_id,
+      faculty_id: row.faculty_id,
+      id: row.id,
+    });
+  });
+  return grouped;
+};
+import { academicApi, facultyApi } from "../lib/api";
 
 export function TimetablePage() {
-  const { toast, backendConfigured, isAuthenticated, session } = usePortal();
+  const { toast, backendConfigured, isAuthenticated, session, departments, activeProfile, userRole } = usePortal();
   const [liveTimetable, setLiveTimetable] = useState(null);
   const [timetableLoading, setTimetableLoading] = useState(false);
+  const [facultyOptions, setFacultyOptions] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [savingEntry, setSavingEntry] = useState(false);
+  const [entryForm, setEntryForm] = useState({ departmentId: "", facultyId: "", subject: "", cohort: "", room: "", dayOfWeek: "1", startsAt: "09:00", endsAt: "10:00" });
 
   useEffect(() => {
     if (!backendConfigured || !isAuthenticated || !session?.access_token) return;
@@ -19,22 +45,7 @@ export function TimetablePage() {
     setLiveTimetable(null);
     academicApi.timetable().then((rows) => {
       if (cancelled || !Array.isArray(rows)) return;
-      const dayNames = { 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday" };
-      const grouped = {};
-      rows.forEach((row) => {
-        const day = dayNames[row.day_of_week];
-        if (!day) return;
-        if (!grouped[day]) grouped[day] = [];
-        grouped[day].push({
-          subject: row.subject,
-          type: /lab|practical/i.test(row.subject) ? "Lab" : "Lecture",
-          time: `${String(row.starts_at).slice(0, 5)} - ${String(row.ends_at).slice(0, 5)}`,
-          room: row.room || "Room not assigned",
-          faculty: row.faculty_name || "",
-          cohort: row.cohort,
-        });
-      });
-      if (!cancelled) setLiveTimetable(grouped);
+      if (!cancelled) setLiveTimetable(groupTimetableRows(rows));
     }).catch((error) => {
       console.warn("[timetable] unable to load live schedule", error);
       if (!cancelled) {
@@ -45,6 +56,37 @@ export function TimetablePage() {
     return () => { cancelled = true; };
   }, [backendConfigured, isAuthenticated, session?.access_token, toast]);
   const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token);
+  const canManageTimetable = ["Principal", "HOD", "Coordinator", "Administrator"].includes(userRole);
+  const matchingDepartment = departments.find((department) => department.name?.toLowerCase() === activeProfile?.dept?.toLowerCase());
+  const selectedDepartmentId = entryForm.departmentId || matchingDepartment?.id || departments[0]?.id || "";
+
+  useEffect(() => {
+    if (!liveSession) { setFacultyOptions([]); return; }
+    let cancelled = false;
+    facultyApi.list().then((rows) => { if (!cancelled) setFacultyOptions(Array.isArray(rows) ? rows : Array.isArray(rows?.data) ? rows.data : []); })
+      .catch((error) => { console.warn("[timetable] faculty directory unavailable", error); if (!cancelled) setFacultyOptions([]); });
+    return () => { cancelled = true; };
+  }, [liveSession, session?.access_token]);
+
+  const createTimetableEntry = async (event) => {
+    event.preventDefault();
+    if (!liveSession) return toast({ title: "Demo preview only", description: "Sample timetable entries are read-only.", variant: "info" });
+    if (!selectedDepartmentId || !entryForm.facultyId || !entryForm.subject.trim() || !entryForm.cohort.trim() || !entryForm.startsAt || !entryForm.endsAt) {
+      return toast({ title: "Missing timetable details", description: "Choose a department and faculty member, and complete subject, cohort and time fields.", variant: "warning" });
+    }
+    if (entryForm.endsAt <= entryForm.startsAt) return toast({ title: "Invalid time range", description: "The end time must be later than the start time.", variant: "warning" });
+    setSavingEntry(true);
+    try {
+      await academicApi.createTimetableEntry({ departmentId: selectedDepartmentId, facultyId: entryForm.facultyId, subject: entryForm.subject.trim(), cohort: entryForm.cohort.trim(), room: entryForm.room.trim() || undefined, dayOfWeek: Number(entryForm.dayOfWeek), startsAt: entryForm.startsAt, endsAt: entryForm.endsAt });
+      const rows = await academicApi.timetable();
+      setLiveTimetable(groupTimetableRows(Array.isArray(rows) ? rows : []));
+      setEntryForm({ departmentId: selectedDepartmentId, facultyId: "", subject: "", cohort: "", room: "", dayOfWeek: "1", startsAt: "09:00", endsAt: "10:00" });
+      setShowCreateForm(false);
+      toast({ title: "Timetable entry created", description: "The new schedule entry is saved to the institutional timetable.", variant: "success" });
+    } catch (error) {
+      toast({ title: "Could not create timetable entry", description: error?.message || "Check department scope, faculty assignment and room/cohort conflicts.", variant: "error" });
+    } finally { setSavingEntry(false); }
+  };
   const schedule = liveSession ? (liveTimetable ?? {}) : weeklyTimetable;
   const [selectedDay, setSelectedDay] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
