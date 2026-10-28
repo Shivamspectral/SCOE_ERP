@@ -340,6 +340,8 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         { label: "Budget & Allocation", href: "/budgets", icon: Wallet, tooltip: "Annual budgets and approvals" },
         { label: "Vendor Registry", href: "/vendors", icon: Briefcase, tooltip: "Supplier master and review status" },
         { label: "Staff Expense Claims", href: "/expense-claims", icon: Wallet, tooltip: "Reimbursements and payment status" },
+        { label: "Admissions Campaigns", href: "/admissions-campaigns", icon: GraduationCap, tooltip: "Application cycles and deadlines" },
+        { label: "Applicant Review", href: "/admission-applications", icon: ClipboardCheck, tooltip: "Staff-only applicant screening and decisions" },
       ],
     }] : []),
   ];
