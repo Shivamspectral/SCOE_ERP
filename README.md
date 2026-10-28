@@ -9,6 +9,10 @@ A college staff ERP for principals, administrators, coordinators, HODs, faculty 
 - **Auth/data:** Supabase Auth + PostgreSQL, institution-scoped tables and Row Level Security (RLS). The API verifies Supabase access tokens and forwards the caller's JWT to normal data queries. A server-only service-role key is optional and used only for administrator-authorized staff invitation emails.
 - **Hosting:** Vercel frontend, Vercel serverless NestJS API, and Supabase Auth/PostgreSQL/Storage. Render remains an alternative API host via `render.yaml`.
 
+## Full ERP scope and delivery plan
+
+The staff-only target module inventory, phased implementation order and production acceptance gate are documented in [`docs/MASTER_ERP_MODULE_ROADMAP.md`](docs/MASTER_ERP_MODULE_ROADMAP.md). The roadmap includes admissions, internal student records (no student/parent portals), curriculum, LMS, examination cell, finance, HR/payroll, library, campus operations, placements, research, OBE/NBA, IQAC/NAAC, statutory reporting, integrations and analytics. It distinguishes planned scope from verified functionality; use the live-data boundaries below when evaluating readiness.
+
 ## Implemented foundation
 
 - Supabase bearer-token verification and identity/role lookup.
