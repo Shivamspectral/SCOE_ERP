@@ -348,6 +348,21 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
     }] : []),
   ];
 
+  const leadershipRoles = ["Principal", "Super Admin", "Vice-Principal"];
+  const visibleNavigationGroups = navigationGroups
+    .map((group) => group.title !== "Operations & Governance" ? group : ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (item.href === "/institution-settings") return leadershipRoles.includes(userRole);
+        if (item.href === "/visitors") return leadershipRoles.includes(userRole) || userRole === "Staff";
+        if (item.href === "/budgets") return leadershipRoles.includes(userRole) || userRole === "HOD";
+        if (item.href === "/vendors") return leadershipRoles.includes(userRole) || userRole === "Staff";
+        if (item.href === "/expense-claims") return ["Principal", "Super Admin", "Vice-Principal", "HOD", "Faculty", "Staff"].includes(userRole);
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
+
   const isItemActive = (item) => {
     if (currentRoute === item.href) return true;
     if (item.aliases && item.aliases.includes(currentRoute)) return true;
