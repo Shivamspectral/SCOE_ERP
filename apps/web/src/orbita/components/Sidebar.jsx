@@ -336,6 +336,7 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         { label: "CO–PO Mapping", href: "/obe-mapping", icon: Network, tooltip: "Outcome correlation matrix" },
         { label: "Attainment Cycles", href: "/attainment-cycles", icon: ClipboardCheck, tooltip: "Outcome attainment review cycles" },
         { label: "Attainment Results", href: "/attainment-results", icon: FileSpreadsheet, tooltip: "Attainment metrics and evidence" },
+        { label: "Institution Configuration", href: "/institution-settings", icon: Settings, tooltip: "Academic year, locale, contact and module settings" },
       ],
     }] : []),
   ];
