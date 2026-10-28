@@ -1,7 +1,9 @@
 -- Circulation rows are immutable except for staff notes and a one-way return transition.
 create or replace function app_private.library_loan_guard()
 returns trigger language plpgsql security definer set search_path = ''
-as $$
+as $
+declare
+  v_book public.library_books%rowtype;
 begin
   if tg_op = 'INSERT' then
     if new.status <> 'issued' or new.returned_at is not null or new.returned_by is not null then
@@ -16,7 +18,8 @@ begin
     if not exists (select 1 from public.library_books b where b.id = new.book_id and b.institution_id = new.institution_id and b.status = 'active') then
       raise exception 'Book is not active in this institution' using errcode = '23514';
     end if;
-    if (select b.available_copies from public.library_books b where b.id = new.book_id and b.institution_id = new.institution_id for update) < 1 then
+    select * into v_book from public.library_books where id = new.book_id and institution_id = new.institution_id for update;
+    if not found or v_book.available_copies < 1 then
       raise exception 'No copies are currently available' using errcode = '23514';
     end if;
     update public.library_books set available_copies = available_copies - 1, updated_at = now()
