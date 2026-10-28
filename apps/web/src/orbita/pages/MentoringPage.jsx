@@ -15,6 +15,7 @@ const DEMO_MEETINGS = [{
   follow_up_on: "2026-11-05", status: "open",
 }];
 const listOf = (value) => Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : Array.isArray(value?.items) ? value.items : [];
+const relationOne = (value) => Array.isArray(value) ? value[0] || {} : value || {};
 const CATEGORIES = ["academic", "attendance", "career", "wellbeing", "discipline", "other"];
 
 export function MentoringPage() {
@@ -76,7 +77,7 @@ export function MentoringPage() {
 
   const selectedAssignment = assignments.find((row) => row.id === selectedAssignmentId) || null;
   const filteredAssignments = useMemo(() => assignments.filter((row) => {
-    const student = row.academic_students || row.student || {};
+    const student = relationOne(row.academic_students || row.student);
     const term = [student.full_name, student.roll_number, student.registration_number, row.academic_year, row.faculty?.name, row.faculty?.email].filter(Boolean).join(" ").toLowerCase();
     return term.includes(search.toLowerCase());
   }), [assignments, search]);
@@ -140,7 +141,7 @@ export function MentoringPage() {
     } catch (e) { toast({ title: "Could not update follow-up", description: e?.message || "Check your assignment permissions.", variant: "error" }); }
   };
 
-  const activeStudent = selectedAssignment?.academic_students || selectedAssignment?.student || {};
+  const activeStudent = relationOne(selectedAssignment?.academic_students || selectedAssignment?.student);
   const activeFaculty = selectedAssignment?.faculty || {};
   const selectedStudentForAssignment = students.find((student) => student.id === assignmentForm.studentId);
   const eligibleFaculty = selectedStudentForAssignment ? faculty.filter((person) => (person.roleAssignmentDepartmentId || person.department_id) === selectedStudentForAssignment.department_id) : faculty;
