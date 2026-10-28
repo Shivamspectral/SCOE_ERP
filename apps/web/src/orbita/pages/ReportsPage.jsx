@@ -49,7 +49,7 @@ export function ReportsPage() {
   if (liveMode) {
     const reportOptions = [
       ["overview","Institution Overview"], ["academic","Academic Performance"],
-      ["attendance","Attendance"], ["finance","Finance & Budgets"],
+      ["attendance","Attendance"], ["examinations","Examination Cell"],
       ["admissions","Admissions"], ["operations","Campus Operations"],
       ["accreditation","Accreditation & OBE"], ["library","Library"],
       ["hr","Human Resources"],
