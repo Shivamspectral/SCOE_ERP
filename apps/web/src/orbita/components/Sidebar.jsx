@@ -321,6 +321,13 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         { label: "Research Projects", href: "/research", icon: BookOpen, tooltip: "Research grants and projects" },
         { label: "Accreditation Evidence", href: "/accreditation", icon: FileSpreadsheet, tooltip: "NAAC, NBA and IQAC evidence" },
         { label: "Institutional Events", href: "/institution-events", icon: CalendarHeart, tooltip: "Institution-wide event calendar" },
+        { label: "Committees", href: "/committees", icon: Users, tooltip: "Statutory and administrative committees" },
+        { label: "Committee Members", href: "/committee-members", icon: Users, tooltip: "Committee rosters and terms" },
+        { label: "Clubs & Societies", href: "/clubs-admin", icon: Trophy, tooltip: "Club charters and budgets" },
+        { label: "Alumni Relations", href: "/alumni-records", icon: Network, tooltip: "Alumni directory and mentorship" },
+        { label: "Laboratory Inventory", href: "/lab-inventory", icon: Building2, tooltip: "Lab equipment and calibration" },
+        { label: "Sports Facilities", href: "/sports-facilities", icon: Trophy, tooltip: "Grounds, courts and facilities" },
+        { label: "Visitor Register", href: "/visitors", icon: KeyRound, tooltip: "Campus visitor check-in and check-out" },
       ],
     }] : []),
   ];
