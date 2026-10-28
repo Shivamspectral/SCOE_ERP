@@ -209,7 +209,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 create trigger hostel_rooms_capture_untracked_occupancy
 before update of occupied_beds on public.hostel_rooms
 for each row execute function app_private.capture_untracked_hostel_occupancy();
