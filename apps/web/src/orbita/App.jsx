@@ -46,7 +46,8 @@ import { college } from "./data/portalData";
 const OPERATION_ROUTES = new Set([
   "/hr", "/leave", "/procurement", "/catalogue", "/work-orders", "/assets",
   "/hostel-rooms", "/vehicles", "/employers", "/drives", "/research",
-  "/accreditation", "/institution-events",
+  "/accreditation", "/institution-events", "/committees", "/committee-members", "/clubs-admin",
+  "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors",
 ]);
 
 export default function App() {
