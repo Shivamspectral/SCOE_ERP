@@ -155,10 +155,14 @@ export class DocumentsController {
   async getFileUrl(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string) {
     const client = this.db.forRequest(request);
     const { data: document, error } = await client.from('documents')
-      .select('id,storage_path,file_name,mime_type,file_size,status')
+      .select('id,institution_id,owner_id,department_id,storage_path,file_name,mime_type,file_size,status')
       .eq('id', id).maybeSingle();
     if (error) throw error;
-    if (!document || !document.storage_path || !document.file_name) {
+    if (!document) throw new NotFoundException('Document record not found');
+    // A signed URL is a bearer credential. Re-check ownership/leadership scope
+    // before minting it, even when RLS allows reading the document metadata.
+    await this.assertFileManager(request, document);
+    if (!document.storage_path || !document.file_name) {
       throw new NotFoundException('No file is attached to this document record');
     }
     const storage = this.storageAdmin();
