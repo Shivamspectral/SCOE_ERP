@@ -1,7 +1,5 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, ServiceUnavailableException, UnsupportedMediaTypeException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 import { basename, extname } from 'node:path';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
@@ -25,15 +23,7 @@ const ALLOWED_DOCUMENT_TYPES: Record<string, string[]> = {
 @Controller('documents')
 @UseGuards(SupabaseAuthGuard)
 export class DocumentsController {
-  constructor(private readonly db: SupabaseRequestClient, private readonly config: ConfigService) {}
-
-  private storageAdmin() {
-    const serviceKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
-    if (!serviceKey) throw new ServiceUnavailableException('Document file storage is not configured on this API deployment');
-    return createClient(this.config.getOrThrow<string>('SUPABASE_URL'), serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    });
-  }
+  constructor(private readonly db: SupabaseRequestClient) {}
 
   private async assertFileManager(request: AuthenticatedRequest, document: any) {
     const client = this.db.forRequest(request);
@@ -122,8 +112,9 @@ export class DocumentsController {
 
     const safeName = originalName.replace(/[^\w.\-() ]/g, '_').slice(0, 180) || ('document' + extension);
     const storagePath = document.institution_id + '/' + document.id + '/' + randomUUID() + extension;
-    const storage = this.storageAdmin();
-    const { error: uploadError } = await storage.storage.from('institution-documents').upload(storagePath, file.buffer, {
+    // Use the caller's JWT for Storage; RLS checks the document owner/manager scope.
+    const storage = client.storage.from('institution-documents');
+    const { error: uploadError } = await storage.upload(storagePath, file.buffer, {
       contentType: file.mimetype,
       upsert: false,
     });
@@ -141,12 +132,12 @@ export class DocumentsController {
       .select('id,title,status,version,file_name,mime_type,file_size,uploaded_by,updated_at')
       .maybeSingle();
     if (updateError || !data) {
-      await storage.storage.from('institution-documents').remove([storagePath]).catch(() => undefined);
+      await storage.remove([storagePath]).catch(() => undefined);
       if (updateError) throw updateError;
       throw new NotFoundException('Document file metadata could not be updated');
     }
     if (document.storage_path) {
-      await storage.storage.from('institution-documents').remove([document.storage_path]).catch(() => undefined);
+      await storage.remove([document.storage_path]).catch(() => undefined);
     }
     return data;
   }
@@ -165,8 +156,8 @@ export class DocumentsController {
     if (!document.storage_path || !document.file_name) {
       throw new NotFoundException('No file is attached to this document record');
     }
-    const storage = this.storageAdmin();
-    const { data, error: signError } = await storage.storage.from('institution-documents')
+    const storage = client.storage.from('institution-documents');
+    const { data, error: signError } = await storage
       .createSignedUrl(document.storage_path, 60, { download: document.file_name });
     if (signError || !data?.signedUrl) {
       throw new ServiceUnavailableException('A secure document download link could not be created');
