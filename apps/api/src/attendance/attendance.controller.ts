@@ -14,7 +14,8 @@ export class AttendanceController {
     const client = this.db.forRequest(request);
     const countStatus = async (status: 'present' | 'absent' | 'late' | 'excused') => {
       const { count, error } = await client.from('attendance_records')
-        .select('id', { count: 'exact', head: true })
+        .select('id,attendance_sessions!inner(status)', { count: 'exact', head: true })
+        .in('attendance_sessions.status', ['submitted','verified'])
         .eq('attendance_status', status);
       if (error) throw error;
       return count ?? 0;
@@ -38,7 +39,7 @@ export class AttendanceController {
     const client = this.db.forRequest(request);
     let query = client.from('attendance_sessions')
       .select('id,institution_id,department_id,class_id,subject_id,faculty_user_id,session_date,session_label,academic_year,semester,lecture_no,status,submitted_at,verified_by,verified_at,review_note,created_at,updated_at,departments(name,code),academic_classes(name,division),academic_subjects(name,code)')
-      .order('session_date', { ascending: false }).limit(100);
+      .order('session_date', { ascending: false }).limit(500);
     if (classId) query = query.eq('class_id', classId);
     if (status && ['draft','submitted','verified','returned'].includes(status)) query = query.eq('status', status);
     if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) query = query.gte('session_date', from);
