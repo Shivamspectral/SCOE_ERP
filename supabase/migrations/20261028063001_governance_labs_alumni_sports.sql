@@ -212,3 +212,23 @@ using (institution_id = (select app_private.current_institution())
   and (select app_private.has_role(array['principal','administrator','coordinator','staff'])))
 with check (institution_id = (select app_private.current_institution())
   and (select app_private.has_role(array['principal','administrator','coordinator','staff'])));
+
+
+-- Include deletions in the audit trail for all operational workspaces.
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'hr_employees','hr_leave_requests','procurement_requests','library_catalogue_items',
+    'campus_work_orders','campus_assets','hostel_rooms','transport_vehicles',
+    'placement_employers','placement_drives','research_projects','accreditation_evidence',
+    'institution_events','institution_committees','institution_committee_members',
+    'institution_clubs','alumni_records','lab_inventory','sports_facilities','visitor_register'
+  ] loop
+    execute format('drop trigger if exists %I_audit on public.%I', t, t);
+    execute format(
+      'create trigger %I_audit after insert or update or delete on public.%I for each row execute function app_private.audit_row_change(%L)',
+      t, t, t
+    );
+  end loop;
+end $$;
