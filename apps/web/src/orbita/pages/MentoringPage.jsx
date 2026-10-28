@@ -21,7 +21,7 @@ const CATEGORIES = ["academic", "attendance", "career", "wellbeing", "discipline
 export function MentoringPage() {
   const { toast, isAuthenticated, session, isDemoPreview, userRole, departments, activeProfile } = usePortal();
   const liveMode = Boolean(isBackendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
-  const canAssign = ["Principal", "HOD", "Coordinator", "Administrator", "Super Admin"].includes(userRole);
+  const canAssign = ["Principal", "Vice-Principal", "HOD", "Coordinator", "Administrator", "Super Admin"].includes(userRole);
   const [assignments, setAssignments] = useState([]);
   const [students, setStudents] = useState([]);
   const [faculty, setFaculty] = useState([]);
