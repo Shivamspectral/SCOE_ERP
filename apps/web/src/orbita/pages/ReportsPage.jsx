@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FileText,
   Download,
@@ -11,6 +11,7 @@ import {
   Building,
 } from "lucide-react";
 import { usePortal } from "../context/PortalContext";
+import { reportsApi } from "../lib/api";
 import { Breadcrumb } from "../components/Breadcrumb";
 
 export function ReportsPage() {
@@ -19,10 +20,73 @@ export function ReportsPage() {
   // Reports API generation/download is not implemented on the server yet. Never
   // present the demo catalog as institutional reports in a live session.
   const displayedReports = liveMode ? [] : reportsList;
+  const [liveReportKind, setLiveReportKind] = useState("overview");
+  const [liveReportData, setLiveReportData] = useState(null);
+  const [liveReportLoading, setLiveReportLoading] = useState(false);
+  const [liveReportError, setLiveReportError] = useState("");
+
+  useEffect(() => {
+    if (!liveMode) return;
+    let cancelled = false;
+    setLiveReportLoading(true);
+    setLiveReportError("");
+    reportsApi.generate(liveReportKind).then((result) => {
+      if (!cancelled) setLiveReportData(result);
+    }).catch((error) => {
+      if (!cancelled) setLiveReportError(error?.message || "Unable to generate this institutional report.");
+    }).finally(() => {
+      if (!cancelled) setLiveReportLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [liveMode, liveReportKind, session?.access_token]);
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
+
+  if (liveMode) {
+    const reportOptions = [
+      ["overview","Institution Overview"], ["academic","Academic Performance"],
+      ["attendance","Attendance"], ["finance","Finance & Budgets"],
+      ["admissions","Admissions"], ["operations","Campus Operations"],
+      ["accreditation","Accreditation & OBE"], ["library","Library"],
+      ["hr","Human Resources"],
+    ];
+    const metrics = liveReportData?.metrics || {};
+    const labelFor = (key) => key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Institutional Reports" }]} />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Live institutional data</p>
+            <h1 className="mt-1 font-display text-2xl font-bold text-foreground sm:text-3xl">Institutional Reports & Analytics</h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Metrics are generated from records your authenticated account is permitted to access. These are operational summaries, not externally certified reports.</p>
+          </div>
+          <label className="grid gap-1.5 text-sm font-medium"><span>Report category</span><select value={liveReportKind} onChange={(e)=>setLiveReportKind(e.target.value)} className="min-w-56 rounded-lg border border-input bg-card px-3 py-2.5">{reportOptions.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        </div>
+        {liveReportLoading && <div className="rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground">Generating report from institutional records…</div>}
+        {liveReportError && <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{liveReportError}</div>}
+        {!liveReportLoading && !liveReportError && liveReportData && (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Object.entries(metrics).map(([key,value])=>(
+                <div key={key} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <p className="text-xs font-medium text-muted-foreground">{labelFor(key)}</p>
+                  <p className="mt-2 font-display text-3xl font-bold tabular-nums text-foreground">{Number(value).toLocaleString("en-IN")}</p>
+                </div>
+              ))}
+            </div>
+            {Object.keys(metrics).length===0 && <div className="rounded-xl border border-border bg-card p-8 text-sm text-muted-foreground">No metrics are available for this report.</div>}
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <span>Generated {new Date(liveReportData.generatedAt).toLocaleString("en-IN")}</span>
+              <span>Tenant-scoped · Permission-filtered · Read-only</span>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   const filteredReports = displayedReports.filter((r) => {
     const matchesCategory =
