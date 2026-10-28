@@ -19,7 +19,7 @@ const MODULES = {
   events: { table: 'institution_events', select: 'id,title,event_type,description,venue,starts_at,ends_at,organizer_department_id,coordinator_id,capacity,status,metadata,created_at,updated_at', fields: ['title','event_type','description','venue','starts_at','ends_at','organizer_department_id','coordinator_id','capacity','status','metadata'] },
   committees: { table: 'institution_committees', select: 'id,committee_code,name,committee_type,purpose,chairperson_id,department_id,starts_on,ends_on,status,meeting_frequency,metadata,created_at,updated_at', fields: ['committee_code','name','committee_type','purpose','chairperson_id','department_id','starts_on','ends_on','status','meeting_frequency','metadata'] },
   committeeMembers: { table: 'institution_committee_members', select: 'id,committee_id,user_id,member_name,designation,member_role,appointed_on,ends_on,status,created_at,updated_at', fields: ['committee_id','user_id','member_name','designation','member_role','appointed_on','ends_on','status'] },
-  clubsAdmin: { table: 'institution_clubs', select: 'id,club_code,name,category,description,faculty_coordinator_id,annual_budget,founded_on,status,metadata,created_at,updated_at', fields: ['club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','name','category','description','faculty_coordinator_id','annual_budget','founded_on','status','metadata'] },
+  clubsAdmin: { table: 'institution_clubs', select: 'id,club_code,name,category,description,faculty_coordinator_id,annual_budget,founded_on,status,metadata,created_at,updated_at', fields: ['club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','budget_code','claim_number','legal_name','vendor_code','name','category','description','faculty_coordinator_id','annual_budget','founded_on','status','metadata'] },
   alumniRecords: { table: 'alumni_records', select: 'id,alumni_code,full_name,graduation_year,programme,department_id,current_employer,current_designation,work_email,contact_phone,linkedin_url,mentorship_available,donation_total,notes,status,created_at,updated_at', fields: ['alumni_code','full_name','graduation_year','programme','department_id','current_employer','current_designation','work_email','contact_phone','linkedin_url','mentorship_available','donation_total','notes','status'] },
   labInventory: { table: 'lab_inventory', select: 'id,asset_tag,name,department_id,laboratory,category,quantity,condition,calibration_due_on,last_service_on,assigned_to,purchase_cost,status,notes,created_at,updated_at', fields: ['asset_tag','name','department_id','laboratory','category','quantity','condition','calibration_due_on','last_service_on','assigned_to','purchase_cost','status','notes'] },
   sportsFacilities: { table: 'sports_facilities', select: 'id,facility_code,name,facility_type,location,capacity,opening_time,closing_time,supervisor_id,status,notes,created_at,updated_at', fields: ['facility_code','name','facility_type','location','capacity','opening_time','closing_time','supervisor_id','status','notes'] },
@@ -33,6 +33,9 @@ const MODULES = {
   attainmentCycles: { table: 'outcome_attainment_cycles', select: 'id,programme_id,term_id,cycle_label,cohort_label,methodology,status,approved_by,approved_at,review_note,created_at,updated_at', fields: ['programme_id','term_id','cycle_label','cohort_label','methodology','status','review_note'] },
   attainmentResults: { table: 'outcome_attainment_results', select: 'id,cycle_id,outcome_type,outcome_id,attained_percent,target_percent,sample_size,evidence,created_at,updated_at', fields: ['cycle_id','outcome_type','outcome_id','attained_percent','target_percent','sample_size','evidence'] },
   institutionSettings: { table: 'institution_settings', select: 'id,academic_year_label,academic_year_starts_on,academic_year_ends_on,default_currency,locale,timezone,contact_email,contact_phone,address,branding,enabled_modules,notification_settings,updated_by,created_by,created_at,updated_at', fields: ['academic_year_label','academic_year_starts_on','academic_year_ends_on','default_currency','locale','timezone','contact_email','contact_phone','enabled_modules','address','branding','notification_settings'] },
+  budgets: { table: 'finance_budgets', select: 'id,fiscal_year,budget_code,title,department_id,allocated_amount,currency,status,approved_by,approved_at,notes,created_by,created_at,updated_at', fields: ['fiscal_year','budget_code','title','department_id','allocated_amount','currency','status','notes'] },
+  vendors: { table: 'vendor_registry', select: 'id,vendor_code,legal_name,gstin,vendor_type,contact_name,contact_email,contact_phone,address,payment_terms,status,reviewed_by,reviewed_at,notes,created_by,created_at,updated_at', fields: ['vendor_code','legal_name','gstin','vendor_type','contact_name','contact_email','contact_phone','payment_terms','status','notes'] },
+  expenseClaims: { table: 'expense_claims', select: 'id,claim_number,employee_id,expense_category,amount,currency,incurred_on,description,receipt_document_id,status,submitted_by,reviewed_by,reviewed_at,paid_at,review_note,created_at,updated_at', fields: ['claim_number','employee_id','expense_category','amount','currency','incurred_on','description','receipt_document_id','status','review_note'] },
 } as const;
 
 type ModuleKey = keyof typeof MODULES;
@@ -56,6 +59,9 @@ const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> =
   courseOutcomes: { draft: ['active', 'archived'], active: ['archived'], archived: [] },
   programOutcomes: { draft: ['active', 'archived'], active: ['archived'], archived: [] },
   attainmentCycles: { draft: ['calculating', 'archived'], calculating: ['submitted_for_review', 'reopened'], submitted_for_review: ['approved', 'reopened'], approved: ['reopened', 'archived'], reopened: ['calculating', 'archived'], archived: [] },
+  budgets: { draft: ['submitted'], submitted: ['approved', 'draft'], approved: ['locked'], locked: ['closed'], closed: [] },
+  vendors: { pending_review: ['approved', 'suspended', 'blacklisted'], approved: ['suspended', 'blacklisted'], suspended: ['approved', 'blacklisted'], blacklisted: [] },
+  expenseClaims: { draft: ['submitted', 'cancelled'], submitted: ['approved', 'rejected', 'cancelled'], approved: ['paid'], rejected: ['draft', 'cancelled'], paid: [], cancelled: [] },
 };
 
 @Controller('operations')
@@ -104,6 +110,7 @@ export class OperationsController {
     values.institution_id = institutionId;
     if (['employees','catalogue','assets','employers','research','evidence'].includes(module)) values.created_by = req.authUser!.id;
     if (module === 'leave') values.created_by = req.authUser!.id;
+    if (module === 'expenseClaims') values.submitted_by = req.authUser!.id;
     if (module === 'procurement') values.requested_by = req.authUser!.id;
     if (module === 'workOrders') values.reported_by = req.authUser!.id;
     const { data, error } = await client.from(config.table).insert(values).select(config.select).single();
@@ -167,6 +174,21 @@ export class OperationsController {
           patch.approved_by = null;
           patch.approved_at = null;
         }
+      }
+      if (currentStatus !== nextStatus && module === 'budgets' && nextStatus === 'approved') {
+        patch.approved_by = req.authUser!.id;
+        patch.approved_at = new Date().toISOString();
+      }
+      if (currentStatus !== nextStatus && module === 'vendors' && ['approved','suspended','blacklisted'].includes(nextStatus)) {
+        patch.reviewed_by = req.authUser!.id;
+        patch.reviewed_at = new Date().toISOString();
+      }
+      if (currentStatus !== nextStatus && module === 'expenseClaims') {
+        if (['approved','rejected'].includes(nextStatus)) {
+          patch.reviewed_by = req.authUser!.id;
+          patch.reviewed_at = new Date().toISOString();
+        }
+        if (nextStatus === 'paid') patch.paid_at = new Date().toISOString();
       }
     }
 
