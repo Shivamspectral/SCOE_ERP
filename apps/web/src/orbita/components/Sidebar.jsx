@@ -342,6 +342,8 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         { label: "Staff Expense Claims", href: "/expense-claims", icon: Wallet, tooltip: "Reimbursements and payment status" },
         { label: "Admissions Campaigns", href: "/admissions-campaigns", icon: GraduationCap, tooltip: "Application cycles and deadlines" },
         { label: "Applicant Review", href: "/admission-applications", icon: ClipboardCheck, tooltip: "Staff-only applicant screening and decisions" },
+        { label: "Examination Cell", href: "/exam-schedule", icon: CalendarDays, tooltip: "Exam sessions and publication lifecycle" },
+        { label: "Subject Exam Timetable", href: "/exam-timetable", icon: CalendarDays, tooltip: "Subject schedules and invigilator assignments" },
       ],
     }] : []),
   ];
