@@ -99,24 +99,28 @@ export class AssignmentsController {
     if (!student || student.institution_id !== assignment.institution_id || student.department_id !== assignment.department_id || student.class_id !== assignment.class_id || student.status !== 'active') {
       throw new BadRequestException('Choose an active student from the assignment class');
     }
-    if (body.marks !== undefined && assignment.max_marks !== null && body.marks > Number(assignment.max_marks)) {
+    const { data: existing, error: existingError } = await client.from('assignment_submissions')
+      .select('marks,feedback,submission_ref,status,submitted_at,evaluated_by')
+      .eq('assignment_id', id).eq('student_id', body.studentId).maybeSingle();
+    if (existingError) throw existingError;
+    const nextMarks = body.marks ?? (existing?.marks == null ? null : Number(existing.marks));
+    const nextStatus = body.status ?? existing?.status ?? 'pending';
+    if (nextMarks !== null && assignment.max_marks !== null && nextMarks > Number(assignment.max_marks)) {
       throw new BadRequestException('Marks cannot exceed the assignment maximum');
     }
-    if (body.status === 'evaluated' && body.marks === undefined) {
-      const { data: existing, error } = await client.from('assignment_submissions').select('marks').eq('assignment_id', id).eq('student_id', body.studentId).maybeSingle();
-      if (error) throw error;
-      if (existing?.marks == null) throw new BadRequestException('Enter marks before marking a submission as evaluated');
+    if (nextStatus === 'evaluated' && nextMarks === null) {
+      throw new BadRequestException('Enter marks before marking a submission as evaluated');
     }
 
     const { data, error } = await client.from('assignment_submissions').upsert({
       assignment_id: id,
       student_id: body.studentId,
-      marks: body.marks ?? undefined,
-      feedback: body.feedback?.trim() || null,
-      submission_ref: body.submissionRef?.trim() || null,
-      status: body.status ?? 'pending',
-      evaluated_by: body.status === 'evaluated' ? request.authUser!.id : null,
-      submitted_at: ['submitted','evaluated','late'].includes(body.status ?? '') ? new Date().toISOString() : null,
+      marks: nextMarks,
+      feedback: body.feedback === undefined ? (existing?.feedback ?? null) : (body.feedback.trim() || null),
+      submission_ref: body.submissionRef === undefined ? (existing?.submission_ref ?? null) : (body.submissionRef.trim() || null),
+      status: nextStatus,
+      evaluated_by: nextStatus === 'evaluated' ? request.authUser!.id : null,
+      submitted_at: ['submitted','evaluated','late'].includes(nextStatus) ? (existing?.submitted_at ?? new Date().toISOString()) : null,
     }, { onConflict: 'assignment_id,student_id' })
       .select('id,assignment_id,student_id,submitted_at,submission_ref,marks,feedback,status,evaluated_by,created_at,updated_at').single();
     if (error) throw error;
