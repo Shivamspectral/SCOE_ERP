@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards, NotFoundException, Delete } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
@@ -73,6 +73,16 @@ export class OperationsController {
     if (error?.code === '23505') throw new BadRequestException('A record with this unique identifier already exists');
     if (error) throw error;
     return data;
+  }
+
+  @Delete(':module/:id')
+  async remove(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Param('id', new ParseUUIDPipe()) id: string) {
+    const config = this.config(module);
+    const { client } = await this.institution(req);
+    const { data, error } = await client.from(config.table).delete().eq('id', id).select('id').maybeSingle();
+    if (error) throw error;
+    if (!data) throw new NotFoundException('Record not found or deletion is not permitted');
+    return { deleted: true, id: data.id };
   }
 
   @Patch(':module/:id')
