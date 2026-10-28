@@ -104,5 +104,6 @@ with check (
 
 revoke all on public.attendance_sessions from anon;
 revoke all on public.attendance_records from anon;
+revoke delete on public.attendance_sessions, public.attendance_records from authenticated;
 grant select, insert, update on public.attendance_sessions to authenticated;
 grant select, insert, update on public.attendance_records to authenticated;
