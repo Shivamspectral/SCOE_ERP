@@ -44,7 +44,7 @@ export class DashboardController {
     const [
       students, departments, classes, subjects, pendingApprovals, pendingTasks,
       notices, submittedSessions, totalAttendance, presentAttendance, onDutyAttendance,
-      assignmentCount, roleRows, markRows,
+      assignmentCount, examSessionsPublished, applicationsUnderReview, openAdmissionCampaigns, roleRows, markRows,
     ] = await Promise.all([
       count('academic_students', { status: 'active' }),
       count('departments', { status: 'active' }),
@@ -58,6 +58,9 @@ export class DashboardController {
       count('attendance_records', { attendance_status: 'present' }),
       count('attendance_records', { attendance_status: 'on_duty' }),
       count('assignment_records'),
+      count('examination_sessions', { status: 'published' }),
+      count('admission_applications', { status: 'under_review' }),
+      count('admission_campaigns', { status: 'open' }),
       client.from('role_assignments').select('user_id').eq('role', 'faculty').eq('status', 'active').limit(5000),
       client.from('marks_records').select('student_id,marks_obtained,max_marks').not('marks_obtained', 'is', null).in('status', ['verified', 'locked']).limit(10000),
     ]);
@@ -71,6 +74,7 @@ export class DashboardController {
       students, faculty, departments, classes, subjects, assignments: assignmentCount,
       mentees: null, pendingApprovals, pendingTasks, notices, attendanceSessions: submittedSessions,
       attendanceRate, averageScore, lowScoreStudents,
+      examSessionsPublished, applicationsUnderReview, openAdmissionCampaigns,
       averageCgpa: null, backlogStudents: null, averageBacklogs: null,
     };
   }
