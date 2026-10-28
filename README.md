@@ -101,4 +101,4 @@ The API must use the same Supabase project as the frontend. Keep service-role ke
 - Configure a real domain, SMTP, environment secrets and recovery procedures.
 - Have the college approve data ownership, retention, support, security and handover terms.
 
-The previous Next.js application remains in the repository as migration/reference code. The active Vercel configuration targets the Vite frontend.
+The repository keeps one active frontend: `apps/web` (Vite + Orbita Max) and one API workspace: `apps/api` (NestJS). The retired Next.js duplicate has been removed to avoid maintaining two competing frontends.
