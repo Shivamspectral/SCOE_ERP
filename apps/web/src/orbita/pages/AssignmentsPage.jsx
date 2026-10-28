@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarClock, ClipboardList, Plus, Save } from "lucide-react";
+import { CalendarClock, ClipboardList, Download, Plus, Save } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Badge } from "../components/Badge";
 import { Card, CardContent } from "../components/Card";
@@ -143,6 +143,27 @@ export function AssignmentsPage() {
     }
   };
 
+  const downloadGradesCsv = () => {
+    if (!selectedAssignment) return;
+    const rows = [
+      ["Roll number", "Student", "Marks", "Maximum marks", "Status", "Feedback"],
+      ...students.map((student) => {
+        const draft = drafts[student.id] || {};
+        return [student.roll_number || "", student.full_name || "", draft.marks ?? "", selectedAssignment.max_marks ?? "", draft.status || "pending", draft.feedback || ""];
+      }),
+    ];
+    const csv = rows.map((row) => row.map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
+    const blob = new Blob([String.fromCharCode(0xfeff), csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${(selectedAssignment.title || "assignment").replace(/[^a-z0-9-_]+/gi, "_")}_grades.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const saveGrade = async (student) => {
     if (!liveMode || !selectedAssignment || selectedAssignment.id.startsWith("demo-")) {
       toast({ title: "Demo preview is read-only", description: "Grades in preview mode are not saved to college records.", variant: "info" });
@@ -212,7 +233,7 @@ export function AssignmentsPage() {
       </div>
 
       {selectedAssignment && <Card><CardContent className="p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 font-semibold text-foreground"><ClipboardList className="size-4" /> Student assessment register</h2><p className="mt-1 text-sm text-muted-foreground">{selectedAssignment.title} · {students.length} active students · {completedCount} evaluated</p></div>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 font-semibold text-foreground"><ClipboardList className="size-4" /> Student assessment register</h2><p className="mt-1 text-sm text-muted-foreground">{selectedAssignment.title} · {students.length} active students · {completedCount} evaluated</p></div><button onClick={downloadGradesCsv} disabled={!students.length} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"><Download className="size-3.5" /> Export CSV</button>
           {liveMode && canManage && <div className="flex flex-wrap gap-2">{selectedAssignment.status === "draft" && <button onClick={() => void changeStatus(selectedAssignment, "published")} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">Publish</button>}{selectedAssignment.status === "published" && <button onClick={() => void changeStatus(selectedAssignment, "closed")} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">Close assignment</button>}</div>}
         </div>
         <div className="mt-4 overflow-x-auto rounded-xl border border-border">
