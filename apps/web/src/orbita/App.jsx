@@ -76,7 +76,7 @@ export default function App() {
     const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
     const liveDataRoutes = new Set([
       "/dashboard", "/timetable", "/attendance", "/assignments", "/marks", "/notices", "/notifications", "/profile", "/settings",
-      "/academics", "/courses", "/subjects", "/examinations", "/admissions-campaigns", "/admission-applications", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results", "/reports",
+      "/academics", "/courses", "/subjects", "/examinations", "/admissions-campaigns", "/admission-applications", "/mentoring", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results", "/reports",
       "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
       ...OPERATION_ROUTES,
     ]);
