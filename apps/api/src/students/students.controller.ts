@@ -89,6 +89,48 @@ export class StudentsController {
   async update(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: UpdateStudentDto) {
     const client = this.db.forRequest(request);
     const patch: Record<string, unknown> = {};
+
+    // Validate reassignment targets before writing. RLS independently enforces
+    // the caller's institution and department permissions on the final update.
+    const { data: current, error: currentError } = await client
+      .from('academic_students')
+      .select('id,institution_id,department_id,class_id')
+      .eq('id', id)
+      .maybeSingle();
+    if (currentError) throw currentError;
+    if (!current) throw new NotFoundException('Student record not found or not accessible');
+
+    const targetDepartmentId = body.departmentId ?? current.department_id;
+    const classWasProvided = body.classId !== undefined;
+    const targetClassId = classWasProvided ? body.classId : current.class_id;
+
+    if (body.departmentId !== undefined || classWasProvided) {
+      const { data: department, error: departmentError } = await client
+        .from('departments')
+        .select('id,institution_id,status')
+        .eq('id', targetDepartmentId)
+        .maybeSingle();
+      if (departmentError) throw departmentError;
+      if (!department || department.institution_id !== current.institution_id || department.status !== 'active') {
+        throw new BadRequestException('Department is not active in this institution');
+      }
+      if (targetClassId) {
+        const { data: academicClass, error: classError } = await client
+          .from('academic_classes')
+          .select('id,institution_id,department_id,status')
+          .eq('id', targetClassId)
+          .maybeSingle();
+        if (classError) throw classError;
+        if (!academicClass || academicClass.institution_id !== current.institution_id ||
+            academicClass.department_id !== targetDepartmentId || academicClass.status !== 'active') {
+          throw new BadRequestException('Class must be active in the selected department');
+        }
+      }
+      if (body.departmentId !== undefined) patch.department_id = targetDepartmentId;
+      if (classWasProvided) patch.class_id = targetClassId;
+      else if (body.departmentId !== undefined && current.department_id !== targetDepartmentId) patch.class_id = null;
+    }
+
     if (body.fullName !== undefined) patch.full_name = body.fullName.trim();
     if (body.rollNumber !== undefined) patch.roll_number = body.rollNumber.trim();
     if (body.registrationNumber !== undefined) patch.registration_number = body.registrationNumber.trim() || null;
