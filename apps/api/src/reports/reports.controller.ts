@@ -28,6 +28,9 @@ export class ReportsController {
     if (parsedFrom && Number.isNaN(parsedFrom.getTime())) throw new BadRequestException('Invalid report start date');
     if (parsedTo && Number.isNaN(parsedTo.getTime())) throw new BadRequestException('Invalid report end date');
     if (parsedFrom && parsedTo && parsedFrom > parsedTo) throw new BadRequestException('Report start date must not be after end date');
+    const parsedToUpperBound = parsedTo && /^\d{4}-\d{2}-\d{2}$/.test(to || '')
+      ? new Date(parsedTo.getTime() + 24 * 60 * 60 * 1000 - 1)
+      : parsedTo;
 
     const count = async (table: string, filters: Record<string, string> = {}) => {
       let query: any = client.from(table).select('id', { count: 'exact', head: true });
@@ -102,7 +105,7 @@ export class ReportsController {
     if (kind === 'attendance') {
       let query: any = client.from('attendance_records').select('attendance_status').limit(10000);
       if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
-      if (parsedTo) query = query.lte('created_at', parsedTo.toISOString());
+      if (parsedTo) query = query.lte('created_at', parsedToUpperBound!.toISOString());
       const { data, error } = await query;
       if (error) throw error;
       const rows = data ?? [];
@@ -129,8 +132,8 @@ export class ReportsController {
         budgetQuery = budgetQuery.gte('created_at', parsedFrom.toISOString());
       }
       if (parsedTo) {
-        invoiceQuery = invoiceQuery.lte('created_at', parsedTo.toISOString());
-        budgetQuery = budgetQuery.lte('created_at', parsedTo.toISOString());
+        invoiceQuery = invoiceQuery.lte('created_at', parsedToUpperBound!.toISOString());
+        budgetQuery = budgetQuery.lte('created_at', parsedToUpperBound!.toISOString());
       }
       const [invoiceResult, budgetResult] = await Promise.all([invoiceQuery, budgetQuery]);
       if (invoiceResult.error) throw invoiceResult.error;
