@@ -21,8 +21,8 @@ const unwrapList = (value) => Array.isArray(value) ? value : Array.isArray(value
 export function ExaminationsPage() {
   const { toast, isAuthenticated, session, isDemoPreview, userRole } = usePortal();
   const liveMode = Boolean(isBackendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
-  const canManage = ["Principal", "HOD", "Coordinator", "Administrator", "Exam Cell"].includes(userRole);
-  const canPublish = ["Principal", "HOD", "Coordinator", "Administrator", "Exam Cell"].includes(userRole);
+  const canManage = ["Principal", "Vice-Principal", "HOD", "Coordinator", "Administrator", "Exam Cell"].includes(userRole);
+  const canPublish = ["Principal", "Vice-Principal", "HOD", "Coordinator", "Administrator", "Exam Cell"].includes(userRole);
   const [sessions, setSessions] = useState([]);
   const [slots, setSlots] = useState([]);
   const [subjects, setSubjects] = useState([]);
