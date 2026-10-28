@@ -47,6 +47,7 @@ export function getNavigationForRole(role) {
         title: "Teaching & Classes",
         items: [
           { label: "My Classes & Attendance", href: "/classes", icon: ClipboardCheck, tooltip: "Course batches & daily roll call" },
+          { label: "Attendance Review Status", href: "/attendance", icon: ClipboardCheck, tooltip: "Read your submitted sessions and review decisions" },
           { label: "Exams & Marks Entry", href: "/marks", icon: GraduationCap, tooltip: "In-sem & end-sem continuous evaluation" },
           { label: "Mentoring & TG", href: "/mentoring", icon: Users, tooltip: "Teacher-guardian mentee counselling" },
           { label: "Tasks & Responsibilities", href: "/tasks", icon: CheckSquare, tooltip: "Syllabus deadlines & accreditation tasks" },
