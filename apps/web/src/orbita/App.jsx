@@ -45,7 +45,7 @@ import { college } from "./data/portalData";
 
 const OPERATION_ROUTES = new Set([
   "/hr", "/leave", "/procurement", "/catalogue", "/work-orders", "/assets",
-  "/hostel-rooms", "/vehicles", "/employers", "/drives", "/research",
+  "/hostel-rooms", "/vehicles", "/hostel-allocations", "/transport-routes", "/transport-stops", "/transport-assignments", "/employers", "/drives", "/research",
   "/accreditation", "/institution-events", "/committees", "/committee-members", "/clubs-admin",
   "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors", "/programmes",
   "/academic-terms", "/curriculum", "/course-outcomes", "/program-outcomes", "/obe-mapping",
