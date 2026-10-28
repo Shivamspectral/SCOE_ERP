@@ -23,6 +23,45 @@ cross join (values
 ) as v(key, name)
 on conflict (institution_id, key) do nothing;
 
+create or replace function app_private.seed_responsibilities(p_institution uuid)
+returns void
+language sql security definer set search_path = ''
+as $
+  insert into public.responsibilities (institution_id, key, name)
+  select p_institution, v.key, v.name
+  from (values
+    ('examination', 'Examination Coordinator'),
+    ('iqac', 'IQAC Coordinator'),
+    ('academic', 'Academic Coordinator'),
+    ('research', 'Research Coordinator'),
+    ('avishkar', 'Avishkar Coordinator'),
+    ('training_placement', 'Training & Placement Coordinator'),
+    ('nss', 'NSS Coordinator'),
+    ('sports', 'Sports Coordinator'),
+    ('cultural', 'Cultural Coordinator'),
+    ('internship', 'Internship Coordinator'),
+    ('industrial_visit', 'Industrial Visit Coordinator'),
+    ('timetable', 'Timetable Coordinator'),
+    ('library', 'Library Coordinator'),
+    ('human_resources', 'Human Resources'),
+    ('finance', 'Finance & Accounts'),
+    ('procurement', 'Procurement Officer'),
+    ('librarian', 'Library Management'),
+    ('placement_officer', 'Training & Placement'),
+    ('iqac_coordinator', 'IQAC Coordinator'),
+    ('exam_cell', 'Examination Cell'),
+    ('admission_officer', 'Admissions Office'),
+    ('facilities', 'Facilities & Maintenance'),
+    ('hostel', 'Hostel Administration'),
+    ('transport', 'Transport Administration'),
+    ('campus_security', 'Campus Security'),
+    ('alumni', 'Alumni Relations'),
+    ('laboratory', 'Laboratory Administration'),
+    ('quality_assurance', 'Quality Assurance')
+  ) as v(key, name)
+  on conflict (institution_id, key) do nothing
+$;
+
 create or replace function app_private.has_role(p_roles text[])
 returns boolean
 language sql stable security definer set search_path = ''
