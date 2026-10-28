@@ -124,7 +124,7 @@ export function DashboardPage() {
     safeGet("/api/dashboard/summary", undefined, null).then((data) => {
       if (cancelled) return;
       if (data) setSummary({ ...emptySummary, ...data });
-      else { setSummary({ ...emptySummary, students: null, faculty: null, departments: null, classes: null, subjects: null, assignments: null, mentees: null, pendingApprovals: null, pendingTasks: null, notices: null, attendanceSessions: null }); setSummaryError(true); }
+      else { setSummary({ ...emptySummary, students: null, faculty: null, departments: null, classes: null, subjects: null, assignments: null, examSessionsPublished: null, applicationsUnderReview: null, openAdmissionCampaigns: null, mentees: null, pendingApprovals: null, pendingTasks: null, notices: null, attendanceSessions: null }); setSummaryError(true); }
     }).finally(() => { if (!cancelled) setSummaryLoading(false); });
     return () => { cancelled = true; };
   }, [realSession, userRole, session?.access_token]);
