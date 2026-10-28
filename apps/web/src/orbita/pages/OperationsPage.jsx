@@ -42,7 +42,7 @@ const MODULES = {
   "/exam-timetable": { key:"examinationTimetable", title:"Subject Exam Timetable", description:"Schedule subject exams, assign venues and invigilators, and prevent room or invigilator time conflicts.", icon:CalendarDays, fields:[["session_id","Examination session ID","text",true],["subject_id","Subject ID","text",true],["exam_date","Exam date","date",true],["starts_at","Starts at","datetime-local",true],["ends_at","Ends at","datetime-local",true],["venue","Venue / room","text",true],["invigilator_id","Invigilator user ID","text"],["max_marks","Maximum marks","number",true],["passing_marks","Passing marks","number",true],["instructions","Instructions","textarea"],["status","Status","select",false,["draft","scheduled","published","completed","cancelled"]]] },
 };
 
-const ROUTE_ALIASES = { "/clubs": "/clubs-admin", "/sports": "/sports-facilities", "/alumni": "/alumni-records", "/hostel": "/hostel-rooms", "/transport": "/vehicles", "/placements": "/drives", "/events": "/institution-events" };
+const ROUTE_ALIASES = { "/examinations": "/exam-schedule", "/clubs": "/clubs-admin", "/sports": "/sports-facilities", "/alumni": "/alumni-records", "/hostel": "/hostel-rooms", "/transport": "/vehicles", "/placements": "/drives", "/events": "/institution-events" };
 
 const humanize = (key) => key.replace(/_/g," ").replace(/\b\w/g,(c)=>c.toUpperCase());
 const displayValue = (value, key) => key === "enabled_modules" && Array.isArray(value) && value.length === 0 ? "All modules (default)" : Array.isArray(value) ? value.join(", ") : value && typeof value === "object" ? JSON.stringify(value) : value == null || value === "" ? "—" : String(value);
