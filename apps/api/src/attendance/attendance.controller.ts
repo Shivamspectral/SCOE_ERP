@@ -55,6 +55,20 @@ export class AttendanceController {
   @Patch('records/:id')
   async updateRecord(@Req() request: AuthenticatedRequest, @Param('id', new ParseUUIDPipe()) id: string, @Body() body: UpdateAttendanceRecordDto) {
     const client = this.db.forRequest(request);
+    // Attendance becomes immutable once submitted for review. Checking only
+    // recorded_by would otherwise let a session owner rewrite verified records.
+    const { data: existing, error: existingError } = await client.from('attendance_records')
+      .select('id,recorded_by,attendance_sessions(status,faculty_user_id)')
+      .eq('id', id).maybeSingle();
+    if (existingError) throw existingError;
+    if (!existing) throw new NotFoundException('Attendance record not found or correction is not permitted');
+    const parent = Array.isArray(existing.attendance_sessions) ? existing.attendance_sessions[0] : existing.attendance_sessions;
+    if (existing.recorded_by !== request.authUser!.id || parent?.faculty_user_id !== request.authUser!.id) {
+      throw new NotFoundException('Attendance record not found or correction is not permitted');
+    }
+    if (!parent || !['draft', 'returned'].includes(parent.status)) {
+      throw new BadRequestException('Attendance can only be corrected while its session is a draft or returned');
+    }
     const patch: Record<string, unknown> = {};
     if (body.status !== undefined) patch.attendance_status = body.status;
     if (body.note !== undefined) patch.note = body.note.trim() || null;
