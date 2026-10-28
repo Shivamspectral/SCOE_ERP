@@ -151,6 +151,15 @@ export const usersApi = {
   remove: (id) => api.del(`/api/users/${id}`),
 };
 
+export const financeApi = {
+  feeStructures: (query) => api.get("/api/finance/fee-structures", query),
+  createFeeStructure: (payload) => api.post("/api/finance/fee-structures", payload),
+  invoices: (query) => api.get("/api/finance/invoices", query),
+  createInvoice: (payload) => api.post("/api/finance/invoices", payload),
+  payments: (id) => api.get(`/api/finance/invoices/${id}/payments`),
+  recordPayment: (id, payload) => api.post(`/api/finance/invoices/${id}/payments`, payload),
+};
+
 export const libraryApi = {
   books: (query) => api.get("/api/library/books", query),
   createBook: (payload) => api.post("/api/library/books", payload),
