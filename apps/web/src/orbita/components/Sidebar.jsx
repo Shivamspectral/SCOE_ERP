@@ -48,6 +48,7 @@ export function getNavigationForRole(role) {
         items: [
           { label: "My Classes & Attendance", href: "/classes", icon: ClipboardCheck, tooltip: "Course batches & daily roll call" },
           { label: "Attendance Review Status", href: "/attendance", icon: ClipboardCheck, tooltip: "Read your submitted sessions and review decisions" },
+          { label: "Assignments & Evaluation", href: "/assignments", icon: FileText, tooltip: "Class assignments, grading and feedback" },
           { label: "Exams & Marks Entry", href: "/marks", icon: GraduationCap, tooltip: "In-sem & end-sem continuous evaluation" },
           { label: "Mentoring & TG", href: "/mentoring", icon: Users, tooltip: "Teacher-guardian mentee counselling" },
           { label: "Tasks & Responsibilities", href: "/tasks", icon: CheckSquare, tooltip: "Syllabus deadlines & accreditation tasks" },
@@ -109,6 +110,7 @@ export function getNavigationForRole(role) {
           { label: "Faculty & Workload", href: "/faculty", icon: Users, tooltip: "Teaching staff workload & cabins" },
           { label: "Student Directory", href: "/students", icon: Users, tooltip: "Department student strength" },
           { label: "Department Attendance", href: "/attendance", icon: ClipboardCheck, tooltip: "Attendance & defaulters list" },
+          { label: "Assignments & Evaluation", href: "/assignments", icon: FileText, tooltip: "Department assignments and assessment progress" },
         ],
       },
       {
@@ -153,6 +155,7 @@ export function getNavigationForRole(role) {
           { label: "Faculty Directory", href: "/faculty", icon: Users, tooltip: "Faculty strength & designations" },
           { label: "Student Management", href: "/students", icon: Users, tooltip: "Campus-wide student registry" },
           { label: "Institutional Attendance", href: "/attendance", icon: ClipboardCheck, tooltip: "Campus-wide attendance & defaulters" },
+          { label: "Academic Assessments", href: "/assignments", icon: FileText, tooltip: "Institution-wide assignment and evaluation oversight" },
         ],
       },
       {
