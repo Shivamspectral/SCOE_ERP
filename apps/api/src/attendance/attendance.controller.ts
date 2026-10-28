@@ -34,13 +34,15 @@ export class AttendanceController {
   }
 
   @Get('sessions')
-  async listSessions(@Req() request: AuthenticatedRequest, @Query('classId') classId?: string, @Query('status') status?: string) {
+  async listSessions(@Req() request: AuthenticatedRequest, @Query('classId') classId?: string, @Query('status') status?: string, @Query('from') from?: string, @Query('to') to?: string) {
     const client = this.db.forRequest(request);
     let query = client.from('attendance_sessions')
       .select('id,institution_id,department_id,class_id,subject_id,faculty_user_id,session_date,session_label,academic_year,semester,lecture_no,status,submitted_at,verified_by,verified_at,review_note,created_at,updated_at,departments(name,code),academic_classes(name,division),academic_subjects(name,code)')
       .order('session_date', { ascending: false }).limit(100);
     if (classId) query = query.eq('class_id', classId);
     if (status && ['draft','submitted','verified','returned'].includes(status)) query = query.eq('status', status);
+    if (from && /^\\d{4}-\\d{2}-\\d{2}$/.test(from)) query = query.gte('session_date', from);
+    if (to && /^\\d{4}-\\d{2}-\\d{2}$/.test(to)) query = query.lte('session_date', to);
     const { data, error } = await query;
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
