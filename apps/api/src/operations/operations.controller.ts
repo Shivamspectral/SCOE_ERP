@@ -32,6 +32,7 @@ const MODULES = {
   outcomeMappings: { table: 'course_program_outcome_mappings', select: 'id,course_outcome_id,program_outcome_id,correlation_level,rationale,created_at,updated_at', fields: ['course_outcome_id','program_outcome_id','correlation_level','rationale'] },
   attainmentCycles: { table: 'outcome_attainment_cycles', select: 'id,programme_id,term_id,cycle_label,cohort_label,methodology,status,approved_by,approved_at,review_note,created_at,updated_at', fields: ['programme_id','term_id','cycle_label','cohort_label','methodology','status','review_note'] },
   attainmentResults: { table: 'outcome_attainment_results', select: 'id,cycle_id,outcome_type,outcome_id,attained_percent,target_percent,sample_size,evidence,created_at,updated_at', fields: ['cycle_id','outcome_type','outcome_id','attained_percent','target_percent','sample_size','evidence'] },
+  institutionSettings: { table: 'institution_settings', select: 'id,academic_year_label,academic_year_starts_on,academic_year_ends_on,default_currency,locale,timezone,contact_email,contact_phone,address,branding,enabled_modules,notification_settings,updated_by,created_by,created_at,updated_at', fields: ['academic_year_label','academic_year_starts_on','academic_year_ends_on','default_currency','locale','timezone','contact_email','contact_phone','enabled_modules','address','branding','notification_settings'] },
 } as const;
 
 type ModuleKey = keyof typeof MODULES;
@@ -130,6 +131,7 @@ export class OperationsController {
       if (body[field] !== undefined) patch[field] = body[field];
     }
     if (!Object.keys(patch).length) throw new BadRequestException('No supported fields were provided');
+    if (module === 'institutionSettings') patch.updated_by = req.authUser!.id;
 
     if (typeof patch.status === 'string' && STATUS_TRANSITIONS[module as ModuleKey]) {
       const { data: current, error: readError } = await client.from(config.table).select('status').eq('id', id).maybeSingle();
