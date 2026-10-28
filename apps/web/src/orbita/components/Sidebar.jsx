@@ -369,6 +369,17 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
       }),
     }))
     .filter((group) => group.items.length > 0);
+  const seenNavigationHrefs = new Set();
+  const uniqueNavigationGroups = visibleNavigationGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (seenNavigationHrefs.has(item.href)) return false;
+        seenNavigationHrefs.add(item.href);
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const isItemActive = (item) => {
     if (currentRoute === item.href) return true;
