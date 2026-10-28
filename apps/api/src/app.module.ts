@@ -21,6 +21,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { FacultyModule } from './faculty/faculty.module';
 import { LibraryModule } from './library/library.module';
 import { FinanceModule } from './finance/finance.module';
+import { OperationsModule } from './operations/operations.module';
 
 @Module({
   imports: [
@@ -30,7 +31,6 @@ import { FinanceModule } from './finance/finance.module';
         NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
         PORT: Joi.number().port().default(4000),
         WEB_ORIGIN: Joi.string().default('http://localhost:5173'),
-        // Supabase is optional for health/docs startup; protected routes fail closed.
         SUPABASE_URL: Joi.string().uri().optional(),
         SUPABASE_PUBLISHABLE_KEY: Joi.string().min(1).optional(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().allow('').optional(),
@@ -56,6 +56,7 @@ import { FinanceModule } from './finance/finance.module';
     FacultyModule,
     LibraryModule,
     FinanceModule,
+    OperationsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
