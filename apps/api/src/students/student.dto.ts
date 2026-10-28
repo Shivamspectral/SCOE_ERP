@@ -11,6 +11,8 @@ export class CreateStudentDto {
 }
 
 export class UpdateStudentDto {
+  @IsOptional() @IsUUID() departmentId?: string;
+  @IsOptional() @IsUUID() classId?: string | null;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) fullName?: string;
   @IsOptional() @IsString() @MaxLength(40) rollNumber?: string;
   @IsOptional() @IsString() @MaxLength(80) registrationNumber?: string;
