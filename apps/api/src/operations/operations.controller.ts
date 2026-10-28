@@ -121,7 +121,7 @@ export class OperationsController {
     const { client } = await this.institution(req, module);
     const limit = Math.min(100, Math.max(1, Number.parseInt(limitRaw ?? '50', 10) || 50));
     const offset = Math.max(0, Number.parseInt(offsetRaw ?? '0', 10) || 0);
-    let query = client.from(config.table).select(config.select, { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
+    let query: any = (client as any).from(config.table).select(config.select, { count: 'exact' }).order('created_at', { ascending: false }).range(offset, offset + limit - 1);
     if (status && config.fields.includes('status' as never)) query = query.eq('status', status);
     if (search?.trim()) {
       const term = search.trim().replace(/[%_(),]/g, '').slice(0, 80);
