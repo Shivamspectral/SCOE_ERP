@@ -164,6 +164,7 @@ export const operationsApi = {
   list: (module, query) => api.get(`/api/operations/${encodeURIComponent(module)}`, query),
   create: (module, payload) => api.post(`/api/operations/${encodeURIComponent(module)}`, payload),
   update: (module, id, payload) => api.patch(`/api/operations/${encodeURIComponent(module)}/${encodeURIComponent(id)}`, payload),
+  remove: (module, id) => api.del(`/api/operations/${encodeURIComponent(module)}/${encodeURIComponent(id)}`),
 };
 
 export const libraryApi = {
