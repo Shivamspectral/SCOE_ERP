@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, ClipboardCheck, RotateCcw, ShieldCheck } from "lucide-react";
+import { CalendarDays, CheckCircle2, ClipboardCheck, Eye, RotateCcw, ShieldCheck } from "lucide-react";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { Card, CardContent } from "../components/Card";
 import { Badge } from "../components/Badge";
@@ -18,6 +18,10 @@ export function AttendancePage() {
   const liveMode = Boolean(backendConfigured && isAuthenticated && session?.access_token);
   const [reviewSessions, setReviewSessions] = useState(liveMode ? [] : previewSessions);
   const [summary, setSummary] = useState(null);
+  const [expandedSessionId, setExpandedSessionId] = useState(null);
+  const [sessionRecords, setSessionRecords] = useState([]);
+  const [recordsLoading, setRecordsLoading] = useState(false);
+  const [recordsError, setRecordsError] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [returningSessionId, setReturningSessionId] = useState(null);
   const [reviewReason, setReviewReason] = useState("");
@@ -43,6 +47,35 @@ export function AttendancePage() {
     }).finally(() => { if (!cancelled) setReviewLoading(false); });
     return () => { cancelled = true; };
   }, [liveMode, session?.access_token]);
+
+  const toggleSessionRecords = async (record) => {
+    if (expandedSessionId === record.id) {
+      setExpandedSessionId(null);
+      setSessionRecords([]);
+      setRecordsError("");
+      return;
+    }
+    setExpandedSessionId(record.id);
+    setSessionRecords([]);
+    setRecordsError("");
+    if (!liveMode) {
+      setSessionRecords([
+        { id: "preview-record-1", academic_students: { roll_number: "01", full_name: "Sample Student One" }, attendance_status: "present" },
+        { id: "preview-record-2", academic_students: { roll_number: "02", full_name: "Sample Student Two" }, attendance_status: "absent" },
+        { id: "preview-record-3", academic_students: { roll_number: "03", full_name: "Sample Student Three" }, attendance_status: "late" },
+      ]);
+      return;
+    }
+    setRecordsLoading(true);
+    try {
+      const result = await attendanceApi.records(record.id);
+      setSessionRecords(Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : []);
+    } catch (error) {
+      setRecordsError(error?.message || "Student attendance records could not be loaded.");
+    } finally {
+      setRecordsLoading(false);
+    }
+  };
 
   const handleAttendanceReview = async (record, decision) => {
     if (decision === "returned" && !reviewReason.trim()) {
@@ -97,7 +130,7 @@ export function AttendancePage() {
       <div className="space-y-3">
         {reviewSessions.map((record) => (
           <Card key={record.id}>
-            <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+            <CardContent className="flex flex-col gap-4 p-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><ClipboardCheck className="size-5" /></div>
                 <div className="min-w-0">
@@ -122,6 +155,23 @@ export function AttendancePage() {
                 </div>
               )}
               {!canReviewAttendance && record.status === "submitted" && <p className="text-xs text-muted-foreground">Awaiting review by department leadership.</p>}
+              <div>
+                <button onClick={() => void toggleSessionRecords(record)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">
+                  <Eye className="size-3.5" /> {expandedSessionId === record.id ? "Hide student records" : "View student records"}
+                </button>
+              </div>
+              {expandedSessionId === record.id && (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-3">
+                    <h3 className="text-sm font-semibold text-foreground">Student attendance register</h3>
+                    <span className="text-xs text-muted-foreground">{sessionRecords.length} records</span>
+                  </div>
+                  {recordsLoading ? <p className="p-4 text-sm text-muted-foreground">Loading student records…</p>
+                    : recordsError ? <p className="p-4 text-sm text-destructive">{recordsError}</p>
+                    : sessionRecords.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No attendance records are available for this session.</p>
+                    : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-4 py-2.5 font-medium">Roll no.</th><th className="px-4 py-2.5 font-medium">Student</th><th className="px-4 py-2.5 font-medium">Status</th></tr></thead><tbody className="divide-y divide-border">{sessionRecords.map((item) => <tr key={item.id}><td className="px-4 py-2.5 text-muted-foreground">{item.academic_students?.roll_number || "—"}</td><td className="px-4 py-2.5 font-medium text-foreground">{item.academic_students?.full_name || "Student record"}</td><td className="px-4 py-2.5"><Badge variant={item.attendance_status === "present" ? "success" : item.attendance_status === "absent" ? "destructive" : "outline"}>{item.attendance_status}</Badge></td></tr>)}</tbody></table></div>}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
