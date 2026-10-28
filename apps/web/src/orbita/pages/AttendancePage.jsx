@@ -33,7 +33,15 @@ export function AttendancePage() {
   const attendanceAudience = userRole === "Faculty" ? "Your submitted and verified sessions" : userRole === "HOD" ? "Department-wide attendance and review queue" : "Institution-wide attendance oversight";
 
   useEffect(() => {
-    if (!liveMode) return;
+    if (!liveMode) {
+      const filtered = previewSessions.filter((item) =>
+        (!sessionStatus || item.status === sessionStatus)
+        && (!sessionFrom || item.session_date >= sessionFrom)
+        && (!sessionTo || item.session_date <= sessionTo)
+      );
+      setReviewSessions(filtered);
+      return;
+    }
     let cancelled = false;
     setReviewSessions([]);
     setReviewLoading(true);
