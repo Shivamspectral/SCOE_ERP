@@ -21,7 +21,7 @@ export function AttendancePage() {
   const [returningSessionId, setReturningSessionId] = useState(null);
   const [reviewReason, setReviewReason] = useState("");
   // Keep the UI aligned with roles currently supported by the database and API.
-  const canReviewAttendance = ["Principal", "Super Admin", "HOD"].includes(userRole);
+  const canReviewAttendance = ["Principal", "Super Admin", "HOD", "Coordinator"].includes(userRole);
 
   useEffect(() => {
     if (!liveMode) return;
