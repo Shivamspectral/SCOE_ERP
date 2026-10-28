@@ -17,6 +17,7 @@ import {
   Bus,
   Briefcase,
   Network,
+  MapPin,
   Bell,
   UserRound,
   Settings,
