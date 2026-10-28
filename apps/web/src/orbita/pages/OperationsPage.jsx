@@ -90,6 +90,9 @@ export function OperationsPage({ route }) {
   const columns = useMemo(() => {
     if (!records.length) return config.fields.filter((f)=>["text","email","date","select","number"].includes(f[2])).slice(0,5).map((f)=>f[0]);
     const preferred = config.fields.map((f)=>f[0]).filter((k)=>records.some((r)=>r[k] !== undefined));
+    if (config.key === "institutionSettings" && records.some((r)=>r.enabled_modules !== undefined)) {
+      return ["academic_year_label","default_currency","locale","timezone","enabled_modules"].filter((k)=>k === "enabled_modules" || preferred.includes(k));
+    }
     return preferred.slice(0,6);
   },[records,config.fields]);
 
