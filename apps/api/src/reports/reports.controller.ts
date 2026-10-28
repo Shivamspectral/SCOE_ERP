@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
@@ -12,8 +12,7 @@ export class ReportsController {
   constructor(private readonly db: SupabaseRequestClient) {}
 
   @Get(':kind')
-  async generate(@Req() req: AuthenticatedRequest, @Query('from') from?: string, @Query('to') to?: string, @Query('departmentId') departmentId?: string) {
-    const kind = (req as any).params?.kind as string;
+  async generate(@Req() req: AuthenticatedRequest, @Param('kind') kind: string, @Query('from') from?: string, @Query('to') to?: string, @Query('departmentId') departmentId?: string) {
     return this.buildReport(req, kind, from, to, departmentId);
   }
 
@@ -77,7 +76,7 @@ export class ReportsController {
       ],
       library: [
         ['catalogueItems','library_catalogue_items',{status:'active'}], ['activeLoans','library_loans',{status:'issued'}],
-        ['overdueLoans','library_loans',{status:'overdue'}],
+        ['issuedLoans','library_loans',{status:'issued'}],
       ],
       hr: [
         ['activeEmployees','hr_employees',{employment_status:'active'}], ['employeesOnLeave','hr_employees',{employment_status:'on_leave'}],
