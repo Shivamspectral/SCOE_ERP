@@ -89,7 +89,7 @@ end $$;
 create or replace function app_private.guard_hostel_transport_tenant()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
-declare parent_institution uuid;
+declare parent_institution uuid; parent_route uuid;
 begin
   if tg_table_name = 'hostel_allocations' then
     select institution_id into parent_institution from public.academic_students where id = new.student_id;
@@ -110,8 +110,9 @@ begin
     select institution_id into parent_institution from public.transport_routes where id = new.route_id;
     if parent_institution is distinct from new.institution_id then raise exception 'Route must belong to this institution' using errcode = '23514'; end if;
     if new.stop_id is not null then
-      select institution_id into parent_institution from public.transport_route_stops where id = new.stop_id;
+      select institution_id, route_id into parent_institution, parent_route from public.transport_route_stops where id = new.stop_id;
       if parent_institution is distinct from new.institution_id then raise exception 'Route stop must belong to this institution' using errcode = '23514'; end if;
+      if parent_route is distinct from new.route_id then raise exception 'Selected stop must belong to the selected route' using errcode = '23514'; end if;
     end if;
   end if;
   return new;
@@ -122,3 +123,69 @@ create trigger transport_routes_tenant_guard before insert or update on public.t
 create trigger transport_route_stops_tenant_guard before insert or update on public.transport_route_stops for each row execute function app_private.guard_hostel_transport_tenant();
 create trigger student_transport_assignments_tenant_guard before insert or update on public.student_transport_assignments for each row execute function app_private.guard_hostel_transport_tenant();
 revoke all on function app_private.guard_hostel_transport_tenant() from public, anon, authenticated;
+
+
+-- Keep bed occupancy consistent with active allocations and reject over-capacity assignments.
+create or replace function app_private.guard_hostel_capacity()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare room_capacity integer; active_allocations integer;
+begin
+  if new.status = 'active' then
+    select capacity into room_capacity from public.hostel_rooms where id = new.room_id and institution_id = new.institution_id;
+    select count(*) into active_allocations from public.hostel_allocations
+      where room_id = new.room_id and institution_id = new.institution_id
+        and status = 'active' and id is distinct from new.id;
+    if room_capacity is null or active_allocations >= room_capacity then
+      raise exception 'Hostel room has no available beds' using errcode = '23514';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+create trigger hostel_allocations_capacity_guard before insert or update on public.hostel_allocations
+for each row execute function app_private.guard_hostel_capacity();
+
+create or replace function app_private.sync_hostel_occupancy()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare room_to_sync uuid; room_institution uuid; occupied integer; capacity_value integer; room_status text;
+begin
+  if tg_op = 'DELETE' then
+    room_to_sync := old.room_id;
+    room_institution := old.institution_id;
+  else
+    room_to_sync := new.room_id;
+    room_institution := new.institution_id;
+  end if;
+  if tg_op = 'UPDATE' and old.room_id is distinct from new.room_id then
+    update public.hostel_rooms
+      set occupied_beds = (select count(*) from public.hostel_allocations where room_id = old.room_id and institution_id = old.institution_id and status = 'active')
+      where id = old.room_id and institution_id = old.institution_id;
+  end if;
+  select capacity, status into capacity_value, room_status from public.hostel_rooms
+    where id = room_to_sync and institution_id = room_institution;
+  select count(*) into occupied from public.hostel_allocations
+    where room_id = room_to_sync and institution_id = room_institution and status = 'active';
+  update public.hostel_rooms
+    set occupied_beds = occupied,
+        status = case
+          when status = 'maintenance' or status = 'inactive' then status
+          when occupied >= capacity_value then 'full'
+          when status = 'full' and occupied < capacity_value then 'available'
+          else status
+        end
+    where id = room_to_sync and institution_id = room_institution;
+  if tg_op = 'DELETE' then return old; else return new; end if;
+end;
+$$;
+create trigger hostel_allocations_sync_occupancy
+after insert or update or delete on public.hostel_allocations
+for each row execute function app_private.sync_hostel_occupancy();
+
+create trigger transport_routes_driver_scope_guard
+before insert or update on public.transport_routes
+for each row execute function app_private.guard_profile_scope('driver_id');
+
+revoke all on function app_private.guard_hostel_capacity() from public, anon, authenticated;
+revoke all on function app_private.sync_hostel_occupancy() from public, anon, authenticated;
