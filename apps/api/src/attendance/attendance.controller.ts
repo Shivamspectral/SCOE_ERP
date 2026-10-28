@@ -41,8 +41,8 @@ export class AttendanceController {
       .order('session_date', { ascending: false }).limit(100);
     if (classId) query = query.eq('class_id', classId);
     if (status && ['draft','submitted','verified','returned'].includes(status)) query = query.eq('status', status);
-    if (from && /^\\d{4}-\\d{2}-\\d{2}$/.test(from)) query = query.gte('session_date', from);
-    if (to && /^\\d{4}-\\d{2}-\\d{2}$/.test(to)) query = query.lte('session_date', to);
+    if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) query = query.gte('session_date', from);
+    if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) query = query.lte('session_date', to);
     const { data, error } = await query;
     if (error) throw error;
     return { data: data ?? [], count: data?.length ?? 0 };
