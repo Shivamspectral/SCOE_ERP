@@ -22,6 +22,9 @@ export function AttendancePage() {
   const [sessionRecords, setSessionRecords] = useState([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState("");
+  const [sessionStatus, setSessionStatus] = useState("");
+  const [sessionFrom, setSessionFrom] = useState("");
+  const [sessionTo, setSessionTo] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [returningSessionId, setReturningSessionId] = useState(null);
   const [reviewReason, setReviewReason] = useState("");
@@ -37,7 +40,7 @@ export function AttendancePage() {
     attendanceApi.summary().then((result) => {
       if (!cancelled) setSummary(result ?? null);
     }).catch(() => { if (!cancelled) setSummary(null); });
-    attendanceApi.sessions().then((rows) => {
+    attendanceApi.sessions({ status: sessionStatus || undefined, from: sessionFrom || undefined, to: sessionTo || undefined }).then((rows) => {
       if (!cancelled) setReviewSessions(Array.isArray(rows) ? rows : []);
     }).catch((error) => {
       if (!cancelled) {
@@ -46,7 +49,7 @@ export function AttendancePage() {
       }
     }).finally(() => { if (!cancelled) setReviewLoading(false); });
     return () => { cancelled = true; };
-  }, [liveMode, session?.access_token]);
+  }, [liveMode, session?.access_token, sessionStatus, sessionFrom, sessionTo]);
 
   const toggleSessionRecords = async (record) => {
     if (expandedSessionId === record.id) {
@@ -117,6 +120,12 @@ export function AttendancePage() {
           Demo workspace · sample records only. Actions here do not update institutional data.
         </div>
       )}
+      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="grid gap-1.5 text-xs font-medium text-muted-foreground"><span>Session status</span><select value={sessionStatus} onChange={(event) => setSessionStatus(event.target.value)} className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground"><option value="">All statuses</option><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="verified">Verified</option><option value="returned">Returned</option></select></label>
+        <label className="grid gap-1.5 text-xs font-medium text-muted-foreground"><span>From date</span><input type="date" value={sessionFrom} max={sessionTo || undefined} onChange={(event) => setSessionFrom(event.target.value)} className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground" /></label>
+        <label className="grid gap-1.5 text-xs font-medium text-muted-foreground"><span>To date</span><input type="date" value={sessionTo} min={sessionFrom || undefined} onChange={(event) => setSessionTo(event.target.value)} className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground" /></label>
+        <div className="flex items-end"><button onClick={() => { setSessionStatus(""); setSessionFrom(""); setSessionTo(""); }} className="w-full rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted">Clear filters</button></div>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Sessions in scope</p><p className="mt-1 text-2xl font-bold text-foreground">{reviewSessions.length}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Awaiting review</p><p className="mt-1 text-2xl font-bold text-foreground">{pendingReview.length}</p></CardContent></Card>
