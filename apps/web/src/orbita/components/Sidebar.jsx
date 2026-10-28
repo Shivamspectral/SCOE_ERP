@@ -362,7 +362,7 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
       items: group.items.filter((item) => {
         if (item.href === "/institution-settings") return leadershipRoles.includes(userRole);
         if (item.href === "/visitors") return leadershipRoles.includes(userRole) || userRole === "Staff";
-        if (item.href === "/budgets") return leadershipRoles.includes(userRole) || userRole === "HOD";
+        if (item.href === "/budgets") return leadershipRoles.includes(userRole) || userRole === "HOD" || userRole === "Staff";
         if (item.href === "/vendors") return leadershipRoles.includes(userRole) || userRole === "Staff";
         if (item.href === "/expense-claims") return ["Principal", "Super Admin", "Vice-Principal", "HOD", "Faculty", "Staff"].includes(userRole);
         return true;
