@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards, NotFoundException, Delete } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards, NotFoundException, ForbiddenException, Delete } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
@@ -74,18 +74,27 @@ export class OperationsController {
     return MODULES[key as ModuleKey];
   }
 
-  private async institution(req: AuthenticatedRequest) {
+  private async institution(req: AuthenticatedRequest, module?: string) {
     const client = this.db.forRequest(req);
     const { data, error } = await client.from('profiles').select('institution_id,status').eq('user_id', req.authUser!.id).maybeSingle();
     if (error) throw error;
     if (!data || data.status !== 'active') throw new BadRequestException('Active institutional access is required');
-    return { client, institutionId: data.institution_id as string };
+    const institutionId = data.institution_id as string;
+    if (module && module !== 'institutionSettings') {
+      const { data: settings, error: settingsError } = await client.from('institution_settings').select('enabled_modules').eq('institution_id', institutionId).maybeSingle();
+      if (settingsError) throw settingsError;
+      const enabledModules = Array.isArray(settings?.enabled_modules) ? settings.enabled_modules as string[] : [];
+      if (enabledModules.length > 0 && !enabledModules.includes(module)) {
+        throw new ForbiddenException('This module is not enabled for your institution subscription');
+      }
+    }
+    return { client, institutionId };
   }
 
   @Get(':module')
   async list(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Query('status') status?: string, @Query('search') search?: string) {
     const config = this.config(module);
-    const { client } = await this.institution(req);
+    const { client } = await this.institution(req, module);
     let query = client.from(config.table).select(config.select).order('created_at', { ascending: false }).limit(250);
     if (status && config.fields.includes('status' as never)) query = query.eq('status', status);
     if (search?.trim()) {
@@ -101,7 +110,7 @@ export class OperationsController {
   @Post(':module')
   async create(@Req() req: AuthenticatedRequest, @Param('module') module: string, @Body() body: Record<string, unknown>) {
     const config = this.config(module);
-    const { client, institutionId } = await this.institution(req);
+    const { client, institutionId } = await this.institution(req, module);
     const values: Record<string, unknown> = {};
     for (const field of config.fields as readonly string[]) {
       if (body[field] !== undefined) values[field] = body[field];
