@@ -77,6 +77,10 @@ begin
   end loop;
 end $$;
 
+create trigger institution_settings_created_by_guard
+before insert or update on public.institution_settings
+for each row execute function app_private.guard_actor_identity('created_by');
+
 drop trigger if exists institution_settings_actor_identity_guard on public.institution_settings;
 create trigger institution_settings_actor_identity_guard
 before insert or update on public.institution_settings
