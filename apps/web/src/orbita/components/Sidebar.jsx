@@ -183,6 +183,7 @@ export function getNavigationForRole(role) {
         title: "System",
         items: [
           { label: "Executive Profile", href: "/profile", icon: UserRound, tooltip: "Principal / VP identity" },
+          { label: "Bulk Staff Accounts", href: "/bulk-accounts", icon: KeyRound, tooltip: "Create staff accounts from CSV" },
           { label: "Settings", href: "/settings", icon: Settings, tooltip: "Security & configurations" },
         ],
       },
@@ -200,7 +201,8 @@ export function getNavigationForRole(role) {
       {
         title: "Identity & Security",
         items: [
-          { label: "User Management (IAM)", href: "/users", icon: Users, tooltip: "Manage students, faculty & admins" },
+          { label: "User Management (IAM)", href: "/users", icon: Users, tooltip: "Manage staff accounts" },
+          { label: "Bulk Staff Accounts", href: "/bulk-accounts", icon: KeyRound, tooltip: "Create staff accounts from CSV" },
           { label: "Approvals & Clearances", href: "/approvals", icon: FileCheck, tooltip: "Root administrative sanction desk" },
           { label: "System Audit Logs", href: "/logs", icon: Shield, tooltip: "Security & transaction logs" },
           { label: "Finance & Fees", href: "/finance", icon: Wallet, tooltip: "Staff fee invoices and payment ledger" },
