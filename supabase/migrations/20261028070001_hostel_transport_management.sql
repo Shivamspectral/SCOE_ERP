@@ -196,8 +196,8 @@ for each row execute function app_private.sync_hostel_occupancy();
 
 create or replace function app_private.capture_untracked_hostel_occupancy()
 returns trigger language plpgsql security definer set search_path = ''
-as $
- declare active_count integer;
+as $$
+declare active_count integer;
 begin
   if new.occupied_beds is distinct from old.occupied_beds then
     select count(*) into active_count from public.hostel_allocations
