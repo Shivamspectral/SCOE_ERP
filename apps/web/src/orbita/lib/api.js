@@ -191,6 +191,7 @@ export const facultyApi = {
 };
 
 export const attendanceApi = {
+  summary: () => api.get("/api/attendance/summary"),
   sessions: (query) => api.get("/api/attendance/sessions", query),
   records: (sessionId) => api.get(`/api/attendance/sessions/${sessionId}/records`),
   createSession: (payload) => api.post("/api/attendance/sessions", payload),
