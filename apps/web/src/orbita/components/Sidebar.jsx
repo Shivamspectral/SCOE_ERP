@@ -344,6 +344,7 @@ export function Sidebar({ collapsed, mobileOpen, onClose }) {
         { label: "Applicant Review", href: "/admission-applications", icon: ClipboardCheck, tooltip: "Staff-only applicant screening and decisions" },
         { label: "Examination Cell", href: "/exam-schedule", icon: CalendarDays, tooltip: "Exam sessions and publication lifecycle" },
         { label: "Subject Exam Timetable", href: "/exam-timetable", icon: CalendarDays, tooltip: "Subject schedules and invigilator assignments" },
+        { label: "Staff Grievances", href: "/staff-grievances", icon: LifeBuoy, tooltip: "Confidential workplace concerns and resolutions" },
       ],
     }] : []),
   ];
