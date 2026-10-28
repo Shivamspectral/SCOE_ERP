@@ -23,9 +23,20 @@ export class ReportsController {
     if (profileError) throw profileError;
     if (!profile || profile.status !== 'active') throw new BadRequestException('Active institutional access is required');
 
+    const parsedFrom = from ? new Date(from) : null;
+    const parsedTo = to ? new Date(to) : null;
+    if (parsedFrom && Number.isNaN(parsedFrom.getTime())) throw new BadRequestException('Invalid report start date');
+    if (parsedTo && Number.isNaN(parsedTo.getTime())) throw new BadRequestException('Invalid report end date');
+    if (parsedFrom && parsedTo && parsedFrom > parsedTo) throw new BadRequestException('Report start date must not be after end date');
+
     const count = async (table: string, filters: Record<string, string> = {}) => {
       let query: any = client.from(table).select('id', { count: 'exact', head: true });
       if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','academic_programmes','finance_budgets','hr_employees','research_projects'].includes(table)) query = query.eq('department_id', departmentId);
+      if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
+      if (parsedTo) {
+        const upperBound = /^\d{4}-\d{2}-\d{2}$/.test(to || '') ? new Date(parsedTo.getTime() + 24 * 60 * 60 * 1000 - 1) : parsedTo;
+        query = query.lte('created_at', upperBound.toISOString());
+      }
       for (const [column, value] of Object.entries(filters)) query = query.eq(column, value);
       const { count: total, error } = await query;
       if (error) throw error;
