@@ -71,6 +71,7 @@ export class FinanceController {
       const { data: structure, error } = await client.from('fee_structures').select('id,institution_id,status,currency,amount').eq('id', body.feeStructureId).maybeSingle();
       if (error) throw error;
       if (!structure || structure.institution_id !== profile.institution_id || structure.status !== 'active') throw new BadRequestException('Fee structure is not active in this institution');
+      if (body.currency && body.currency.toUpperCase() !== structure.currency) throw new BadRequestException('Invoice currency must match its fee structure');
     }
     const currency = (body.currency || 'INR').toUpperCase();
     if (!/^[A-Z]{3}$/.test(currency)) throw new BadRequestException('Currency must be a three-letter ISO code');
