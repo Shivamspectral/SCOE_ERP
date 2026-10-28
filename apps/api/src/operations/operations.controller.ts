@@ -49,6 +49,12 @@ const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> =
   visitors: { expected: ['checked_in', 'denied'], checked_in: ['checked_out'], checked_out: [], denied: [] },
   events: { draft: ['planned', 'cancelled'], planned: ['published', 'cancelled'], published: ['completed', 'cancelled'], completed: [], cancelled: [] },
   evidence: { draft: ['in_progress', 'archived'], in_progress: ['submitted_for_review', 'archived'], submitted_for_review: ['approved', 'needs_revision'], needs_revision: ['in_progress', 'archived'], approved: ['archived'], archived: [] },
+  programmes: { draft: ['active', 'archived'], active: ['suspended', 'archived'], suspended: ['active', 'archived'], archived: [] },
+  academicTerms: { planned: ['active', 'cancelled'], active: ['completed', 'cancelled'], completed: [], cancelled: [] },
+  curriculumCourses: { draft: ['active', 'archived'], active: ['archived'], archived: [] },
+  courseOutcomes: { draft: ['active', 'archived'], active: ['archived'], archived: [] },
+  programOutcomes: { draft: ['active', 'archived'], active: ['archived'], archived: [] },
+  attainmentCycles: { draft: ['calculating', 'archived'], calculating: ['submitted_for_review', 'reopened'], submitted_for_review: ['approved', 'reopened'], approved: ['reopened', 'archived'], reopened: ['calculating', 'archived'], archived: [] },
 };
 
 @Controller('operations')
@@ -149,6 +155,16 @@ export class OperationsController {
       if (currentStatus !== nextStatus && module === 'visitors') {
         if (nextStatus === 'checked_in') patch.checked_in_at = new Date().toISOString();
         if (nextStatus === 'checked_out') patch.checked_out_at = new Date().toISOString();
+      }
+      if (currentStatus !== nextStatus && module === 'attainmentCycles') {
+        if (nextStatus === 'approved') {
+          patch.approved_by = req.authUser!.id;
+          patch.approved_at = new Date().toISOString();
+        }
+        if (nextStatus === 'reopened') {
+          patch.approved_by = null;
+          patch.approved_at = null;
+        }
       }
     }
 
