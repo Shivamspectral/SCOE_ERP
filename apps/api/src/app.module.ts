@@ -27,9 +27,10 @@ import { FacultyModule } from './faculty/faculty.module';
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
         PORT: Joi.number().port().default(4000),
-        WEB_ORIGIN: Joi.string().required(),
-        SUPABASE_URL: Joi.string().uri().required(),
-        SUPABASE_PUBLISHABLE_KEY: Joi.string().min(1).required(),
+        WEB_ORIGIN: Joi.string().default('http://localhost:5173'),
+        // Supabase is optional for health/docs startup; protected routes fail closed.
+        SUPABASE_URL: Joi.string().uri().optional(),
+        SUPABASE_PUBLISHABLE_KEY: Joi.string().min(1).optional(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().allow('').optional(),
       }),
       validationOptions: { allowUnknown: true, abortEarly: false },
