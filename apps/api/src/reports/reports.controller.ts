@@ -3,7 +3,7 @@ import type { AuthenticatedRequest } from '../auth/supabase-auth.guard';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { SupabaseRequestClient } from '../database/supabase-request-client.service';
 
-const REPORT_KINDS = ['overview','academic','attendance','finance','admissions','operations','accreditation','library','hr'] as const;
+const REPORT_KINDS = ['overview','academic','attendance','examinations','admissions','operations','accreditation','library','hr'] as const;
 type ReportKind = typeof REPORT_KINDS[number];
 
 @Controller('reports')
@@ -34,7 +34,7 @@ export class ReportsController {
 
     const count = async (table: string, filters: Record<string, string> = {}) => {
       let query: any = client.from(table).select('id', { count: 'exact', head: true });
-      if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','assignment_records','academic_programmes','finance_budgets','hr_employees','research_projects'].includes(table)) query = query.eq('department_id', departmentId);
+      if (departmentId && ['academic_classes','academic_subjects','academic_students','attendance_sessions','marks_records','assignment_records','academic_programmes','finance_budgets','hr_employees','research_projects','examination_sessions'].includes(table)) query = query.eq('department_id', departmentId);
       if (parsedFrom) query = query.gte('created_at', parsedFrom.toISOString());
       if (parsedTo) {
         const upperBound = /^\d{4}-\d{2}-\d{2}$/.test(to || '') ? new Date(parsedTo.getTime() + 24 * 60 * 60 * 1000 - 1) : parsedTo;
@@ -73,6 +73,17 @@ export class ReportsController {
         ['partiallyPaidInvoices','fee_invoices',{status:'partially_paid'}], ['paidInvoices','fee_invoices',{status:'paid'}],
         ['approvedBudgets','finance_budgets',{status:'approved'}], ['submittedExpenseClaims','expense_claims',{status:'submitted'}],
         ['approvedExpenseClaims','expense_claims',{status:'approved'}], ['paidExpenseClaims','expense_claims',{status:'paid'}],
+      ],
+      examinations: [
+        ['examSessionsDraft','examination_sessions',{status:'draft'}],
+        ['examSessionsScheduled','examination_sessions',{status:'scheduled'}],
+        ['examSessionsPublished','examination_sessions',{status:'published'}],
+        ['examSessionsInProgress','examination_sessions',{status:'in_progress'}],
+        ['examSessionsCompleted','examination_sessions',{status:'completed'}],
+        ['examSessionsCancelled','examination_sessions',{status:'cancelled'}],
+        ['timetableSlotsScheduled','examination_timetable',{status:'scheduled'}],
+        ['timetableSlotsPublished','examination_timetable',{status:'published'}],
+        ['timetableSlotsCompleted','examination_timetable',{status:'completed'}],
       ],
       admissions: [
         ['campaignsOpen','admission_campaigns',{status:'open'}], ['applicationsSubmitted','admission_applications',{status:'submitted'}],
