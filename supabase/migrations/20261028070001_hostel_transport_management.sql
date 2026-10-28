@@ -194,9 +194,30 @@ create trigger hostel_allocations_sync_occupancy
 after insert or update or delete on public.hostel_allocations
 for each row execute function app_private.sync_hostel_occupancy();
 
+create or replace function app_private.capture_untracked_hostel_occupancy()
+returns trigger language plpgsql security definer set search_path = ''
+as $
+declare active_count integer;
+begin
+  if new.occupied_beds is distinct from old.occupied_beds then
+    select count(*) into active_count from public.hostel_allocations
+      where room_id = new.id and institution_id = new.institution_id and status = 'active';
+    if new.occupied_beds < active_count then
+      raise exception 'Occupied beds cannot be lower than active bed allocations' using errcode = '23514';
+    end if;
+    new.untracked_occupied_beds := new.occupied_beds - active_count;
+  end if;
+  return new;
+end;
+$;
+create trigger hostel_rooms_capture_untracked_occupancy
+before update of occupied_beds on public.hostel_rooms
+for each row execute function app_private.capture_untracked_hostel_occupancy();
+
 create trigger transport_routes_driver_scope_guard
 before insert or update on public.transport_routes
 for each row execute function app_private.guard_profile_scope('driver_id');
 
 revoke all on function app_private.guard_hostel_capacity() from public, anon, authenticated;
 revoke all on function app_private.sync_hostel_occupancy() from public, anon, authenticated;
+revoke all on function app_private.capture_untracked_hostel_occupancy() from public, anon, authenticated;
