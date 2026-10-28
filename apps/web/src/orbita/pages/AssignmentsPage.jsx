@@ -31,10 +31,11 @@ export function AssignmentsPage() {
 
   useEffect(() => {
     if (!liveMode) {
-      setAssignments(demoAssignments);
+      const previewRows = demoAssignments.filter((item) => !statusFilter || item.status === statusFilter);
+      setAssignments(previewRows);
       setClasses([{ id: "demo-class-1", name: "SE Computer", division: "A" }, { id: "demo-class-2", name: "TE Computer", division: "B" }]);
       setSubjects([]);
-      setSelectedId((current) => current || demoAssignments[0].id);
+      setSelectedId((current) => previewRows.some((item) => item.id === current) ? current : (previewRows[0]?.id || ""));
       return;
     }
     let cancelled = false;
