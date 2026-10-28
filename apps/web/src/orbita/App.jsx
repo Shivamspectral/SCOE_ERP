@@ -41,6 +41,7 @@ import { StudentsManagementPage } from "./pages/StudentsManagementPage";
 import { ApprovalsPage } from "./pages/ApprovalsPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { UsersManagementPage } from "./pages/UsersManagementPage";
+import { BulkAccountsPage } from "./pages/BulkAccountsPage";
 import { SystemLogsPage } from "./pages/SystemLogsPage";
 
 import { college } from "./data/portalData";
@@ -77,7 +78,7 @@ export default function App() {
     const liveDataRoutes = new Set([
       "/dashboard", "/timetable", "/attendance", "/assignments", "/marks", "/notices", "/notifications", "/profile", "/settings",
       "/academics", "/courses", "/subjects", "/examinations", "/exam-schedule", "/exam-timetable", "/admissions-campaigns", "/admission-applications", "/mentoring", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results", "/reports",
-      "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
+      "/department", "/departments", "/faculty", "/students", "/approvals", "/users", "/bulk-accounts",
       ...OPERATION_ROUTES,
     ]);
     if (liveSession && !liveDataRoutes.has(currentRoute)) {
@@ -119,6 +120,7 @@ export default function App() {
       case "/approvals": return <ApprovalsPage />;
       case "/reports": return <ReportsPage />;
       case "/users": return <UsersManagementPage />;
+      case "/bulk-accounts": return <BulkAccountsPage />;
       case "/logs": return <SystemLogsPage />;
       default: return <DashboardPage />;
     }
