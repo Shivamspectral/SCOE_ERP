@@ -19,7 +19,7 @@ const MODULES = {
   events: { table: 'institution_events', select: 'id,title,event_type,description,venue,starts_at,ends_at,organizer_department_id,coordinator_id,capacity,status,metadata,created_at,updated_at', fields: ['title','event_type','description','venue','starts_at','ends_at','organizer_department_id','coordinator_id','capacity','status','metadata'] },
   committees: { table: 'institution_committees', select: 'id,committee_code,name,committee_type,purpose,chairperson_id,department_id,starts_on,ends_on,status,meeting_frequency,metadata,created_at,updated_at', fields: ['committee_code','name','committee_type','purpose','chairperson_id','department_id','starts_on','ends_on','status','meeting_frequency','metadata'] },
   committeeMembers: { table: 'institution_committee_members', select: 'id,committee_id,user_id,member_name,designation,member_role,appointed_on,ends_on,status,created_at,updated_at', fields: ['committee_id','user_id','member_name','designation','member_role','appointed_on','ends_on','status'] },
-  clubsAdmin: { table: 'institution_clubs', select: 'id,club_code,name,category,description,faculty_coordinator_id,annual_budget,founded_on,status,metadata,created_at,updated_at', fields: ['club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','budget_code','claim_number','legal_name','vendor_code','application_number','applicant_name','campaign_code','exam_code','case_number','subject','name','category','description','faculty_coordinator_id','annual_budget','founded_on','status','metadata'] },
+  clubsAdmin: { table: 'institution_clubs', select: 'id,club_code,name,category,description,faculty_coordinator_id,annual_budget,founded_on,status,metadata,created_at,updated_at', fields: ['club_code','programme_code','academic_year','term_code','outcome_code','cohort_label','budget_code','claim_number','legal_name','vendor_code','application_number','applicant_name','campaign_code','exam_code','case_number','subject','route_code','stop_name','name','category','description','faculty_coordinator_id','annual_budget','founded_on','status','metadata'] },
   alumniRecords: { table: 'alumni_records', select: 'id,alumni_code,full_name,graduation_year,programme,department_id,current_employer,current_designation,work_email,contact_phone,linkedin_url,mentorship_available,donation_total,notes,status,created_at,updated_at', fields: ['alumni_code','full_name','graduation_year','programme','department_id','current_employer','current_designation','work_email','contact_phone','linkedin_url','mentorship_available','donation_total','notes','status'] },
   labInventory: { table: 'lab_inventory', select: 'id,asset_tag,name,department_id,laboratory,category,quantity,condition,calibration_due_on,last_service_on,assigned_to,purchase_cost,status,notes,created_at,updated_at', fields: ['asset_tag','name','department_id','laboratory','category','quantity','condition','calibration_due_on','last_service_on','assigned_to','purchase_cost','status','notes'] },
   sportsFacilities: { table: 'sports_facilities', select: 'id,facility_code,name,facility_type,location,capacity,opening_time,closing_time,supervisor_id,status,notes,created_at,updated_at', fields: ['facility_code','name','facility_type','location','capacity','opening_time','closing_time','supervisor_id','status','notes'] },
@@ -41,6 +41,10 @@ const MODULES = {
   examinationSessions: { table: 'examination_sessions', select: 'id,exam_code,name,exam_type,academic_year,term_id,department_id,starts_on,ends_on,status,instructions,created_by,created_at,updated_at', fields: ['exam_code','name','exam_type','academic_year','term_id','department_id','starts_on','ends_on','status','instructions'] },
   examinationTimetable: { table: 'examination_timetable', select: 'id,session_id,subject_id,exam_date,starts_at,ends_at,venue,invigilator_id,max_marks,passing_marks,status,instructions,created_by,created_at,updated_at', fields: ['session_id','subject_id','exam_date','starts_at','ends_at','venue','invigilator_id','max_marks','passing_marks','status','instructions'] },
   staffGrievances: { table: 'staff_grievances', select: 'id,case_number,category,subject,description,priority,is_anonymous,status,assigned_to,resolution_note,resolved_at,created_by,created_at,updated_at', fields: ['case_number','category','subject','description','priority','is_anonymous','status','assigned_to','resolution_note'] },
+  hostelAllocations: { table: 'hostel_allocations', select: 'id,student_id,room_id,bed_label,starts_on,ends_on,status,allocated_by,notes,created_at,updated_at', fields: ['student_id','room_id','bed_label','starts_on','ends_on','status','notes'] },
+  transportRoutes: { table: 'transport_routes', select: 'id,route_code,name,direction,start_point,end_point,assigned_vehicle_id,driver_id,departure_time,return_time,status,notes,created_by,created_at,updated_at', fields: ['route_code','name','direction','start_point','end_point','assigned_vehicle_id','driver_id','departure_time','return_time','status','notes'] },
+  transportRouteStops: { table: 'transport_route_stops', select: 'id,route_id,stop_order,stop_name,pickup_time,drop_time,status,created_at,updated_at', fields: ['route_id','stop_order','stop_name','pickup_time','drop_time','status'] },
+  studentTransportAssignments: { table: 'student_transport_assignments', select: 'id,student_id,route_id,stop_id,starts_on,ends_on,status,allocated_by,notes,created_at,updated_at', fields: ['student_id','route_id','stop_id','starts_on','ends_on','status','notes'] },
 } as const;
 
 type ModuleKey = keyof typeof MODULES;
@@ -78,6 +82,10 @@ const STATUS_TRANSITIONS: Partial<Record<ModuleKey, Record<string, string[]>>> =
   examinationSessions: { draft: ['scheduled', 'cancelled'], scheduled: ['published', 'cancelled'], published: ['in_progress', 'cancelled'], in_progress: ['completed', 'cancelled'], completed: [], cancelled: [] },
   examinationTimetable: { draft: ['scheduled', 'cancelled'], scheduled: ['published', 'completed', 'cancelled'], published: ['completed', 'cancelled'], completed: [], cancelled: [] },
   staffGrievances: { submitted: ['assigned', 'withdrawn'], assigned: ['investigating', 'resolved', 'reopened'], investigating: ['resolved', 'reopened'], resolved: ['closed', 'reopened'], closed: ['reopened'], reopened: ['assigned', 'investigating'], withdrawn: [] },
+  hostelAllocations: { active: ['checked_out', 'cancelled'], checked_out: [], cancelled: [] },
+  transportRoutes: { planned: ['active', 'suspended', 'retired'], active: ['suspended', 'retired'], suspended: ['active', 'retired'], retired: [] },
+  transportRouteStops: { active: ['inactive'], inactive: ['active'] },
+  studentTransportAssignments: { active: ['completed', 'cancelled'], completed: [], cancelled: [] },
 };
 
 @Controller('operations')
@@ -135,7 +143,7 @@ export class OperationsController {
     }
     if (!Object.keys(values).length) throw new BadRequestException('No supported fields were provided');
     values.institution_id = institutionId;
-    if (['employees','catalogue','assets','employers','research','evidence','admissionCampaigns','admissionApplications','examinationSessions','examinationTimetable','staffGrievances'].includes(module)) values.created_by = req.authUser!.id;
+    if (['employees','catalogue','assets','employers','research','evidence','admissionCampaigns','admissionApplications','examinationSessions','examinationTimetable','staffGrievances','transportRoutes'].includes(module)) values.created_by = req.authUser!.id;
     if (module === 'leave') values.created_by = req.authUser!.id;
     if (module === 'expenseClaims') values.submitted_by = req.authUser!.id;
     if (module === 'procurement') values.requested_by = req.authUser!.id;
