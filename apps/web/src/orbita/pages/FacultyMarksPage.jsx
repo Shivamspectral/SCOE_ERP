@@ -95,8 +95,7 @@ export function FacultyMarksPage() {
         return operations;
       });
       if (!writes.length) {
-        toast({ title: "No marks entered", description: "Enter at least one mark before saving.", variant: "warning" });
-        return false;
+        throw new Error("Enter at least one mark before saving.");
       }
       await Promise.all(writes);
       const records = await marksApi.list({ limit: 300 });
