@@ -64,12 +64,18 @@ function restore() {
   if (session) return session;
   try {
     session = normalizeSession(JSON.parse(localStorage.getItem(SESSION_KEY) || "null"));
-    // Migrate an older stored session once so future boots keep the expiry.
-    if (session?.access_token && session.expires_at) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    }
   } catch {
     session = null;
+    return session;
+  }
+  // Migration persistence is best-effort; storage restrictions must not discard
+  // a valid in-memory session restored successfully above.
+  if (session?.access_token && session.expires_at) {
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } catch {
+      /* storage unavailable (private mode / WebView) */
+    }
   }
   return session;
 }
