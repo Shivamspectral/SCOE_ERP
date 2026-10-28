@@ -99,7 +99,7 @@ export class OperationsController {
   }
 
   private async institution(req: AuthenticatedRequest, module?: string) {
-    const client = this.db.forRequest(req);
+    const client: any = this.db.forRequest(req);
     const { data, error } = await client.from('profiles').select('institution_id,status').eq('user_id', req.authUser!.id).maybeSingle();
     if (error) throw error;
     if (!data || data.status !== 'active') throw new BadRequestException('Active institutional access is required');

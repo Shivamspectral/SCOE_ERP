@@ -68,12 +68,6 @@ export class ReportsController {
         ['presentRecords','attendance_records',{attendance_status:'present'}], ['absentRecords','attendance_records',{attendance_status:'absent'}],
         ['lateRecords','attendance_records',{attendance_status:'late'}], ['excusedRecords','attendance_records',{attendance_status:'excused'}],
       ],
-      finance: [
-        ['feeStructures','fee_structures',{status:'active'}], ['unpaidInvoices','fee_invoices',{status:'unpaid'}],
-        ['partiallyPaidInvoices','fee_invoices',{status:'partially_paid'}], ['paidInvoices','fee_invoices',{status:'paid'}],
-        ['approvedBudgets','finance_budgets',{status:'approved'}], ['submittedExpenseClaims','expense_claims',{status:'submitted'}],
-        ['approvedExpenseClaims','expense_claims',{status:'approved'}], ['paidExpenseClaims','expense_claims',{status:'paid'}],
-      ],
       examinations: [
         ['examSessionsDraft','examination_sessions',{status:'draft'}],
         ['examSessionsScheduled','examination_sessions',{status:'scheduled'}],
@@ -145,27 +139,6 @@ export class ReportsController {
       if (error) throw error;
       const rows = (data ?? []).filter((row: { marks_obtained: number | string | null; max_marks: number | string | null }) => Number(row.max_marks) > 0 && Number.isFinite(Number(row.marks_obtained)));
       summary.averageVerifiedMarksPercent = rows.length ? Math.round(rows.reduce((sum: number, row: { marks_obtained: number | string; max_marks: number | string }) => sum + (Number(row.marks_obtained) / Number(row.max_marks)) * 100, 0) / rows.length * 10) / 10 : null;
-    }
-
-    if (kind === 'finance') {
-      let invoiceQuery: any = client.from('fee_invoices').select('amount_due,amount_paid,status').limit(10000);
-      let budgetQuery: any = client.from('finance_budgets').select('allocated_amount,status').limit(10000);
-      if (parsedFrom) {
-        invoiceQuery = invoiceQuery.gte('created_at', parsedFrom.toISOString());
-        budgetQuery = budgetQuery.gte('created_at', parsedFrom.toISOString());
-      }
-      if (parsedTo) {
-        invoiceQuery = invoiceQuery.lte('created_at', parsedToUpperBound!.toISOString());
-        budgetQuery = budgetQuery.lte('created_at', parsedToUpperBound!.toISOString());
-      }
-      const [invoiceResult, budgetResult] = await Promise.all([invoiceQuery, budgetQuery]);
-      if (invoiceResult.error) throw invoiceResult.error;
-      if (budgetResult.error) throw budgetResult.error;
-      const invoices = invoiceResult.data ?? [];
-      const budgets = budgetResult.data ?? [];
-      summary.invoiceAmountDue = Math.round(invoices.reduce((sum: number, row: { amount_due: number | string }) => sum + Number(row.amount_due || 0), 0) * 100) / 100;
-      summary.invoiceAmountPaid = Math.round(invoices.reduce((sum: number, row: { amount_paid: number | string }) => sum + Number(row.amount_paid || 0), 0) * 100) / 100;
-      summary.approvedBudgetAmount = Math.round(budgets.filter((row: { status: string }) => row.status === 'approved').reduce((sum: number, row: { allocated_amount: number | string }) => sum + Number(row.allocated_amount || 0), 0) * 100) / 100;
     }
 
     if (kind === 'accreditation') {
