@@ -50,7 +50,7 @@ const OPERATION_ROUTES = new Set([
   "/accreditation", "/institution-events", "/committees", "/committee-members", "/clubs-admin",
   "/alumni-records", "/lab-inventory", "/sports-facilities", "/visitors", "/programmes",
   "/academic-terms", "/curriculum", "/course-outcomes", "/program-outcomes", "/obe-mapping",
-  "/attainment-cycles", "/attainment-results", "/institution-settings", "/budgets", "/vendors", "/expense-claims", "/admissions-campaigns", "/admission-applications", "/exam-schedule", "/exam-timetable", "/examinations", "/staff-grievances", "/feedback", "/support", "/grievances",
+  "/attainment-cycles", "/attainment-results", "/institution-settings", "/budgets", "/vendors", "/expense-claims", "/admissions-campaigns", "/admission-applications", "/exam-schedule", "/exam-timetable", "/staff-grievances", "/feedback", "/support", "/grievances",
   "/clubs", "/sports", "/alumni", "/hostel", "/transport", "/placements", "/events", "/student-council", "/members", "/council",
 ]);
 
@@ -75,7 +75,7 @@ export default function App() {
     const liveSession = Boolean(backendConfigured && isAuthenticated && session?.access_token && !isDemoPreview);
     const liveDataRoutes = new Set([
       "/dashboard", "/timetable", "/attendance", "/assignments", "/marks", "/notices", "/notifications", "/profile", "/settings",
-      "/academics", "/courses", "/subjects", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results", "/reports",
+      "/academics", "/courses", "/subjects", "/examinations", "/classes", "/enrollments", "/documents", "/logs", "/tasks", "/library", "/finance", "/results", "/reports",
       "/department", "/departments", "/faculty", "/students", "/approvals", "/users",
       ...OPERATION_ROUTES,
     ]);
