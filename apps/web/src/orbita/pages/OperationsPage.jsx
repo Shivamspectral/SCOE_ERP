@@ -77,6 +77,16 @@ export function OperationsPage({ route }) {
 
   useEffect(()=>{ void load(); },[load]);
 
+  useEffect(() => {
+    setModal(false);
+    setEditingRecord(null);
+    setForm({});
+    setSearch("");
+    setStatus("");
+    setError("");
+    setNotice("");
+  }, [route]);
+
   const columns = useMemo(() => {
     if (!records.length) return config.fields.filter((f)=>["text","email","date","select","number"].includes(f[2])).slice(0,5).map((f)=>f[0]);
     const preferred = config.fields.map((f)=>f[0]).filter((k)=>records.some((r)=>r[k] !== undefined));
