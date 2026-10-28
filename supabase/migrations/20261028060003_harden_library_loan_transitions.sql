@@ -1,7 +1,7 @@
 -- Circulation rows are immutable except for staff notes and a one-way return transition.
 create or replace function app_private.library_loan_guard()
 returns trigger language plpgsql security definer set search_path = ''
-as $
+as $function$
 declare
   v_book public.library_books%rowtype;
 begin
@@ -50,4 +50,4 @@ begin
   new.updated_at := now();
   return new;
 end;
-$$;
+$function$;
